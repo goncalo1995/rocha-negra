@@ -42,6 +42,7 @@ interface AssetManagerProps {
 const assetTypeConfig: Record<AssetType, { label: string; icon: typeof Banknote; color: string }> = {
   liquid_cash: { label: 'Liquid Cash', icon: Banknote, color: 'text-success' },
   investment: { label: 'Investment', icon: TrendingUp, color: 'text-chart-2' },
+  crypto: { label: 'Cryptocurrency', icon: TrendingUp, color: 'text-chart-4' },
   physical: { label: 'Physical Asset', icon: Car, color: 'text-chart-3' },
   liability: { label: 'Liability', icon: CreditCard, color: 'text-destructive' },
 };

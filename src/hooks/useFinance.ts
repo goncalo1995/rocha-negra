@@ -176,6 +176,11 @@ export function useFinance() {
     // Simple budget estimation (average of last 3 months or current month's income)
     const monthlyBudget = monthlyIncome > 0 ? monthlyIncome : 0;
 
+    const upcomingBillsCount = state.recurringRules.filter(r => {
+      const dueDate = new Date(r.nextDueDate);
+      return r.isActive && dueDate >= now && dueDate <= thirtyDaysFromNow;
+    }).length;
+
     return {
       netWorth,
       totalAssets,
@@ -185,6 +190,7 @@ export function useFinance() {
       monthlyBudget,
       safeToSpend,
       upcomingBills,
+      upcomingBillsCount,
     };
   }, [state.assets, state.transactions, state.recurringRules]);
 
