@@ -364,6 +364,13 @@ export function useSupabaseFinance() {
     const safeToSpend = liquidCash - upcomingBills;
     const monthlyBudget = monthlyIncome * 0.7;
 
+    const upcomingBillsCount = recurringRules.filter(r => {
+      if (!r.isActive) return false;
+      const dueDate = new Date(r.nextDueDate);
+      const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return daysUntilDue >= 0 && daysUntilDue <= 30;
+    }).length;
+
     return {
       netWorth,
       totalAssets,
@@ -373,6 +380,7 @@ export function useSupabaseFinance() {
       monthlyBudget,
       safeToSpend,
       upcomingBills,
+      upcomingBillsCount,
     };
   }, [state]);
 
@@ -453,14 +461,18 @@ function mapTransactionsFromDB(rows: any[]): Transaction[] {
 function mapRuleFromDB(row: any): RecurringRule {
   return {
     id: row.id,
+    name: row.name || row.description,
     transactionId: row.transaction_id,
     categoryId: row.category_id,
     assetId: row.asset_id,
+    type: row.type || 'expense',
     frequency: row.frequency,
+    dayOfMonth: row.day_of_month,
     nextDueDate: row.next_due_date,
     projectedAmount: parseFloat(row.projected_amount),
     description: row.description,
     isActive: row.is_active,
+    createdAt: row.created_at,
   };
 }
 
