@@ -227,6 +227,7 @@ const Index = () => {
         categories={categories}
         assets={assets}
         onAddTransaction={addTransaction}
+        onAddRecurringRule={addRecurringRule}
       />
     </div>
   );
