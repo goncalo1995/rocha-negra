@@ -50,17 +50,31 @@ export function useFinance() {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     };
-    setState(prev => ({ ...prev, transactions: [...prev.transactions, newTransaction] }));
     
-    // Update asset value based on transaction
-    const asset = state.assets.find(a => a.id === transaction.assetId);
-    if (asset) {
-      const change = transaction.type === 'income' ? transaction.amount : -transaction.amount;
-      updateAsset(asset.id, { currentValue: asset.currentValue + change });
-    }
+    // Update both transaction list and asset value atomically
+    setState(prev => {
+      const asset = prev.assets.find(a => a.id === transaction.assetId);
+      const updatedAssets = asset
+        ? prev.assets.map(a => 
+            a.id === transaction.assetId 
+              ? { 
+                  ...a, 
+                  currentValue: a.currentValue + (transaction.type === 'income' ? transaction.amount : -transaction.amount),
+                  updatedAt: new Date().toISOString()
+                } 
+              : a
+          )
+        : prev.assets;
+
+      return {
+        ...prev,
+        transactions: [...prev.transactions, newTransaction],
+        assets: updatedAssets,
+      };
+    });
     
     return newTransaction;
-  }, [setState, state.assets, updateAsset]);
+  }, [setState]);
 
   const updateTransaction = useCallback((id: string, updates: Partial<Transaction>) => {
     setState(prev => ({

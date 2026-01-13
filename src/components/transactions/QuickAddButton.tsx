@@ -18,17 +18,44 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Transaction, Category, Asset, TransactionType } from '@/types/finance';
+import { Transaction, Category, Asset, TransactionType, RecurringRule, RecurringFrequency } from '@/types/finance';
 import { Plus, ArrowDownLeft, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { addMonths, addWeeks, addQuarters, addYears, setDate } from 'date-fns';
 
 interface QuickAddButtonProps {
   categories: Category[];
   assets: Asset[];
   onAddTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  onAddRecurringRule?: (rule: Omit<RecurringRule, 'id'>) => void;
 }
 
-export function QuickAddButton({ categories, assets, onAddTransaction }: QuickAddButtonProps) {
+function getNextDueDate(frequency: RecurringFrequency, dayOfMonth: number): string {
+  const now = new Date();
+  let nextDate = setDate(now, dayOfMonth);
+  
+  // If the day has passed this period, move to next period
+  if (nextDate <= now) {
+    switch (frequency) {
+      case 'weekly':
+        nextDate = addWeeks(nextDate, 1);
+        break;
+      case 'monthly':
+        nextDate = addMonths(nextDate, 1);
+        break;
+      case 'quarterly':
+        nextDate = addQuarters(nextDate, 1);
+        break;
+      case 'yearly':
+        nextDate = addYears(nextDate, 1);
+        break;
+    }
+  }
+  
+  return nextDate.toISOString();
+}
+
+export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecurringRule }: QuickAddButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
@@ -36,6 +63,8 @@ export function QuickAddButton({ categories, assets, onAddTransaction }: QuickAd
   const [categoryId, setCategoryId] = useState('');
   const [assetId, setAssetId] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
+  const [dayOfMonth, setDayOfMonth] = useState('1');
 
   const resetForm = () => {
     setType('expense');
@@ -44,23 +73,44 @@ export function QuickAddButton({ categories, assets, onAddTransaction }: QuickAd
     setCategoryId('');
     setAssetId('');
     setIsRecurring(false);
+    setFrequency('monthly');
+    setDayOfMonth('1');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const parsedAmount = parseFloat(amount);
+    const parsedDayOfMonth = parseInt(dayOfMonth) || 1;
     if (isNaN(parsedAmount) || !categoryId || !assetId) return;
 
+    // Always add the transaction
     onAddTransaction({
       type,
       amount: parsedAmount,
-      description: description || 'Quick expense',
+      description: description || 'Quick transaction',
       date: new Date().toISOString(),
       categoryId,
       assetId,
       isRecurring,
     });
+
+    // If recurring, also create a recurring rule
+    if (isRecurring && onAddRecurringRule) {
+      onAddRecurringRule({
+        name: description || `Recurring ${type}`,
+        categoryId,
+        assetId,
+        type,
+        frequency,
+        dayOfMonth: parsedDayOfMonth,
+        nextDueDate: getNextDueDate(frequency, parsedDayOfMonth),
+        projectedAmount: parsedAmount,
+        description: description || `Recurring ${type}`,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      });
+    }
 
     resetForm();
     setIsOpen(false);
@@ -74,6 +124,13 @@ export function QuickAddButton({ categories, assets, onAddTransaction }: QuickAd
     { value: 'expense' as const, label: 'Expense', icon: ArrowUpRight, color: 'text-destructive border-destructive' },
     { value: 'income' as const, label: 'Income', icon: ArrowDownLeft, color: 'text-success border-success' },
     { value: 'transfer' as const, label: 'Transfer', icon: ArrowLeftRight, color: 'text-muted-foreground border-muted' },
+  ];
+
+  const frequencyOptions: { value: RecurringFrequency; label: string }[] = [
+    { value: 'weekly', label: 'Weekly' },
+    { value: 'monthly', label: 'Monthly' },
+    { value: 'quarterly', label: 'Quarterly' },
+    { value: 'yearly', label: 'Yearly' },
   ];
 
   return (
@@ -196,6 +253,38 @@ export function QuickAddButton({ categories, assets, onAddTransaction }: QuickAd
                 onCheckedChange={setIsRecurring}
               />
             </div>
+
+            {/* Recurring Options - Show when recurring is enabled */}
+            {isRecurring && (
+              <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
+                <div className="space-y-2">
+                  <Label htmlFor="frequency">Frequency</Label>
+                  <Select value={frequency} onValueChange={(v) => setFrequency(v as RecurringFrequency)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {frequencyOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dayOfMonth">Day of {frequency === 'weekly' ? 'week' : 'month'}</Label>
+                  <Input
+                    id="dayOfMonth"
+                    type="number"
+                    min="1"
+                    max={frequency === 'weekly' ? 7 : 31}
+                    value={dayOfMonth}
+                    onChange={(e) => setDayOfMonth(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Submit */}
             <div className="flex gap-2">
