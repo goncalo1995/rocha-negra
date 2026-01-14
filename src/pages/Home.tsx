@@ -1,0 +1,182 @@
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Mountain, Wallet, Dumbbell, Brain, ChartLine, Sparkles } from 'lucide-react';
+import { useFinance } from '@/hooks/useFinance';
+import { formatCurrency } from '@/lib/formatters';
+
+interface ModuleWidget {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  href: string;
+  enabled: boolean;
+  gradient: string;
+  summary?: React.ReactNode;
+}
+
+const Home = () => {
+  const { metrics, recurringRules } = useFinance();
+
+  const modules: ModuleWidget[] = [
+    {
+      id: 'finance',
+      title: 'Finance',
+      description: 'Track assets, expenses, and build wealth',
+      icon: Wallet,
+      href: '/finance',
+      enabled: true,
+      gradient: 'from-primary/20 to-primary/5',
+      summary: (
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Net Worth</p>
+            <p className="text-lg font-bold text-primary">{formatCurrency(metrics.netWorth)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Monthly Burn</p>
+            <p className="text-lg font-bold text-destructive">-{formatCurrency(metrics.monthlyBurn)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Safe to Spend</p>
+            <p className="text-lg font-bold">{formatCurrency(metrics.safeToSpend)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Upcoming Bills</p>
+            <p className="text-lg font-bold text-warning">{metrics.upcomingBillsCount}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'sports',
+      title: 'Sports',
+      description: 'Training plans, progress, and achievements',
+      icon: Dumbbell,
+      href: '/sports',
+      enabled: false,
+      gradient: 'from-chart-2/20 to-chart-2/5',
+    },
+    {
+      id: 'mindset',
+      title: 'Mindset',
+      description: 'Habits, goals, and personal growth',
+      icon: Brain,
+      href: '/mindset',
+      enabled: false,
+      gradient: 'from-chart-4/20 to-chart-4/5',
+    },
+    {
+      id: 'analytics',
+      title: 'Analytics',
+      description: 'Cross-module insights and trends',
+      icon: ChartLine,
+      href: '/analytics',
+      enabled: false,
+      gradient: 'from-chart-3/20 to-chart-3/5',
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero Header */}
+      <header className="relative overflow-hidden border-b border-border/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
+        <div className="container relative py-12">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/50 shadow-lg shadow-primary/20">
+              <Mountain className="h-10 w-10 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight">Rocha Negra</h1>
+              <p className="mt-2 text-muted-foreground">Life Management Platform</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Module Grid */}
+      <main className="container py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Your Modules</h2>
+            <p className="text-sm text-muted-foreground">Click to open or drag to rearrange</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Sparkles className="h-4 w-4" />
+            <span>More modules coming soon</span>
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+          {modules.map((module) => {
+            const Icon = module.icon;
+            
+            if (!module.enabled) {
+              return (
+                <Card 
+                  key={module.id}
+                  className="relative overflow-hidden border-dashed opacity-50 transition-opacity hover:opacity-70"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${module.gradient}`} />
+                  <CardHeader className="relative">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+                        <Icon className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{module.title}</CardTitle>
+                        <CardDescription>{module.description}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    <p className="text-sm text-muted-foreground italic">Coming soon...</p>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            return (
+              <Link key={module.id} to={module.href} className="group">
+                <Card className="relative overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${module.gradient} transition-opacity group-hover:opacity-150`} />
+                  <CardHeader className="relative">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
+                        <Icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{module.title}</CardTitle>
+                        <CardDescription>{module.description}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    {module.summary}
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Quick Stats Footer */}
+        <div className="mt-12 rounded-xl border border-border/50 bg-card/50 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ChartLine className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Active recurring rules:</span>
+              <span className="font-semibold">{recurringRules.filter(r => r.isActive).length}</span>
+            </div>
+            <Link to="/finance" className="text-sm text-primary hover:underline">
+              View all →
+            </Link>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Home;
