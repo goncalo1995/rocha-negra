@@ -226,6 +226,21 @@ export function useFinance() {
     return state.assets.find(a => a.id === id);
   }, [state.assets]);
 
+  // Export all data
+  const exportData = useCallback((): FinanceState => {
+    return state;
+  }, [state]);
+
+  // Import data (merge or replace)
+  const importData = useCallback((data: Partial<FinanceState>) => {
+    setState(prev => ({
+      assets: data.assets ?? prev.assets,
+      categories: data.categories ?? prev.categories,
+      transactions: data.transactions ?? prev.transactions,
+      recurringRules: data.recurringRules ?? prev.recurringRules,
+    }));
+  }, [setState]);
+
   return {
     // State
     assets: state.assets,
@@ -258,5 +273,9 @@ export function useFinance() {
     getMonthlyTransactions,
     getCategoryById,
     getAssetById,
+
+    // Import/Export
+    exportData,
+    importData,
   };
 }
