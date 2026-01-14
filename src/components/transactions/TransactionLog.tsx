@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Transaction, Category, Asset } from '@/types/finance';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Transaction, Category, Asset, FinanceState } from '@/types/finance';
 import { formatCurrency, formatRelativeDate } from '@/lib/formatters';
 import { 
   Search, 
@@ -19,31 +25,68 @@ import {
   ArrowDownLeft,
   ArrowLeftRight,
   Receipt,
+  CalendarIcon,
+  Download,
+  Upload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 
 interface TransactionLogProps {
   transactions: Transaction[];
   categories: Category[];
   assets: Asset[];
   onDeleteTransaction: (id: string) => void;
+  onImportData?: (data: Partial<FinanceState>) => void;
+  onExportData?: () => FinanceState;
 }
 
 type FilterType = 'all' | 'income' | 'expense' | 'transfer';
 type NatureFilter = 'all' | 'fixed' | 'variable' | 'savings';
+type TimeRange = 'all' | 'today' | 'this_week' | 'this_month' | 'this_year' | 'custom';
 
 export function TransactionLog({ 
   transactions, 
   categories, 
   assets,
-  onDeleteTransaction 
+  onDeleteTransaction,
+  onImportData,
+  onExportData,
 }: TransactionLogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<FilterType>('all');
   const [natureFilter, setNatureFilter] = useState<NatureFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [timeRange, setTimeRange] = useState<TimeRange>('all');
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getTimeRangeFilter = (range: TimeRange): { start: Date; end: Date } | null => {
+    const now = new Date();
+    switch (range) {
+      case 'today':
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case 'this_week':
+        return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+      case 'this_month':
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case 'this_year':
+        return { start: startOfYear(now), end: endOfYear(now) };
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          return { start: startOfDay(customStartDate), end: endOfDay(customEndDate) };
+        }
+        return null;
+      default:
+        return null;
+    }
+  };
 
   const filteredTransactions = useMemo(() => {
+    const timeFilter = getTimeRangeFilter(timeRange);
+    
     return transactions
       .filter(t => {
         // Search filter
@@ -54,6 +97,14 @@ export function TransactionLog({
             t.description.toLowerCase().includes(searchLower) ||
             category?.name.toLowerCase().includes(searchLower);
           if (!matchesSearch) return false;
+        }
+
+        // Time range filter
+        if (timeFilter) {
+          const transactionDate = parseISO(t.date);
+          if (!isWithinInterval(transactionDate, { start: timeFilter.start, end: timeFilter.end })) {
+            return false;
+          }
         }
 
         // Type filter
@@ -71,7 +122,45 @@ export function TransactionLog({
         return true;
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions, categories, searchQuery, typeFilter, natureFilter, categoryFilter]);
+  }, [transactions, categories, searchQuery, typeFilter, natureFilter, categoryFilter, timeRange, customStartDate, customEndDate]);
+
+  const handleExport = () => {
+    if (!onExportData) return;
+    
+    const data = onExportData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rocha-negra-finance-${format(new Date(), 'yyyy-MM-dd')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Data exported successfully');
+  };
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !onImportData) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string) as Partial<FinanceState>;
+        onImportData(data);
+        toast.success('Data imported successfully');
+      } catch (error) {
+        toast.error('Failed to import data. Invalid file format.');
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const getTransactionIcon = (type: Transaction['type']) => {
     switch (type) {
@@ -106,6 +195,60 @@ export function TransactionLog({
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            
+            <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
+              <SelectTrigger className="w-[140px]">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Time" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="this_week">This Week</SelectItem>
+                <SelectItem value="this_month">This Month</SelectItem>
+                <SelectItem value="this_year">This Year</SelectItem>
+                <SelectItem value="custom">Custom Range</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {timeRange === 'custom' && (
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-[120px] justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customStartDate ? format(customStartDate, 'MMM d') : 'Start'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customStartDate}
+                      onSelect={setCustomStartDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-[120px] justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customEndDate ? format(customEndDate, 'MMM d') : 'End'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customEndDate}
+                      onSelect={setCustomEndDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
             
             <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as FilterType)}>
               <SelectTrigger className="w-[130px]">
@@ -145,6 +288,35 @@ export function TransactionLog({
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Export/Import buttons */}
+            <div className="flex gap-2 ml-auto">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!onImportData}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                disabled={!onExportData}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

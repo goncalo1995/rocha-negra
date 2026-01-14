@@ -38,6 +38,8 @@ const Finance = () => {
     addRecurringRule,
     updateRecurringRule,
     deleteRecurringRule,
+    exportData,
+    importData,
   } = useFinance();
 
   // Calendar events function
@@ -212,6 +214,8 @@ const Finance = () => {
               categories={categories}
               assets={assets}
               onDeleteTransaction={deleteTransaction}
+              onExportData={exportData}
+              onImportData={importData}
             />
           </TabsContent>
 
