@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mountain, Wallet, Dumbbell, Brain, ChartLine, Sparkles } from 'lucide-react';
+import { Mountain, Wallet, Dumbbell, Brain, ChartLine, Sparkles, Globe, Car } from 'lucide-react';
 import { useFinance } from '@/hooks/useFinance';
+import { useIT } from '@/hooks/useIT';
+import { useVehicles } from '@/hooks/useVehicles';
 import { formatCurrency } from '@/lib/formatters';
 
 interface ModuleWidget {
@@ -17,6 +19,8 @@ interface ModuleWidget {
 
 const Home = () => {
   const { metrics, recurringRules } = useFinance();
+  const { metrics: itMetrics } = useIT();
+  const { metrics: vehicleMetrics } = useVehicles();
 
   const modules: ModuleWidget[] = [
     {
@@ -49,6 +53,50 @@ const Home = () => {
       ),
     },
     {
+      id: 'it',
+      title: 'IT Assets',
+      description: 'Domains, renewals, and annual costs',
+      icon: Globe,
+      href: '/it',
+      enabled: true,
+      gradient: 'from-chart-3/20 to-chart-3/5',
+      summary: (
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Domains</p>
+            <p className="text-lg font-bold">{itMetrics.totalDomains}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Annual Cost</p>
+            <p className="text-lg font-bold text-destructive">{formatCurrency(itMetrics.annualCost)}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'vehicles',
+      title: 'Vehicles',
+      description: 'Maintenance, fuel, and insurance tracking',
+      icon: Car,
+      href: '/vehicles',
+      enabled: true,
+      gradient: 'from-chart-1/20 to-chart-1/5',
+      summary: (
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Vehicles</p>
+            <p className="text-lg font-bold">{vehicleMetrics.totalVehicles}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Costs (Year)</p>
+            <p className="text-lg font-bold text-destructive">
+              {formatCurrency(vehicleMetrics.totalMaintenanceCostThisYear + vehicleMetrics.totalFuelCostThisYear)}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
       id: 'sports',
       title: 'Sports',
       description: 'Training plans, progress, and achievements',
@@ -65,15 +113,6 @@ const Home = () => {
       href: '/mindset',
       enabled: false,
       gradient: 'from-chart-4/20 to-chart-4/5',
-    },
-    {
-      id: 'analytics',
-      title: 'Analytics',
-      description: 'Cross-module insights and trends',
-      icon: ChartLine,
-      href: '/analytics',
-      enabled: false,
-      gradient: 'from-chart-3/20 to-chart-3/5',
     },
   ];
 
