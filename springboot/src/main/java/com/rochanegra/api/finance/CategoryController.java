@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,7 +25,7 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryDto> createCategory(@RequestBody CategoryCreateDto createDto,
+    public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody CategoryCreateDto createDto,
             Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         CategoryDto newCategory = categoryService.createCategory(createDto, userId);
@@ -37,7 +38,8 @@ public class CategoryController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<CategoryDto> updateCategory(@PathVariable UUID id, @RequestBody CategoryCreateDto updateDto) {
+    public ResponseEntity<CategoryDto> updateCategory(@PathVariable UUID id,
+            @Valid @RequestBody CategoryCreateDto updateDto) {
         return ResponseEntity.ok(categoryService.updateCategory(id, updateDto));
     }
 

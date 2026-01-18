@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.rochanegra.api.exception.ResourceNotFoundException;
+
 @Service
 @RequiredArgsConstructor
 public class RecurringRuleService {
@@ -38,13 +40,13 @@ public class RecurringRuleService {
 
     public RecurringRuleDto getRecurringRule(UUID id) {
         RecurringRule rule = recurringRuleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rule not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Rule not found"));
         return toDto(rule);
     }
 
     public RecurringRuleDto updateRecurringRule(UUID id, RecurringRuleCreateDto updateDto) {
         RecurringRule rule = recurringRuleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rule not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Rule not found"));
 
         if (updateDto.description() != null)
             rule.setDescription(updateDto.description());

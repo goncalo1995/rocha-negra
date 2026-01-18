@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
+import com.rochanegra.api.exception.ResourceNotFoundException;
+
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
@@ -34,13 +36,13 @@ public class TransactionService {
 
     public TransactionDto getTransaction(UUID id) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
         return toDto(transaction);
     }
 
     public void deleteTransaction(UUID id) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
 
         // Revert asset balance
         if (transaction.getAssetId() != null) {
@@ -58,7 +60,7 @@ public class TransactionService {
 
     public TransactionDto updateTransaction(UUID id, TransactionCreateDto updateDto) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
 
         // Revert old asset balance
         if (transaction.getAssetId() != null) {

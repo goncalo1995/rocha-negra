@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.UUID;
 
@@ -22,7 +23,7 @@ public class UserProfileController {
 
     @PatchMapping("/me")
     public ResponseEntity<UserProfileDto> updateMyProfile(Authentication authentication,
-            @RequestBody UserProfileUpdateDto updateDto) {
+            @Valid @RequestBody UserProfileUpdateDto updateDto) {
         UUID userId = UUID.fromString(authentication.getName());
         return ResponseEntity.ok(userProfileService.updateProfile(userId, updateDto));
     }

@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.rochanegra.api.exception.ResourceNotFoundException;
+
 @Service
 @RequiredArgsConstructor
 public class AssetService {
@@ -16,7 +18,7 @@ public class AssetService {
     public void updateBalance(UUID assetId, java.math.BigDecimal amount,
             com.rochanegra.api.finance.types.TransactionType type) {
         Asset asset = assetRepository.findById(assetId)
-                .orElseThrow(() -> new RuntimeException("Asset not found")); // todo: custom exception
+                .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
 
         if (type == com.rochanegra.api.finance.types.TransactionType.income) {
             asset.setCurrentValue(asset.getCurrentValue().add(amount));
@@ -49,13 +51,13 @@ public class AssetService {
 
     public AssetDto getAsset(UUID assetId) {
         Asset asset = assetRepository.findById(assetId)
-                .orElseThrow(() -> new RuntimeException("Asset not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
         return toDto(asset);
     }
 
     public AssetDto updateAsset(UUID assetId, AssetCreateDto updateDto) {
         Asset asset = assetRepository.findById(assetId)
-                .orElseThrow(() -> new RuntimeException("Asset not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
 
         if (updateDto.name() != null)
             asset.setName(updateDto.name());

@@ -3,6 +3,7 @@ package com.rochanegra.api.finance;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +16,7 @@ public class AssetController {
     private final AssetService assetService;
 
     @PostMapping
-    public AssetDto createAsset(@RequestBody AssetCreateDto createDto, Authentication authentication) {
+    public AssetDto createAsset(@Valid @RequestBody AssetCreateDto createDto, Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         return assetService.createAsset(createDto, userId);
     }
@@ -32,7 +33,7 @@ public class AssetController {
     }
 
     @PatchMapping("/{id}")
-    public AssetDto updateAsset(@PathVariable UUID id, @RequestBody AssetCreateDto updateDto) {
+    public AssetDto updateAsset(@PathVariable UUID id, @Valid @RequestBody AssetCreateDto updateDto) {
         return assetService.updateAsset(id, updateDto);
     }
 

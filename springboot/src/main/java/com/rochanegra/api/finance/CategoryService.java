@@ -1,9 +1,8 @@
 package com.rochanegra.api.finance;
 
+import com.rochanegra.api.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import com.rochanegra.api.finance.types.TransactionType;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,13 +16,13 @@ public class CategoryService {
 
     public CategoryDto getCategory(UUID categoryId) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         return toDto(category);
     }
 
     public CategoryDto updateCategory(UUID categoryId, CategoryCreateDto updateDto) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         if (updateDto.name() != null)
             category.setName(updateDto.name());
@@ -67,7 +66,7 @@ public class CategoryService {
             if (category.getUserId().equals(userId)) {
                 categoryRepository.delete(category);
             } else {
-                throw new RuntimeException("Category not found or access denied");
+                throw new ResourceNotFoundException("Category not found or access denied");
             }
         });
     }

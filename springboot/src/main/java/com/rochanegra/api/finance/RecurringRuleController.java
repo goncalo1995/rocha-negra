@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,7 +29,7 @@ public class RecurringRuleController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<RecurringRuleDto> updateRule(@PathVariable UUID id,
-            @RequestBody RecurringRuleCreateDto updateDto) {
+            @Valid @RequestBody RecurringRuleCreateDto updateDto) {
         return ResponseEntity.ok(recurringRuleService.updateRecurringRule(id, updateDto));
     }
 

@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.UUID;
 
 @RestController
@@ -16,7 +17,7 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @PostMapping
-    public ResponseEntity<TransactionDto> createTransaction(@RequestBody TransactionCreateDto createDto,
+    public ResponseEntity<TransactionDto> createTransaction(@Valid @RequestBody TransactionCreateDto createDto,
             Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         TransactionDto newTransaction = transactionService.createTransaction(createDto, userId);
@@ -42,7 +43,7 @@ public class TransactionController {
     }
 
     @PatchMapping("/{id}")
-    public TransactionDto updateTransaction(@PathVariable UUID id, @RequestBody TransactionCreateDto updateDto) {
+    public TransactionDto updateTransaction(@PathVariable UUID id, @Valid @RequestBody TransactionCreateDto updateDto) {
         return transactionService.updateTransaction(id, updateDto);
     }
 
