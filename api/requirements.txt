@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+python-dotenv
+langchain
+langchain-openai
+slowapi
+supabase
+#python-jose[cryptography]
+pyjwt[crypto] # Use pyjwt which has better support for JWKS
+requests
