@@ -15,7 +15,32 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
 
-    public List<CategoryDto> getCategoriesForUser(UUID userId) {
+    public CategoryDto getCategory(UUID categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+        return toDto(category);
+    }
+
+    public CategoryDto updateCategory(UUID categoryId, CategoryCreateDto updateDto) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        if (updateDto.name() != null)
+            category.setName(updateDto.name());
+        if (updateDto.type() != null)
+            category.setType(updateDto.type());
+        if (updateDto.nature() != null)
+            category.setNature(updateDto.nature());
+        if (updateDto.iconSlug() != null)
+            category.setIconSlug(updateDto.iconSlug());
+        if (updateDto.color() != null)
+            category.setColor(updateDto.color());
+
+        Category savedCategory = categoryRepository.save(category);
+        return toDto(savedCategory);
+    }
+
+    public List<CategoryDto> getAllCategories(UUID userId) {
         return categoryRepository.findByUserId(userId)
                 .stream()
                 .map(this::toDto)

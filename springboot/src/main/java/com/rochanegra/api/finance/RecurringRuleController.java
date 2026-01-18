@@ -3,9 +3,7 @@ package com.rochanegra.api.finance;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,9 +16,25 @@ public class RecurringRuleController {
     private final RecurringRuleService recurringRuleService;
 
     @GetMapping
-    public ResponseEntity<List<RecurringRuleDto>> getMyRecurringRules(Authentication authentication) {
+    public ResponseEntity<List<RecurringRuleDto>> getMyRules(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
-        List<RecurringRuleDto> rules = recurringRuleService.getRulesForUser(userId);
-        return ResponseEntity.ok(rules);
+        return ResponseEntity.ok(recurringRuleService.getRulesForUser(userId));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<RecurringRuleDto> getRule(@PathVariable UUID id) {
+        return ResponseEntity.ok(recurringRuleService.getRecurringRule(id));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<RecurringRuleDto> updateRule(@PathVariable UUID id,
+            @RequestBody RecurringRuleCreateDto updateDto) {
+        return ResponseEntity.ok(recurringRuleService.updateRecurringRule(id, updateDto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteRule(@PathVariable UUID id) {
+        recurringRuleService.deleteRecurringRule(id);
+        return ResponseEntity.noContent().build();
     }
 }

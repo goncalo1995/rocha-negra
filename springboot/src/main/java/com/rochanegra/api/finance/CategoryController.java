@@ -19,7 +19,7 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<List<CategoryDto>> getMyCategories(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
-        List<CategoryDto> categories = categoryService.getCategoriesForUser(userId);
+        List<CategoryDto> categories = categoryService.getAllCategories(userId);
         return ResponseEntity.ok(categories);
     }
 
@@ -29,6 +29,16 @@ public class CategoryController {
         UUID userId = UUID.fromString(authentication.getName());
         CategoryDto newCategory = categoryService.createCategory(createDto, userId);
         return new ResponseEntity<>(newCategory, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoryDto> getCategory(@PathVariable UUID id) {
+        return ResponseEntity.ok(categoryService.getCategory(id));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<CategoryDto> updateCategory(@PathVariable UUID id, @RequestBody CategoryCreateDto updateDto) {
+        return ResponseEntity.ok(categoryService.updateCategory(id, updateDto));
     }
 
     @DeleteMapping("/{id}")

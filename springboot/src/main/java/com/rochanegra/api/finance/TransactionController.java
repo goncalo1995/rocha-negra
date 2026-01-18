@@ -25,9 +25,23 @@ public class TransactionController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TransactionDto>> getMyTransactions(Authentication authentication) {
+    public List<TransactionDto> getTransactions(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
-        List<TransactionDto> transactions = transactionService.getTransactionsForUser(userId);
-        return ResponseEntity.ok(transactions);
+        return transactionService.getTransactionsForUser(userId);
+    }
+
+    @GetMapping("/{id}")
+    public TransactionDto getTransaction(@PathVariable UUID id) {
+        return transactionService.getTransaction(id);
+    }
+
+    @PatchMapping("/{id}")
+    public TransactionDto updateTransaction(@PathVariable UUID id, @RequestBody TransactionCreateDto updateDto) {
+        return transactionService.updateTransaction(id, updateDto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteTransaction(@PathVariable UUID id) {
+        transactionService.deleteTransaction(id);
     }
 }
