@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -25,9 +24,16 @@ public class TransactionController {
     }
 
     @GetMapping
-    public List<TransactionDto> getTransactions(Authentication authentication) {
+    public org.springframework.data.domain.Page<TransactionDto> getTransactions(
+            Authentication authentication,
+            @RequestParam(required = false) java.time.LocalDate startDate,
+            @RequestParam(required = false) java.time.LocalDate endDate,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID assetId,
+            org.springframework.data.domain.Pageable pageable) {
+
         UUID userId = UUID.fromString(authentication.getName());
-        return transactionService.getTransactionsForUser(userId);
+        return transactionService.getTransactions(userId, startDate, endDate, categoryId, assetId, pageable);
     }
 
     @GetMapping("/{id}")

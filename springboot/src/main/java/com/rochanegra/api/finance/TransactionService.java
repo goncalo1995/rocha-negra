@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -100,11 +99,53 @@ public class TransactionService {
         return toDto(saved);
     }
 
+    public org.springframework.data.domain.Page<TransactionDto> getTransactions(
+            UUID userId,
+            java.time.LocalDate startDate,
+            java.time.LocalDate endDate,
+            UUID categoryId,
+            UUID assetId,
+            org.springframework.data.domain.Pageable pageable) {
+
+        org.springframework.data.jpa.domain.Specification<Transaction> spec = createSpecification(userId, startDate,
+                endDate, categoryId, assetId);
+        org.springframework.data.domain.Page<Transaction> page = transactionRepository.findAll(spec, pageable);
+        return page.map(this::toDto);
+    }
+
+    // Deprecated or removed, kept for now if used elsewhere, but redirected to
+    // filtered
     public List<TransactionDto> getTransactionsForUser(UUID userId) {
-        return transactionRepository.findByUserIdOrderByDateDesc(userId)
-                .stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+        return getTransactions(userId, null, null, null, null, org.springframework.data.domain.Pageable.unpaged())
+                .getContent();
+    }
+
+    private org.springframework.data.jpa.domain.Specification<Transaction> createSpecification(
+            UUID userId,
+            java.time.LocalDate startDate,
+            java.time.LocalDate endDate,
+            UUID categoryId,
+            UUID assetId) {
+        return (root, query, criteriaBuilder) -> {
+            java.util.List<jakarta.persistence.criteria.Predicate> predicates = new java.util.ArrayList<>();
+
+            predicates.add(criteriaBuilder.equal(root.get("userId"), userId));
+
+            if (startDate != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("date"), startDate));
+            }
+            if (endDate != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("date"), endDate));
+            }
+            if (categoryId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("categoryId"), categoryId));
+            }
+            if (assetId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("assetId"), assetId));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
     }
 
     private TransactionDto toDto(Transaction transaction) {
