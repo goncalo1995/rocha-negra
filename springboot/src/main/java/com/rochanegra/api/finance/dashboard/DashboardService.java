@@ -1,5 +1,9 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.dashboard;
 
+import com.rochanegra.api.finance.assets.AssetRepository;
+import com.rochanegra.api.finance.transactions.TransactionDto;
+import com.rochanegra.api.finance.transactions.TransactionRepository;
+import com.rochanegra.api.finance.transactions.TransactionService;
 import com.rochanegra.api.finance.types.TransactionType;
 
 import lombok.RequiredArgsConstructor;

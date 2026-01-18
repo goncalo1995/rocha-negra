@@ -1,11 +1,11 @@
 package com.rochanegra.api.vehicles;
 
-import com.rochanegra.api.finance.TransactionCreateDto;
-import com.rochanegra.api.finance.TransactionService;
+import com.rochanegra.api.finance.transactions.TransactionCreateDto;
+import com.rochanegra.api.finance.transactions.TransactionService;
 import com.rochanegra.api.finance.types.TransactionType;
-import com.rochanegra.api.finance.RecurringRuleCreateDto;
-import com.rochanegra.api.finance.RecurringRuleService;
-import com.rochanegra.api.finance.RecurringFrequency;
+import com.rochanegra.api.finance.recurring.RecurringRuleCreateDto;
+import com.rochanegra.api.finance.recurring.RecurringRuleService;
+import com.rochanegra.api.finance.recurring.RecurringFrequency;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

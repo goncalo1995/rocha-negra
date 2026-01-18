@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.recurring;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.recurring;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.rochanegra.api.finance.transactions.TransactionCreateDto;
+import com.rochanegra.api.finance.transactions.TransactionService;
 import com.rochanegra.api.finance.types.TransactionType;
 
 import java.time.LocalDate;

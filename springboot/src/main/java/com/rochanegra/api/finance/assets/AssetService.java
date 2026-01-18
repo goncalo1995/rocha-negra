@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.assets;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

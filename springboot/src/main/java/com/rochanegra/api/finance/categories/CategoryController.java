@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.categories;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

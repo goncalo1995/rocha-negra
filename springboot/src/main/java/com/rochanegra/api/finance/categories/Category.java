@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.categories;
 
 import com.rochanegra.api.finance.types.CategoryNature;
 import com.rochanegra.api.finance.types.TransactionType;

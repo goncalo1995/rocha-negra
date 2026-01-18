@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance; // Or your package name
+package com.rochanegra.api.finance.transactions; // Or your package name
 
 import jakarta.persistence.*;
 import lombok.Data;

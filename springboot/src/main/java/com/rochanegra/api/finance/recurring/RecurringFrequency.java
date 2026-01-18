@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.recurring;
 
 public enum RecurringFrequency {
     weekly,

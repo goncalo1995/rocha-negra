@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.transactions;
 
 import com.rochanegra.api.finance.types.TransactionType;
 import org.springframework.data.jpa.repository.JpaRepository;

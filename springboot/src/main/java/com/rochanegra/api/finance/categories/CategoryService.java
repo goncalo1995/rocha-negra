@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.categories;
 
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;

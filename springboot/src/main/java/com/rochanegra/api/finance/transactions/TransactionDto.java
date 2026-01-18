@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.transactions;
 
 import java.math.BigDecimal;
 import java.time.Instant;

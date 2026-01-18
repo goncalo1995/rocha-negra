@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.assets;
 
 import com.rochanegra.api.finance.types.AssetType;
 import java.math.BigDecimal;

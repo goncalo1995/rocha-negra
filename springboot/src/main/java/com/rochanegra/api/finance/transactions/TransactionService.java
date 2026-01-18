@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.transactions;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.rochanegra.api.exception.ResourceNotFoundException;
+import com.rochanegra.api.finance.assets.AssetService;
 
 @Service
 @RequiredArgsConstructor

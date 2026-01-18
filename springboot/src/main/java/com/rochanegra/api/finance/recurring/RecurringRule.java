@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance;
+package com.rochanegra.api.finance.recurring;
 
 import jakarta.persistence.*;
 import lombok.Data;
