@@ -24,15 +24,26 @@ public class MaintenanceLog {
     private UUID vehicleId;
 
     @Column(nullable = false)
+    private String type;
+
+    @Column(nullable = false)
     private String description;
+
+    @Column(name = "mileage_at_service")
+    private Integer mileageAtService;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal cost;
 
+    private String currency;
+
+    @Column(name = "service_provider")
+    private String serviceProvider;
+
+    private String notes;
+
     @Column(nullable = false)
     private LocalDate date;
-
-    private Integer odometer;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

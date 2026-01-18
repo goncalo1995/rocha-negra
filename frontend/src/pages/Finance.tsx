@@ -34,10 +34,12 @@ const Finance = () => {
     updateAsset,
     deleteAsset,
     addTransaction,
+    updateTransaction,
     deleteTransaction,
     addRecurringRule,
     updateRecurringRule,
     deleteRecurringRule,
+    addTransactions,
     exportData,
     importData,
   } = useFinance();
@@ -70,26 +72,28 @@ const Finance = () => {
     // Add recurring rule occurrences
     recurringRules.forEach(rule => {
       if (!rule.isActive) return;
-      
+
       const dueDate = parseISO(rule.nextDueDate);
       let current = new Date(dueDate);
-      
+
       // Find occurrences in the month
       while (isBefore(current, monthStart)) {
-        if (rule.frequency === 'weekly') current = addWeeks(current, 1);
-        else if (rule.frequency === 'monthly') current = addMonths(current, 1);
-        else if (rule.frequency === 'quarterly') current = addMonths(current, 3);
-        else current = addMonths(current, 12);
+        switch (rule.frequency) {
+          case 'weekly': current = addWeeks(current, 1); break;
+          case 'monthly': current = addMonths(current, 1); break;
+          case 'quarterly': current = addMonths(current, 3); break;
+          case 'yearly': current = addMonths(current, 12); break;
+        }
       }
-      
+
       if (isAfter(current, monthStart) && isBefore(current, monthEnd)) {
         events.push({
           id: `recurring-${rule.id}`,
           date: current,
-          title: rule.name,
+          title: rule.name || 'Recurring',
           amount: rule.projectedAmount,
           type: 'recurring',
-          transactionType: rule.type,
+          transactionType: rule.type || 'expense',
           categoryId: rule.categoryId,
           isPast: isBefore(current, now),
         });
@@ -112,13 +116,13 @@ const Finance = () => {
 
       recurringRules.forEach(rule => {
         if (!rule.isActive) return;
-        
+
         let monthlyAmount = rule.projectedAmount;
         if (rule.frequency === 'weekly') monthlyAmount *= 4;
         else if (rule.frequency === 'quarterly') monthlyAmount /= 3;
         else if (rule.frequency === 'yearly') monthlyAmount /= 12;
 
-        if (rule.type === 'income') projectedIncome += monthlyAmount;
+        if ((rule.type || 'expense') === 'income') projectedIncome += monthlyAmount;
         else projectedExpenses += monthlyAmount;
       });
 
@@ -187,10 +191,10 @@ const Finance = () => {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6 animate-fade-in">
-            <DashboardCockpit 
-              metrics={metrics} 
-              transactions={transactions} 
-              categories={categories} 
+            <DashboardCockpit
+              metrics={metrics}
+              transactions={transactions}
+              categories={categories}
             />
             <ProjectionsChart projections={projections} currentBalance={metrics.netWorth} />
           </TabsContent>
@@ -214,8 +218,10 @@ const Finance = () => {
               categories={categories}
               assets={assets}
               onDeleteTransaction={deleteTransaction}
+              onUpdateTransaction={updateTransaction}
               onExportData={exportData}
               onImportData={importData}
+              onAddTransactions={addTransactions}
             />
           </TabsContent>
 

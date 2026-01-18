@@ -1,280 +1,285 @@
-import { useLocalStorage } from './useLocalStorage';
-import { Asset, Category, Transaction, RecurringRule, FinanceState, DashboardMetrics } from '@/types/finance';
-import { defaultCategories } from '@/data/defaultCategories';
-import { useMemo, useCallback } from 'react';
-
-const STORAGE_KEY = 'rocha-negra-finance';
-
-const initialState: FinanceState = {
-  assets: [],
-  categories: defaultCategories,
-  transactions: [],
-  recurringRules: [],
-};
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { Asset, Category, Transaction, RecurringRule, DashboardMetrics } from '@/types/finance';
+import { useCallback, useMemo } from 'react';
 
 export function useFinance() {
-  const [state, setState] = useLocalStorage<FinanceState>(STORAGE_KEY, initialState);
+  const queryClient = useQueryClient();
 
-  // Asset operations
-  const addAsset = useCallback((asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newAsset: Asset = {
-      ...asset,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setState(prev => ({ ...prev, assets: [...prev.assets, newAsset] }));
-    return newAsset;
-  }, [setState]);
+  // Queries
+  const { data: assets = [] } = useQuery({
+    queryKey: ['assets'],
+    queryFn: async () => {
+      const response = await api.get<Asset[]>('/assets');
+      return response.data;
+    },
+  });
 
-  const updateAsset = useCallback((id: string, updates: Partial<Asset>) => {
-    setState(prev => ({
-      ...prev,
-      assets: prev.assets.map(a =>
-        a.id === id ? { ...a, ...updates, updatedAt: new Date().toISOString() } : a
-      ),
-    }));
-  }, [setState]);
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const response = await api.get<Category[]>('/categories');
+      return response.data;
+    },
+  });
 
-  const deleteAsset = useCallback((id: string) => {
-    setState(prev => ({
-      ...prev,
-      assets: prev.assets.filter(a => a.id !== id),
-    }));
-  }, [setState]);
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: async () => {
+      const response = await api.get<{ content: Transaction[] }>('/transactions');
+      return response.data.content;
+    },
+  });
 
-  // Transaction operations
-  const addTransaction = useCallback((transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    
-    // Update both transaction list and asset value atomically
-    setState(prev => {
-      const asset = prev.assets.find(a => a.id === transaction.assetId);
-      const updatedAssets = asset
-        ? prev.assets.map(a => 
-            a.id === transaction.assetId 
-              ? { 
-                  ...a, 
-                  currentValue: a.currentValue + (transaction.type === 'income' ? transaction.amount : -transaction.amount),
-                  updatedAt: new Date().toISOString()
-                } 
-              : a
-          )
-        : prev.assets;
+  const { data: recurringRules = [] } = useQuery({
+    queryKey: ['recurring-rules'],
+    queryFn: async () => {
+      const response = await api.get<RecurringRule[]>('/recurring-rules');
+      return response.data;
+    },
+  });
 
-      return {
-        ...prev,
-        transactions: [...prev.transactions, newTransaction],
-        assets: updatedAssets,
-      };
-    });
-    
-    return newTransaction;
-  }, [setState]);
+  const { data: metricsData } = useQuery({
+    queryKey: ['dashboard-metrics'],
+    queryFn: async () => {
+      const response = await api.get<any>('/dashboard');
+      return response.data;
+    },
+  });
 
-  const updateTransaction = useCallback((id: string, updates: Partial<Transaction>) => {
-    setState(prev => ({
-      ...prev,
-      transactions: prev.transactions.map(t => (t.id === id ? { ...t, ...updates } : t)),
-    }));
-  }, [setState]);
+  // Mapping backend dashboard to frontend metrics
+  const metrics: DashboardMetrics = useMemo(() => ({
+    netWorth: metricsData?.totalNetWorth || 0,
+    totalAssets: metricsData?.totalNetWorth || 0, // Simplified
+    totalLiabilities: 0,
+    monthlyBurn: Math.abs(metricsData?.monthlyExpenses || 0),
+    monthlyIncome: metricsData?.monthlyIncome || 0,
+    monthlyBudget: metricsData?.monthlyIncome || 0,
+    safeToSpend: metricsData?.monthlySavings || 0,
+    upcomingBills: 0,
+    upcomingBillsCount: 0,
+  }), [metricsData]);
 
-  const deleteTransaction = useCallback((id: string) => {
-    setState(prev => ({
-      ...prev,
-      transactions: prev.transactions.filter(t => t.id !== id),
-    }));
-  }, [setState]);
+  // Asset Mutations
+  const addAssetMutation = useMutation({
+    mutationFn: (asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>) => api.post('/assets', asset),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
 
-  // Category operations
-  const addCategory = useCallback((category: Omit<Category, 'id'>) => {
-    const newCategory: Category = {
-      ...category,
-      id: crypto.randomUUID(),
-    };
-    setState(prev => ({ ...prev, categories: [...prev.categories, newCategory] }));
-    return newCategory;
-  }, [setState]);
+  const updateAssetMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Asset> }) => api.patch(`/assets/${id}`, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
 
-  const updateCategory = useCallback((id: string, updates: Partial<Category>) => {
-    setState(prev => ({
-      ...prev,
-      categories: prev.categories.map(c => (c.id === id ? { ...c, ...updates } : c)),
-    }));
-  }, [setState]);
+  const deleteAssetMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/assets/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
 
-  const deleteCategory = useCallback((id: string) => {
-    setState(prev => ({
-      ...prev,
-      categories: prev.categories.filter(c => c.id !== id),
-    }));
-  }, [setState]);
+  // Transaction Mutations
+  const addTransactionMutation = useMutation({
+    mutationFn: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => api.post('/transactions', transaction),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
 
-  // Recurring rule operations
-  const addRecurringRule = useCallback((rule: Omit<RecurringRule, 'id'>) => {
-    const newRule: RecurringRule = {
-      ...rule,
-      id: crypto.randomUUID(),
-    };
-    setState(prev => ({ ...prev, recurringRules: [...prev.recurringRules, newRule] }));
-    return newRule;
-  }, [setState]);
+  const updateTransactionMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Transaction> }) => api.patch(`/transactions/${id}`, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
 
-  const updateRecurringRule = useCallback((id: string, updates: Partial<RecurringRule>) => {
-    setState(prev => ({
-      ...prev,
-      recurringRules: prev.recurringRules.map(r => (r.id === id ? { ...r, ...updates } : r)),
-    }));
-  }, [setState]);
+  const deleteTransactionMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/transactions/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
 
-  const deleteRecurringRule = useCallback((id: string) => {
-    setState(prev => ({
-      ...prev,
-      recurringRules: prev.recurringRules.filter(r => r.id !== id),
-    }));
-  }, [setState]);
+  const addTransactionsMutation = useMutation({
+    mutationFn: (transactions: Omit<Transaction, 'id' | 'createdAt'>[]) => api.post('/transactions/bulk', transactions),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
 
-  // Dashboard metrics
-  const metrics = useMemo((): DashboardMetrics => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+  // Category Mutations
+  const addCategoryMutation = useMutation({
+    mutationFn: (category: Omit<Category, 'id'>) => api.post('/categories', category),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
 
-    // Calculate totals
-    const totalAssets = state.assets
-      .filter(a => a.type !== 'liability')
-      .reduce((sum, a) => sum + a.currentValue, 0);
+  const deleteCategoryMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/categories/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
 
-    const totalLiabilities = state.assets
-      .filter(a => a.type === 'liability')
-      .reduce((sum, a) => sum + Math.abs(a.currentValue), 0);
+  // Recurring Rule Mutations
+  const addRecurringRuleMutation = useMutation({
+    mutationFn: (rule: Omit<RecurringRule, 'id'>) => api.post('/recurring-rules', rule),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring-rules'] }),
+  });
 
-    const netWorth = totalAssets - totalLiabilities;
+  const updateRecurringRuleMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<RecurringRule> }) => api.patch(`/recurring-rules/${id}`, updates),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring-rules'] }),
+  });
 
-    // Current month transactions
-    const currentMonthTransactions = state.transactions.filter(t => {
-      const date = new Date(t.date);
-      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-    });
+  const deleteRecurringRuleMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/recurring-rules/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring-rules'] }),
+  });
 
-    const monthlyIncome = currentMonthTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
+  // Callbacks to maintain original API
+  const addAsset = useCallback(async (asset: any) => addAssetMutation.mutateAsync(asset), [addAssetMutation]);
+  const updateAsset = useCallback(async (id: string, updates: any) => updateAssetMutation.mutateAsync({ id, updates }), [updateAssetMutation]);
+  const deleteAsset = useCallback(async (id: string) => deleteAssetMutation.mutateAsync(id), [deleteAssetMutation]);
 
-    const monthlyBurn = currentMonthTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
+  const addTransaction = useCallback(async (transaction: any) => addTransactionMutation.mutateAsync(transaction), [addTransactionMutation]);
+  const addTransactions = useCallback(async (transactions: any[]) => {
+    await addTransactionsMutation.mutateAsync(transactions);
+  }, [addTransactionsMutation]);
+  const updateTransaction = useCallback(async (id: string, updates: any) => updateTransactionMutation.mutateAsync({ id, updates }), [updateTransactionMutation]);
+  const deleteTransaction = useCallback(async (id: string) => deleteTransactionMutation.mutateAsync(id), [deleteTransactionMutation]);
 
-    // Calculate upcoming bills (next 30 days)
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  const addCategory = useCallback(async (category: any) => addCategoryMutation.mutateAsync(category), [addCategoryMutation]);
+  const deleteCategory = useCallback(async (id: string) => deleteCategoryMutation.mutateAsync(id), [deleteCategoryMutation]);
 
-    const upcomingBills = state.recurringRules
-      .filter(r => {
-        const dueDate = new Date(r.nextDueDate);
-        return r.isActive && dueDate >= now && dueDate <= thirtyDaysFromNow;
-      })
-      .reduce((sum, r) => sum + r.projectedAmount, 0);
+  const addRecurringRule = useCallback(async (rule: any) => addRecurringRuleMutation.mutateAsync(rule), [addRecurringRuleMutation]);
+  const updateRecurringRule = useCallback(async (id: string, updates: any) => updateRecurringRuleMutation.mutateAsync({ id, updates }), [updateRecurringRuleMutation]);
+  const deleteRecurringRule = useCallback(async (id: string) => deleteRecurringRuleMutation.mutateAsync(id), [deleteRecurringRuleMutation]);
 
-    // Safe to spend = Liquid cash - upcoming fixed bills
-    const liquidCash = state.assets
-      .filter(a => a.type === 'liquid_cash')
-      .reduce((sum, a) => sum + a.currentValue, 0);
+  const getAssetById = useCallback((id: string) => assets.find(a => a.id === id), [assets]);
+  const getCategoryById = useCallback((id: string) => categories.find(c => c.id === id), [categories]);
 
-    const safeToSpend = Math.max(0, liquidCash - upcomingBills);
-
-    // Simple budget estimation (average of last 3 months or current month's income)
-    const monthlyBudget = monthlyIncome > 0 ? monthlyIncome : 0;
-
-    const upcomingBillsCount = state.recurringRules.filter(r => {
-      const dueDate = new Date(r.nextDueDate);
-      return r.isActive && dueDate >= now && dueDate <= thirtyDaysFromNow;
-    }).length;
-
+  const exportData = useCallback(() => {
     return {
-      netWorth,
-      totalAssets,
-      totalLiabilities,
-      monthlyBurn,
-      monthlyIncome,
-      monthlyBudget,
-      safeToSpend,
-      upcomingBills,
-      upcomingBillsCount,
+      assets,
+      categories,
+      transactions,
+      recurringRules,
     };
-  }, [state.assets, state.transactions, state.recurringRules]);
+  }, [assets, categories, transactions, recurringRules]);
 
-  // Get transactions for a specific month
-  const getMonthlyTransactions = useCallback((year: number, month: number) => {
-    return state.transactions.filter(t => {
-      const date = new Date(t.date);
-      return date.getFullYear() === year && date.getMonth() === month;
-    });
-  }, [state.transactions]);
+  const importData = useCallback(async (data: Partial<any>) => {
+    const assetIdMap: Record<string, string> = {};
+    const categoryIdMap: Record<string, string> = {};
 
-  // Get category by id
-  const getCategoryById = useCallback((id: string) => {
-    return state.categories.find(c => c.id === id);
-  }, [state.categories]);
+    // 1. Import or Map Categories
+    if (data.categories) {
+      for (const cat of data.categories) {
+        let existing = categories.find(c => c.name === cat.name && c.type === cat.type);
+        if (!existing) {
+          try {
+            const res = await addCategory(cat);
+            existing = res.data;
+          } catch (e) {
+            console.error('Failed to import category', cat.name, e);
+          }
+        }
+        if (existing) categoryIdMap[cat.id] = existing.id;
+      }
+    }
 
-  // Get asset by id
-  const getAssetById = useCallback((id: string) => {
-    return state.assets.find(a => a.id === id);
-  }, [state.assets]);
+    // 2. Import or Map Assets
+    if (data.assets) {
+      for (const asset of data.assets) {
+        let existing = assets.find(a => a.name === asset.name);
+        if (!existing) {
+          try {
+            const res = await addAsset(asset);
+            existing = res.data;
+          } catch (e) {
+            console.error('Failed to import asset', asset.name, e);
+          }
+        }
+        if (existing) assetIdMap[asset.id] = existing.id;
+      }
+    }
 
-  // Export all data
-  const exportData = useCallback((): FinanceState => {
-    return state;
-  }, [state]);
+    // 3. Import Recurring Rules (using maps)
+    if (data.recurringRules) {
+      for (const rule of data.recurringRules) {
+        if (!recurringRules.find(r => r.name === rule.name)) {
+          const mappedRule = {
+            ...rule,
+            assetId: assetIdMap[rule.assetId] || rule.assetId,
+            categoryId: categoryIdMap[rule.categoryId] || rule.categoryId,
+          };
+          await addRecurringRule(mappedRule);
+        }
+      }
+    }
 
-  // Import data (merge or replace)
-  const importData = useCallback((data: Partial<FinanceState>) => {
-    setState(prev => ({
-      assets: data.assets ?? prev.assets,
-      categories: data.categories ?? prev.categories,
-      transactions: data.transactions ?? prev.transactions,
-      recurringRules: data.recurringRules ?? prev.recurringRules,
-    }));
-  }, [setState]);
+    // 4. Import Transactions (using maps)
+    if (data.transactions) {
+      const transactionsToImport = [];
+      for (const t of data.transactions) {
+        const alreadyExists = transactions.find(
+          existing =>
+            existing.date === t.date &&
+            existing.amount === t.amount &&
+            existing.description === t.description
+        );
+        if (!alreadyExists) {
+          transactionsToImport.push({
+            ...t,
+            assetId: assetIdMap[t.assetId] || t.assetId,
+            categoryId: categoryIdMap[t.categoryId] || t.categoryId,
+          });
+        }
+      }
+      if (transactionsToImport.length > 0) {
+        await addTransactions(transactionsToImport);
+      }
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    queryClient.invalidateQueries({ queryKey: ['assets'] });
+    queryClient.invalidateQueries({ queryKey: ['categories'] });
+    queryClient.invalidateQueries({ queryKey: ['recurring-rules'] });
+  }, [categories, assets, recurringRules, transactions, addCategory, addAsset, addRecurringRule, addTransactions, queryClient]);
 
   return {
-    // State
-    assets: state.assets,
-    categories: state.categories,
-    transactions: state.transactions,
-    recurringRules: state.recurringRules,
+    assets,
+    categories,
+    transactions,
+    recurringRules,
     metrics,
-
-    // Asset operations
     addAsset,
     updateAsset,
     deleteAsset,
-
-    // Transaction operations
     addTransaction,
+    addTransactions,
     updateTransaction,
     deleteTransaction,
-
-    // Category operations
     addCategory,
-    updateCategory,
     deleteCategory,
-
-    // Recurring rule operations
     addRecurringRule,
     updateRecurringRule,
     deleteRecurringRule,
-
-    // Helpers
-    getMonthlyTransactions,
-    getCategoryById,
     getAssetById,
-
-    // Import/Export
+    getCategoryById,
     exportData,
     importData,
   };

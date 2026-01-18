@@ -32,10 +32,41 @@ public class VehicleController {
         return ResponseEntity.ok(vehicles);
     }
 
-    // NOTE: You would add GET (by ID), PATCH, and DELETE endpoints for vehicles
-    // here following the same pattern.
+    @PatchMapping("/{vehicleId}")
+    public ResponseEntity<VehicleDto> updateVehicle(
+            @PathVariable UUID vehicleId,
+            @RequestBody VehicleCreateDto updateDto,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        VehicleDto updatedVehicle = vehicleService.updateVehicle(vehicleId, updateDto, userId);
+        return ResponseEntity.ok(updatedVehicle);
+    }
 
-    // --- Log Endpoints ---
+    @DeleteMapping("/{vehicleId}")
+    public ResponseEntity<Void> deleteVehicle(
+            @PathVariable UUID vehicleId,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        vehicleService.deleteVehicle(vehicleId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- Global Log Endpoints (Must be above per-vehicle log endpoints) ---
+    @GetMapping("/maintenance")
+    public ResponseEntity<List<MaintenanceLogDto>> getAllMaintenanceLogs(Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        List<MaintenanceLogDto> logs = vehicleService.getAllMaintenanceLogs(userId);
+        return ResponseEntity.ok(logs);
+    }
+
+    @GetMapping("/fuel")
+    public ResponseEntity<List<FuelLogDto>> getAllFuelLogs(Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        List<FuelLogDto> logs = vehicleService.getAllFuelLogs(userId);
+        return ResponseEntity.ok(logs);
+    }
+
+    // --- Per-Vehicle Log Endpoints ---
     @PostMapping("/{vehicleId}/maintenance")
     public ResponseEntity<MaintenanceLogDto> addMaintenanceLog(
             @PathVariable UUID vehicleId,
@@ -44,6 +75,34 @@ public class VehicleController {
         UUID userId = UUID.fromString(authentication.getName());
         MaintenanceLogDto newLog = vehicleService.addMaintenanceLog(vehicleId, logDto, userId);
         return new ResponseEntity<>(newLog, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{vehicleId}/maintenance")
+    public ResponseEntity<List<MaintenanceLogDto>> getMaintenanceLogs(
+            @PathVariable UUID vehicleId,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        List<MaintenanceLogDto> logs = vehicleService.getMaintenanceLogs(vehicleId, userId);
+        return ResponseEntity.ok(logs);
+    }
+
+    @PatchMapping("/maintenance/{logId}")
+    public ResponseEntity<MaintenanceLogDto> updateMaintenanceLog(
+            @PathVariable UUID logId,
+            @RequestBody MaintenanceLogCreateDto updateDto,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        MaintenanceLogDto updatedLog = vehicleService.updateMaintenanceLog(logId, updateDto, userId);
+        return ResponseEntity.ok(updatedLog);
+    }
+
+    @DeleteMapping("/maintenance/{logId}")
+    public ResponseEntity<Void> deleteMaintenanceLog(
+            @PathVariable UUID logId,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        vehicleService.deleteMaintenanceLog(logId, userId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{vehicleId}/fuel")
@@ -56,4 +115,31 @@ public class VehicleController {
         return new ResponseEntity<>(newLog, HttpStatus.CREATED);
     }
 
+    @GetMapping("/{vehicleId}/fuel")
+    public ResponseEntity<List<FuelLogDto>> getFuelLogs(
+            @PathVariable UUID vehicleId,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        List<FuelLogDto> logs = vehicleService.getFuelLogs(vehicleId, userId);
+        return ResponseEntity.ok(logs);
+    }
+
+    @PatchMapping("/fuel/{logId}")
+    public ResponseEntity<FuelLogDto> updateFuelLog(
+            @PathVariable UUID logId,
+            @RequestBody FuelLogCreateDto updateDto,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        FuelLogDto updatedLog = vehicleService.updateFuelLog(logId, updateDto, userId);
+        return ResponseEntity.ok(updatedLog);
+    }
+
+    @DeleteMapping("/fuel/{logId}")
+    public ResponseEntity<Void> deleteFuelLog(
+            @PathVariable UUID logId,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        vehicleService.deleteFuelLog(logId, userId);
+        return ResponseEntity.noContent().build();
+    }
 }

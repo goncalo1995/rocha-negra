@@ -5,10 +5,18 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record FuelLogDto(
-        UUID id,
-        UUID vehicleId,
-        BigDecimal gallons,
-        BigDecimal totalCost,
-        Integer odometer,
-        LocalDate date) {
+                UUID id,
+                UUID vehicleId,
+                BigDecimal quantity,
+                String quantityUnit,
+                BigDecimal pricePerUnit,
+                BigDecimal totalCost,
+                String currency,
+                Integer mileageAtFill,
+                Boolean fullTank,
+                String station,
+                String notes,
+                LocalDate date,
+                BigDecimal normalizedQuantityLiters,
+                Double normalizedMileageKm) {
 }

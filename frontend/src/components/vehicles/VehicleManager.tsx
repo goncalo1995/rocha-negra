@@ -17,12 +17,14 @@ interface VehicleManagerProps {
   vehicles: Vehicle[];
   maintenanceRecords: MaintenanceRecord[];
   fuelRecords: FuelRecord[];
-  onAddVehicle: (vehicle: Omit<Vehicle, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onAddVehicle: (vehicle: Omit<Vehicle, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => void;
   onUpdateVehicle: (id: string, updates: Partial<Vehicle>) => void;
   onDeleteVehicle: (id: string) => void;
-  onAddMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'linkedTransactionId'>) => void;
+  onAddMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'userId' | 'linkedTransactionId'>) => void;
+  onUpdateMaintenanceRecord: (id: string, updates: Partial<MaintenanceRecord>) => void;
   onDeleteMaintenanceRecord: (id: string) => void;
-  onAddFuelRecord: (record: Omit<FuelRecord, 'id' | 'createdAt' | 'linkedTransactionId'>) => void;
+  onAddFuelRecord: (record: Omit<FuelRecord, 'id' | 'createdAt' | 'userId' | 'linkedTransactionId' | 'normalizedQuantityLiters' | 'normalizedMileageKm'>) => void;
+  onUpdateFuelRecord: (id: string, updates: Partial<FuelRecord>) => void;
   onDeleteFuelRecord: (id: string) => void;
   getFuelEfficiency: (vehicleId: string) => number | null;
 }
@@ -52,8 +54,10 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
   onUpdateVehicle,
   onDeleteVehicle,
   onAddMaintenanceRecord,
+  onUpdateMaintenanceRecord,
   onDeleteMaintenanceRecord,
   onAddFuelRecord,
+  onUpdateFuelRecord,
   onDeleteFuelRecord,
   getFuelEfficiency,
 }) => {
@@ -62,6 +66,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isFuelDialogOpen, setIsFuelDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [editingMaintenanceLog, setEditingMaintenanceLog] = useState<MaintenanceRecord | null>(null);
+  const [editingFuelLog, setEditingFuelLog] = useState<FuelRecord | null>(null);
 
   const [vehicleForm, setVehicleForm] = useState({
     name: '',
@@ -69,12 +75,16 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
     model: '',
     year: new Date().getFullYear().toString(),
     licensePlate: '',
+    vin: '',
     fuelType: 'gasoline' as FuelType,
     currentMileage: '',
     mileageUnit: 'km' as 'km' | 'mi',
+    fuelUnit: 'liters' as 'liters' | 'gallons_us' | 'gallons_uk',
     insuranceProvider: '',
     insurancePolicyNumber: '',
     insuranceExpirationDate: '',
+    insuranceYearlyCost: '',
+    insuranceRenewalDate: '',
     notes: '',
   });
 
@@ -94,8 +104,9 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
     vehicleId: '',
     date: format(new Date(), 'yyyy-MM-dd'),
     quantity: '',
-    quantityUnit: 'liters' as 'liters' | 'gallons',
+    quantityUnit: 'liters' as 'liters' | 'gallons_us' | 'gallons_uk',
     pricePerUnit: '',
+    totalCost: '',
     mileageAtFill: '',
     fullTank: true,
     station: '',
@@ -110,12 +121,16 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       model: '',
       year: new Date().getFullYear().toString(),
       licensePlate: '',
+      vin: '',
       fuelType: 'gasoline',
       currentMileage: '',
       mileageUnit: 'km',
+      fuelUnit: 'liters',
       insuranceProvider: '',
       insurancePolicyNumber: '',
       insuranceExpirationDate: '',
+      insuranceYearlyCost: '',
+      insuranceRenewalDate: '',
       notes: '',
     });
     setEditingVehicle(null);
@@ -123,47 +138,41 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
 
   const handleVehicleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    const vehicleData = {
+      name: vehicleForm.name || `${vehicleForm.make} ${vehicleForm.model} ${vehicleForm.year}`,
+      make: vehicleForm.make,
+      model: vehicleForm.model,
+      year: parseInt(vehicleForm.year) || 0,
+      licensePlate: vehicleForm.licensePlate || undefined,
+      vin: vehicleForm.vin || undefined,
+      fuelType: vehicleForm.fuelType,
+      currentMileage: parseFloat(vehicleForm.currentMileage) || 0,
+      mileageUnit: vehicleForm.mileageUnit,
+      fuelUnit: vehicleForm.fuelUnit,
+      insuranceProvider: vehicleForm.insuranceProvider || undefined,
+      insurancePolicyNumber: vehicleForm.insurancePolicyNumber || undefined,
+      insuranceExpirationDate: vehicleForm.insuranceExpirationDate || undefined,
+      insuranceYearlyCost: parseFloat(vehicleForm.insuranceYearlyCost) || undefined,
+      insuranceRenewalDate: vehicleForm.insuranceRenewalDate || undefined,
+      notes: vehicleForm.notes || undefined,
+    };
+
     if (editingVehicle) {
-      onUpdateVehicle(editingVehicle.id, {
-        name: vehicleForm.name || `${vehicleForm.make} ${vehicleForm.model} ${vehicleForm.year}`,
-        make: vehicleForm.make,
-        model: vehicleForm.model,
-        year: parseInt(vehicleForm.year),
-        licensePlate: vehicleForm.licensePlate || undefined,
-        fuelType: vehicleForm.fuelType,
-        currentMileage: parseFloat(vehicleForm.currentMileage) || 0,
-        mileageUnit: vehicleForm.mileageUnit,
-        insuranceProvider: vehicleForm.insuranceProvider || undefined,
-        insurancePolicyNumber: vehicleForm.insurancePolicyNumber || undefined,
-        insuranceExpirationDate: vehicleForm.insuranceExpirationDate || undefined,
-        notes: vehicleForm.notes || undefined,
-      });
+      onUpdateVehicle(editingVehicle.id, vehicleData);
     } else {
-      onAddVehicle({
-        name: vehicleForm.name || `${vehicleForm.make} ${vehicleForm.model} ${vehicleForm.year}`,
-        make: vehicleForm.make,
-        model: vehicleForm.model,
-        year: parseInt(vehicleForm.year),
-        licensePlate: vehicleForm.licensePlate || undefined,
-        fuelType: vehicleForm.fuelType,
-        currentMileage: parseFloat(vehicleForm.currentMileage) || 0,
-        mileageUnit: vehicleForm.mileageUnit,
-        insuranceProvider: vehicleForm.insuranceProvider || undefined,
-        insurancePolicyNumber: vehicleForm.insurancePolicyNumber || undefined,
-        insuranceExpirationDate: vehicleForm.insuranceExpirationDate || undefined,
-        notes: vehicleForm.notes || undefined,
-      });
+      onAddVehicle(vehicleData);
     }
-    
+
     resetVehicleForm();
     setIsVehicleDialogOpen(false);
+    setEditingVehicle(null);
   };
 
   const handleMaintenanceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    onAddMaintenanceRecord({
+
+    const maintenanceData = {
       vehicleId: maintenanceForm.vehicleId,
       date: maintenanceForm.date,
       type: maintenanceForm.type,
@@ -173,8 +182,14 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       currency: maintenanceForm.currency,
       serviceProvider: maintenanceForm.serviceProvider || undefined,
       notes: maintenanceForm.notes || undefined,
-    });
-    
+    };
+
+    if (editingMaintenanceLog) {
+      onUpdateMaintenanceRecord(editingMaintenanceLog.id, maintenanceData);
+    } else {
+      onAddMaintenanceRecord(maintenanceData);
+    }
+
     setMaintenanceForm({
       vehicleId: '',
       date: format(new Date(), 'yyyy-MM-dd'),
@@ -187,34 +202,44 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       notes: '',
     });
     setIsMaintenanceDialogOpen(false);
+    setEditingMaintenanceLog(null);
   };
 
   const handleFuelSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const quantity = parseFloat(fuelForm.quantity) || 0;
     const pricePerUnit = parseFloat(fuelForm.pricePerUnit) || 0;
-    
-    onAddFuelRecord({
+    const totalCost = parseFloat(fuelForm.totalCost) || (quantity * pricePerUnit);
+
+    const fuelData = {
       vehicleId: fuelForm.vehicleId,
       date: fuelForm.date,
       quantity,
       quantityUnit: fuelForm.quantityUnit,
       pricePerUnit,
-      totalCost: quantity * pricePerUnit,
+      totalCost,
       currency: fuelForm.currency,
       mileageAtFill: parseFloat(fuelForm.mileageAtFill) || 0,
       fullTank: fuelForm.fullTank,
       station: fuelForm.station || undefined,
       notes: fuelForm.notes || undefined,
-    });
-    
+    };
+
+    if (editingFuelLog) {
+      onUpdateFuelRecord(editingFuelLog.id, fuelData as any);
+    } else {
+      onAddFuelRecord(fuelData as any);
+    }
+
+    console.log(format(new Date(), 'yyyy-MM-dd'));
     setFuelForm({
       vehicleId: '',
       date: format(new Date(), 'yyyy-MM-dd'),
       quantity: '',
-      quantityUnit: 'liters',
+      quantityUnit: (vehicles.find(v => v.id === fuelForm.vehicleId)?.fuelUnit) || 'liters',
       pricePerUnit: '',
+      totalCost: '',
       mileageAtFill: '',
       fullTank: true,
       station: '',
@@ -222,6 +247,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       notes: '',
     });
     setIsFuelDialogOpen(false);
+    setEditingFuelLog(null);
   };
 
   const handleEditVehicle = (vehicle: Vehicle) => {
@@ -232,15 +258,53 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       model: vehicle.model,
       year: vehicle.year.toString(),
       licensePlate: vehicle.licensePlate || '',
+      vin: vehicle.vin || '',
       fuelType: vehicle.fuelType,
-      currentMileage: vehicle.currentMileage.toString(),
-      mileageUnit: vehicle.mileageUnit,
-      insuranceProvider: vehicle.insuranceProvider || '',
+      currentMileage: (vehicle).currentMileage?.toString() || '',
+      mileageUnit: (vehicle).mileageUnit || 'km',
+      fuelUnit: (vehicle).fuelUnit || 'liters',
+      insuranceProvider: (vehicle).insuranceProvider || '',
       insurancePolicyNumber: vehicle.insurancePolicyNumber || '',
       insuranceExpirationDate: vehicle.insuranceExpirationDate || '',
+      insuranceYearlyCost: vehicle.insuranceYearlyCost?.toString() || '',
+      insuranceRenewalDate: vehicle.insuranceRenewalDate || '',
       notes: vehicle.notes || '',
     });
     setIsVehicleDialogOpen(true);
+  };
+
+  const handleEditMaintenance = (record: MaintenanceRecord) => {
+    setEditingMaintenanceLog(record);
+    setMaintenanceForm({
+      vehicleId: record.vehicleId,
+      date: record.date,
+      type: record.type,
+      description: record.description,
+      mileageAtService: record.mileageAtService.toString(),
+      cost: record.cost.toString(),
+      currency: record.currency,
+      serviceProvider: record.serviceProvider || '',
+      notes: record.notes || '',
+    });
+    setIsMaintenanceDialogOpen(true);
+  };
+
+  const handleEditFuel = (record: FuelRecord) => {
+    setEditingFuelLog(record);
+    setFuelForm({
+      vehicleId: record.vehicleId,
+      date: record.date,
+      quantity: record.quantity.toString(),
+      quantityUnit: record.quantityUnit,
+      pricePerUnit: record.pricePerUnit.toString(),
+      totalCost: record.totalCost.toString(),
+      mileageAtFill: record.mileageAtFill.toString(),
+      fullTank: record.fullTank,
+      station: record.station || '',
+      currency: record.currency,
+      notes: record.notes || '',
+    });
+    setIsFuelDialogOpen(true);
   };
 
   const getInsuranceStatus = (expirationDate?: string) => {
@@ -249,7 +313,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
     if (days < 0) return { label: 'Expired', variant: 'destructive' as const };
     if (days <= 30) return { label: `${days}d left`, variant: 'destructive' as const };
     if (days <= 90) return { label: `${days}d left`, variant: 'outline' as const };
-    
+
     return { label: format(new Date(expirationDate), 'MMM yyyy'), variant: 'secondary' as const };
   };
 
@@ -307,6 +371,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                     <Input
                       id="year"
                       type="number"
+                      min="1900"
+                      max="2100"
                       placeholder="2020"
                       value={vehicleForm.year}
                       onChange={(e) => setVehicleForm(prev => ({ ...prev, year: e.target.value }))}
@@ -320,6 +386,15 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                       placeholder="Optional"
                       value={vehicleForm.licensePlate}
                       onChange={(e) => setVehicleForm(prev => ({ ...prev, licensePlate: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vin">VIN</Label>
+                    <Input
+                      id="vin"
+                      placeholder="Vehicle Identification Number"
+                      value={vehicleForm.vin}
+                      onChange={(e) => setVehicleForm(prev => ({ ...prev, vin: e.target.value }))}
                     />
                   </div>
                   <div>
@@ -344,6 +419,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                       <Input
                         id="currentMileage"
                         type="number"
+                        min="0"
                         placeholder="50000"
                         value={vehicleForm.currentMileage}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, currentMileage: e.target.value }))}
@@ -362,8 +438,24 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                       </Select>
                     </div>
                   </div>
+                  <div>
+                    <Label htmlFor="fuelUnit">Fuel Unit</Label>
+                    <Select
+                      value={vehicleForm.fuelUnit}
+                      onValueChange={(value) => setVehicleForm(prev => ({ ...prev, fuelUnit: value as any }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="liters">Liters</SelectItem>
+                        <SelectItem value="gallons_us">Gallons (US)</SelectItem>
+                        <SelectItem value="gallons_uk">Gallons (UK)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                
+
                 <div className="border-t pt-4">
                   <h4 className="mb-3 text-sm font-medium">Insurance (Optional)</h4>
                   <div className="grid grid-cols-2 gap-4">
@@ -377,12 +469,41 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                       />
                     </div>
                     <div>
+                      <Label htmlFor="insurancePolicyNumber">Policy Number</Label>
+                      <Input
+                        id="insurancePolicyNumber"
+                        placeholder="Policy #"
+                        value={vehicleForm.insurancePolicyNumber}
+                        onChange={(e) => setVehicleForm(prev => ({ ...prev, insurancePolicyNumber: e.target.value }))}
+                      />
+                    </div>
+                    <div>
                       <Label htmlFor="insuranceExpirationDate">Expiration</Label>
                       <Input
                         id="insuranceExpirationDate"
                         type="date"
                         value={vehicleForm.insuranceExpirationDate}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, insuranceExpirationDate: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="insuranceYearlyCost">Yearly Cost</Label>
+                      <Input
+                        id="insuranceYearlyCost"
+                        type="number"
+                        min="0"
+                        placeholder="Cost"
+                        value={vehicleForm.insuranceYearlyCost}
+                        onChange={(e) => setVehicleForm(prev => ({ ...prev, insuranceYearlyCost: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="insuranceRenewalDate">Next Renewal</Label>
+                      <Input
+                        id="insuranceRenewalDate"
+                        type="date"
+                        value={vehicleForm.insuranceRenewalDate}
+                        onChange={(e) => setVehicleForm(prev => ({ ...prev, insuranceRenewalDate: e.target.value }))}
                       />
                     </div>
                   </div>
@@ -480,6 +601,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                     <Label>Cost</Label>
                     <Input
                       type="number"
+                      min="0"
                       step="0.01"
                       placeholder="150.00"
                       value={maintenanceForm.cost}
@@ -542,6 +664,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                     <Label>Mileage at Fill</Label>
                     <Input
                       type="number"
+                      min="0"
                       placeholder="50000"
                       value={fuelForm.mileageAtFill}
                       onChange={(e) => setFuelForm(prev => ({ ...prev, mileageAtFill: e.target.value }))}
@@ -553,22 +676,33 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                     <div className="flex gap-2">
                       <Input
                         type="number"
+                        min="0"
                         step="0.01"
                         placeholder="45.5"
                         value={fuelForm.quantity}
-                        onChange={(e) => setFuelForm(prev => ({ ...prev, quantity: e.target.value }))}
+                        onChange={(e) => {
+                          const qty = e.target.value;
+                          const q = parseFloat(qty) || 0;
+                          const p = parseFloat(fuelForm.pricePerUnit) || 0;
+                          setFuelForm(prev => ({
+                            ...prev,
+                            quantity: qty,
+                            totalCost: (q * p).toFixed(2)
+                          }));
+                        }}
                         required
                       />
                       <Select
                         value={fuelForm.quantityUnit}
-                        onValueChange={(value) => setFuelForm(prev => ({ ...prev, quantityUnit: value as 'liters' | 'gallons' }))}
+                        onValueChange={(value) => setFuelForm(prev => ({ ...prev, quantityUnit: value as any }))}
                       >
                         <SelectTrigger className="w-24">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="liters">L</SelectItem>
-                          <SelectItem value="gallons">gal</SelectItem>
+                          <SelectItem value="liters">Liters</SelectItem>
+                          <SelectItem value="gallons_us">Gallons (US)</SelectItem>
+                          <SelectItem value="gallons_uk">Gallons (UK)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -577,10 +711,32 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                     <Label>Price per Unit</Label>
                     <Input
                       type="number"
+                      min="0"
                       step="0.001"
                       placeholder="1.65"
                       value={fuelForm.pricePerUnit}
-                      onChange={(e) => setFuelForm(prev => ({ ...prev, pricePerUnit: e.target.value }))}
+                      onChange={(e) => {
+                        const price = e.target.value;
+                        const qty = parseFloat(fuelForm.quantity) || 0;
+                        const p = parseFloat(price) || 0;
+                        setFuelForm(prev => ({
+                          ...prev,
+                          pricePerUnit: price,
+                          totalCost: (qty * p).toFixed(2)
+                        }));
+                      }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label>Total Cost</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="75.00"
+                      value={fuelForm.totalCost}
+                      onChange={(e) => setFuelForm(prev => ({ ...prev, totalCost: e.target.value }))}
                       required
                     />
                   </div>
@@ -678,7 +834,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                         <span>Fuel Efficiency</span>
                       </div>
                       <p className="mt-1 text-lg font-semibold">
-                        {efficiency !== null 
+                        {efficiency !== null
                           ? `${efficiency.toFixed(1)} ${vehicle.mileageUnit}/${vehicle.fuelType === 'electric' ? 'kWh' : 'L'}`
                           : 'N/A'}
                       </p>
@@ -736,12 +892,20 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                                     {format(new Date(record.date), 'MMM d, yyyy')} • {record.mileageAtService.toLocaleString()} {vehicle.mileageUnit}
                                   </p>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-destructive">-{formatCurrency(record.cost)}</span>
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium text-destructive mr-2">-{formatCurrency(record.cost)}</span>
                                   <Button
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8"
+                                    onClick={() => handleEditMaintenance(record)}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive"
                                     onClick={() => onDeleteMaintenanceRecord(record.id)}
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -771,12 +935,20 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                                     {format(new Date(record.date), 'MMM d, yyyy')} • {record.mileageAtFill.toLocaleString()} {vehicle.mileageUnit}
                                   </p>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-destructive">-{formatCurrency(record.totalCost)}</span>
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium text-destructive mr-2">-{formatCurrency(record.totalCost)}</span>
                                   <Button
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8"
+                                    onClick={() => handleEditFuel(record)}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive"
                                     onClick={() => onDeleteFuelRecord(record.id)}
                                   >
                                     <Trash2 className="h-4 w-4" />

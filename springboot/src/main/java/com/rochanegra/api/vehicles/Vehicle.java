@@ -29,6 +29,35 @@ public class Vehicle {
     @Column(name = "license_plate")
     private String licensePlate;
 
+    @Column(name = "fuel_type")
+    private String fuelType;
+
+    @Column(name = "current_mileage")
+    private Double currentMileage;
+
+    @Column(name = "mileage_unit")
+    private String mileageUnit;
+
+    @Column(name = "fuel_unit")
+    private String fuelUnit;
+
+    @Column(name = "insurance_provider")
+    private String insuranceProvider;
+
+    @Column(name = "insurance_policy_number")
+    private String insurancePolicyNumber;
+
+    @Column(name = "insurance_expiration_date")
+    private String insuranceExpirationDate;
+
+    @Column(name = "insurance_yearly_cost")
+    private java.math.BigDecimal insuranceYearlyCost;
+
+    @Column(name = "insurance_renewal_date")
+    private java.time.LocalDate insuranceRenewalDate;
+
+    private String notes;
+
     @CreationTimestamp
     private Instant createdAt;
 

@@ -5,7 +5,7 @@
 CREATE TYPE public.asset_type AS ENUM ('liquid_cash', 'investment', 'physical', 'liability');
 CREATE TYPE public.transaction_type AS ENUM ('income', 'expense', 'transfer');
 CREATE TYPE public.category_nature AS ENUM ('fixed', 'variable', 'savings', 'emergency');
-CREATE TYPE public.recurring_frequency AS ENUM ('weekly', 'monthly', 'yearly');
+CREATE TYPE public.recurring_frequency AS ENUM ('weekly', 'monthly', 'quarterly', 'yearly');
 
 -- 2. Create profiles table (links to auth.users)
 CREATE TABLE public.profiles (

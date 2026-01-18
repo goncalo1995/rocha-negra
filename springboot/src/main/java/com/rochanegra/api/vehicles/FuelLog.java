@@ -24,13 +24,34 @@ public class FuelLog {
     private UUID vehicleId;
 
     @Column(nullable = false, precision = 10, scale = 3)
-    private BigDecimal gallons;
+    private BigDecimal quantity;
+
+    @Column(name = "quantity_unit")
+    private String quantityUnit;
+
+    @Column(name = "price_per_unit", precision = 10, scale = 3)
+    private BigDecimal pricePerUnit;
 
     @Column(name = "total_cost", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalCost;
 
-    @Column(nullable = false)
-    private Integer odometer;
+    private String currency;
+
+    @Column(name = "mileage_at_fill")
+    private Integer mileageAtFill;
+
+    @Column(name = "full_tank")
+    private Boolean fullTank;
+
+    private String station;
+
+    private String notes;
+
+    @Column(name = "normalized_quantity_liters", nullable = false, precision = 10, scale = 3)
+    private BigDecimal normalizedQuantityLiters;
+
+    @Column(name = "normalized_mileage_km", nullable = false)
+    private Double normalizedMileageKm;
 
     @Column(nullable = false)
     private LocalDate date;

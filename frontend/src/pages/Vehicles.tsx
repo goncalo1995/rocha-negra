@@ -16,8 +16,10 @@ const Vehicles = () => {
     updateVehicle,
     deleteVehicle,
     addMaintenanceRecord,
+    updateMaintenanceRecord,
     deleteMaintenanceRecord,
     addFuelRecord,
+    updateFuelRecord,
     deleteFuelRecord,
     getFuelEfficiency,
   } = useVehicles();
@@ -73,7 +75,7 @@ const Vehicles = () => {
             <CardHeader className="pb-2">
               <CardDescription>Avg Fuel Efficiency</CardDescription>
               <CardTitle className="text-2xl">
-                {metrics.averageFuelEfficiency !== null 
+                {metrics.averageFuelEfficiency !== null
                   ? `${metrics.averageFuelEfficiency.toFixed(1)} km/L`
                   : 'N/A'}
               </CardTitle>
@@ -90,8 +92,10 @@ const Vehicles = () => {
           onUpdateVehicle={updateVehicle}
           onDeleteVehicle={deleteVehicle}
           onAddMaintenanceRecord={addMaintenanceRecord}
+          onUpdateMaintenanceRecord={updateMaintenanceRecord}
           onDeleteMaintenanceRecord={deleteMaintenanceRecord}
           onAddFuelRecord={addFuelRecord}
+          onUpdateFuelRecord={updateFuelRecord}
           onDeleteFuelRecord={deleteFuelRecord}
           getFuelEfficiency={getFuelEfficiency}
         />

@@ -1,72 +1,34 @@
+import { Database } from './database.types';
+import { FromDb } from './utils';
+
+type AssetRow = Database['public']['Tables']['assets']['Row'];
+type CategoryRow = Database['public']['Tables']['categories']['Row'];
+type TransactionRow = Database['public']['Tables']['transactions']['Row'];
+type RecurringRuleRow = Database['public']['Tables']['recurring_rules']['Row'];
+
 export type AssetType = 'liquid_cash' | 'investment' | 'crypto' | 'physical' | 'liability';
+export type TransactionType = Database['public']['Enums']['transaction_type'];
+export type CategoryNature = Database['public']['Enums']['category_nature'];
+export type RecurringFrequency = Database['public']['Enums']['recurring_frequency'];
 
-export type TransactionType = 'income' | 'expense' | 'transfer';
-
-export type CategoryNature = 'fixed' | 'variable' | 'savings' | 'emergency';
-
-export type RecurringFrequency = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
-
-export interface Asset {
-  id: string;
-  name: string;
+export interface Asset extends FromDb<Omit<AssetRow, 'type'>> {
   type: AssetType;
-  currentValue: number;
-  currency: string;
-  description?: string;
-  // For crypto assets
-  ticker?: string;
-  quantity?: number;
-  // For depreciating assets
-  purchaseValue?: number;
-  purchaseDate?: string;
-  depreciationRate?: number; // Annual percentage
-  // For maintenance tracking
-  lastMaintenanceDate?: string;
-  maintenanceIntervalMonths?: number;
-  estimatedMaintenanceCost?: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
+export interface Category extends FromDb<Omit<CategoryRow, 'type' | 'nature'>> {
   type: 'income' | 'expense';
   nature: CategoryNature;
-  iconSlug: string;
-  color?: string;
-  budgetLimit?: number; // Monthly budget for this category
 }
 
-export interface Transaction {
-  id: string;
-  amount: number;
-  description: string;
-  date: string;
+export interface Transaction extends FromDb<Omit<TransactionRow, 'type'>> {
   type: TransactionType;
-  categoryId: string;
-  assetId: string;
-  toAssetId?: string; // For transfers
-  isRecurring: boolean;
-  recurringRuleId?: string;
-  attachmentUrl?: string;
-  createdAt: string;
 }
 
-export interface RecurringRule {
-  id: string;
-  name: string;
-  transactionId?: string;
-  categoryId: string;
-  assetId: string;
-  type: TransactionType;
+export interface RecurringRule extends FromDb<Omit<RecurringRuleRow, 'frequency'>> {
   frequency: RecurringFrequency;
-  dayOfMonth?: number; // 1-31, for monthly/quarterly/yearly
-  nextDueDate: string;
-  projectedAmount: number;
-  description: string;
-  isActive: boolean;
-  createdAt: string;
+  // UI-only or transient fields
+  name?: string;
+  type?: TransactionType;
 }
 
 export interface FinanceState {
@@ -76,7 +38,6 @@ export interface FinanceState {
   recurringRules: RecurringRule[];
 }
 
-// Helper type for dashboard metrics
 export interface DashboardMetrics {
   netWorth: number;
   totalAssets: number;
@@ -89,7 +50,6 @@ export interface DashboardMetrics {
   upcomingBillsCount: number;
 }
 
-// For projections
 export interface ProjectedMonth {
   month: string;
   date: Date;
@@ -99,7 +59,6 @@ export interface ProjectedMonth {
   cumulativeBalance: number;
 }
 
-// Calendar event types
 export interface CalendarEvent {
   id: string;
   date: Date;

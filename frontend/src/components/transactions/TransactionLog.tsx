@@ -18,8 +18,8 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Transaction, Category, Asset, FinanceState } from '@/types/finance';
 import { formatCurrency, formatRelativeDate } from '@/lib/formatters';
-import { 
-  Search, 
+import {
+  Search,
   Filter,
   ArrowUpRight,
   ArrowDownLeft,
@@ -28,6 +28,7 @@ import {
   CalendarIcon,
   Download,
   Upload,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, parseISO } from 'date-fns';
@@ -38,21 +39,31 @@ interface TransactionLogProps {
   categories: Category[];
   assets: Asset[];
   onDeleteTransaction: (id: string) => void;
+  onUpdateTransaction?: (id: string, updates: Partial<Transaction>) => void;
   onImportData?: (data: Partial<FinanceState>) => void;
   onExportData?: () => FinanceState;
+  onAddTransactions?: (transactions: any[]) => Promise<void>;
 }
+
+import { BankImportDialog } from './BankImportDialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Pencil, Trash2 } from 'lucide-react';
 
 type FilterType = 'all' | 'income' | 'expense' | 'transfer';
 type NatureFilter = 'all' | 'fixed' | 'variable' | 'savings';
 type TimeRange = 'all' | 'today' | 'this_week' | 'this_month' | 'this_year' | 'custom';
 
-export function TransactionLog({ 
-  transactions, 
-  categories, 
+export function TransactionLog({
+  transactions,
+  categories,
   assets,
   onDeleteTransaction,
+  onUpdateTransaction,
   onImportData,
   onExportData,
+  onAddTransactions,
 }: TransactionLogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<FilterType>('all');
@@ -61,7 +72,43 @@ export function TransactionLog({
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  const [isBankImportOpen, setIsBankImportOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editForm, setEditForm] = useState({
+    amount: '',
+    description: '',
+    categoryId: '',
+    assetId: '',
+    date: '',
+  });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = (t: Transaction) => {
+    setEditingTransaction(t);
+    setEditForm({
+      amount: t.amount.toString(),
+      description: t.description,
+      categoryId: t.categoryId,
+      assetId: t.assetId,
+      date: t.date.split('T')[0],
+    });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTransaction || !onUpdateTransaction) return;
+
+    onUpdateTransaction(editingTransaction.id, {
+      amount: parseFloat(editForm.amount),
+      description: editForm.description,
+      categoryId: editForm.categoryId,
+      assetId: editForm.assetId,
+      date: editForm.date,
+    });
+    setEditingTransaction(null);
+    toast.success('Transaction updated');
+  };
 
   const getTimeRangeFilter = (range: TimeRange): { start: Date; end: Date } | null => {
     const now = new Date();
@@ -86,14 +133,14 @@ export function TransactionLog({
 
   const filteredTransactions = useMemo(() => {
     const timeFilter = getTimeRangeFilter(timeRange);
-    
+
     return transactions
       .filter(t => {
         // Search filter
         if (searchQuery) {
           const searchLower = searchQuery.toLowerCase();
           const category = categories.find(c => c.id === t.categoryId);
-          const matchesSearch = 
+          const matchesSearch =
             t.description.toLowerCase().includes(searchLower) ||
             category?.name.toLowerCase().includes(searchLower);
           if (!matchesSearch) return false;
@@ -126,7 +173,7 @@ export function TransactionLog({
 
   const handleExport = () => {
     if (!onExportData) return;
-    
+
     const data = onExportData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -155,7 +202,7 @@ export function TransactionLog({
       }
     };
     reader.readAsText(file);
-    
+
     // Reset the input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -195,7 +242,7 @@ export function TransactionLog({
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            
+
             <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
               <SelectTrigger className="w-[140px]">
                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -249,7 +296,7 @@ export function TransactionLog({
                 </Popover>
               </div>
             )}
-            
+
             <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as FilterType)}>
               <SelectTrigger className="w-[130px]">
                 <Filter className="mr-2 h-4 w-4" />
@@ -310,6 +357,15 @@ export function TransactionLog({
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setIsBankImportOpen(true)}
+                disabled={!onAddTransactions}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Bank Statement
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleExport}
                 disabled={!onExportData}
               >
@@ -342,7 +398,7 @@ export function TransactionLog({
                 const asset = assets.find(a => a.id === transaction.assetId);
                 const Icon = getTransactionIcon(transaction.type);
                 const colorClass = getTransactionColor(transaction.type);
-                
+
                 return (
                   <div
                     key={transaction.id}
@@ -351,7 +407,7 @@ export function TransactionLog({
                     <div className={cn('rounded-lg bg-secondary p-2', colorClass)}>
                       <Icon className="h-4 w-4" />
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-medium truncate">{transaction.description}</p>
@@ -377,12 +433,32 @@ export function TransactionLog({
                         <span>{formatRelativeDate(transaction.date)}</span>
                       </div>
                     </div>
-                    
-                    <div className="text-right">
-                      <p className={cn('font-semibold', colorClass)}>
-                        {transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : ''}
-                        {formatCurrency(transaction.amount)}
-                      </p>
+
+                    <div className="text-right flex items-center gap-3">
+                      <div>
+                        <p className={cn('font-semibold', colorClass)}>
+                          {transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : ''}
+                          {formatCurrency(transaction.amount)}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => startEdit(transaction)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => onDeleteTransaction(transaction.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -391,6 +467,86 @@ export function TransactionLog({
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!editingTransaction} onOpenChange={(open) => !open && setEditingTransaction(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Transaction</DialogTitle>
+            <DialogDescription>Update the details of this transaction.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input
+                value={editForm.description}
+                onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Amount</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editForm.amount}
+                  onChange={e => setEditForm(prev => ({ ...prev, amount: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={editForm.date}
+                  onChange={e => setEditForm(prev => ({ ...prev, date: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={editForm.categoryId} onValueChange={v => setEditForm(prev => ({ ...prev, categoryId: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Account</Label>
+              <Select value={editForm.assetId} onValueChange={v => setEditForm(prev => ({ ...prev, assetId: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {assets.map(asset => (
+                    <SelectItem key={asset.id} value={asset.id}>{asset.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setEditingTransaction(null)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <BankImportDialog
+        isOpen={isBankImportOpen}
+        onOpenChange={setIsBankImportOpen}
+        categories={categories}
+        assets={assets}
+        onImport={onAddTransactions || (async () => { })}
+      />
     </div>
   );
 }

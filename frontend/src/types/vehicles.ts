@@ -1,65 +1,28 @@
+import { Database } from './database.types';
+import { FromDb } from './utils';
+
+type VehicleRow = Database['public']['Tables']['vehicles']['Row'];
+type MaintenanceRow = Database['public']['Tables']['maintenance_logs']['Row'];
+type FuelRow = Database['public']['Tables']['fuel_logs']['Row'];
+
 export type FuelType = 'gasoline' | 'diesel' | 'electric' | 'hybrid' | 'lpg';
 
-export interface Vehicle {
-  id: string;
-  name: string; // e.g., "Honda Civic 2020"
-  make: string;
-  model: string;
-  year: number;
-  licensePlate?: string;
+export interface Vehicle extends FromDb<Omit<VehicleRow, 'fuel_type' | 'mileage_unit' | 'fuel_unit'>> {
   fuelType: FuelType;
-  // Tracking
-  currentMileage: number;
   mileageUnit: 'km' | 'mi';
-  // Finance integration
-  linkedAssetId?: string;
-  // Insurance
-  insuranceProvider?: string;
-  insurancePolicyNumber?: string;
-  insuranceExpirationDate?: string;
+  fuelUnit: 'liters' | 'gallons_us' | 'gallons_uk';
+  // UI-only or transient fields
   insuranceRecurringRuleId?: string;
-  // Metadata
   purchaseDate?: string;
   purchasePrice?: number;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
-export interface MaintenanceRecord {
-  id: string;
-  vehicleId: string;
-  date: string;
+export interface MaintenanceRecord extends FromDb<Omit<MaintenanceRow, 'type'>> {
   type: 'oil_change' | 'tire_rotation' | 'brake_service' | 'inspection' | 'repair' | 'other';
-  description: string;
-  mileageAtService: number;
-  cost: number;
-  currency: string;
-  // Finance sync
-  linkedTransactionId?: string;
-  // Metadata
-  serviceProvider?: string;
-  notes?: string;
-  createdAt: string;
 }
 
-export interface FuelRecord {
-  id: string;
-  vehicleId: string;
-  date: string;
-  quantity: number; // liters or gallons
-  quantityUnit: 'liters' | 'gallons';
-  pricePerUnit: number;
-  totalCost: number;
-  currency: string;
-  mileageAtFill: number;
-  fullTank: boolean;
-  // Finance sync
-  linkedTransactionId?: string;
-  // Metadata
-  station?: string;
-  notes?: string;
-  createdAt: string;
+export interface FuelRecord extends FromDb<Omit<FuelRow, 'quantity_unit'>> {
+  quantityUnit: 'liters' | 'gallons_us' | 'gallons_uk';
 }
 
 export interface VehiclesState {

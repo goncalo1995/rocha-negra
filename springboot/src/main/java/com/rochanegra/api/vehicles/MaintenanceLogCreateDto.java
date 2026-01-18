@@ -4,8 +4,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record MaintenanceLogCreateDto(
-        String description,
-        BigDecimal cost,
-        LocalDate date,
-        Integer odometer) {
+                String type,
+                String description,
+                Integer mileageAtService,
+                BigDecimal cost,
+                String currency,
+                String serviceProvider,
+                String notes,
+                LocalDate date) {
 }

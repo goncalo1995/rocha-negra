@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.rochanegra.api.exception.ResourceNotFoundException;
 
@@ -14,6 +16,13 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AssetService assetService;
+
+    @Transactional
+    public List<TransactionDto> createTransactions(List<TransactionCreateDto> createDtos, UUID userId) {
+        return createDtos.stream()
+                .map(dto -> createTransaction(dto, userId))
+                .collect(Collectors.toList());
+    }
 
     public TransactionDto createTransaction(TransactionCreateDto createDto, UUID userId) {
         Transaction transaction = new Transaction();

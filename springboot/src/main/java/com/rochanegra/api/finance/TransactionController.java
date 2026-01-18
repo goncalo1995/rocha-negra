@@ -24,6 +24,15 @@ public class TransactionController {
         return new ResponseEntity<>(newTransaction, HttpStatus.CREATED);
     }
 
+    @PostMapping("/bulk")
+    public ResponseEntity<java.util.List<TransactionDto>> createTransactions(
+            @RequestBody java.util.List<TransactionCreateDto> createDtos,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        java.util.List<TransactionDto> newTransactions = transactionService.createTransactions(createDtos, userId);
+        return new ResponseEntity<>(newTransactions, HttpStatus.CREATED);
+    }
+
     @GetMapping
     public org.springframework.data.domain.Page<TransactionDto> getTransactions(
             Authentication authentication,
