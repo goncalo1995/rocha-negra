@@ -2,7 +2,7 @@
 -- Run this in the Supabase SQL Editor
 
 -- 1. Create custom types
-CREATE TYPE public.asset_type AS ENUM ('liquid_cash', 'investment', 'physical', 'liability');
+CREATE TYPE public.asset_type AS ENUM ('bank_account', 'cash', 'credit_card', 'investment', 'property', 'vehicle', 'jewelry', 'other');
 CREATE TYPE public.transaction_type AS ENUM ('income', 'expense', 'transfer');
 CREATE TYPE public.category_nature AS ENUM ('fixed', 'variable', 'savings', 'emergency');
 CREATE TYPE public.recurring_frequency AS ENUM ('weekly', 'monthly', 'quarterly', 'yearly');
@@ -25,7 +25,9 @@ CREATE TABLE public.assets (
   type public.asset_type NOT NULL,
   current_value DECIMAL(15,2) NOT NULL DEFAULT 0,
   currency TEXT NOT NULL DEFAULT 'EUR',
+  institution TEXT,
   description TEXT,
+  custom_fields JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

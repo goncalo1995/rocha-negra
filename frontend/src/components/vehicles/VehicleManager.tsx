@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Vehicle, MaintenanceRecord, FuelRecord, FuelType } from '@/types/vehicles';
 import { formatCurrency } from '@/lib/formatters';
 import { format, differenceInDays } from 'date-fns';
+import { useFinance } from '@/hooks/useFinance';
 
 interface VehicleManagerProps {
   vehicles: Vehicle[];
@@ -69,6 +70,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
   const [editingMaintenanceLog, setEditingMaintenanceLog] = useState<MaintenanceRecord | null>(null);
   const [editingFuelLog, setEditingFuelLog] = useState<FuelRecord | null>(null);
 
+  const { assets } = useFinance();
+
   const [vehicleForm, setVehicleForm] = useState({
     name: '',
     make: '',
@@ -98,6 +101,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
     currency: 'EUR',
     serviceProvider: '',
     notes: '',
+    assetId: '',
+    syncToFinance: true,
   });
 
   const [fuelForm, setFuelForm] = useState({
@@ -112,6 +117,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
     station: '',
     currency: 'EUR',
     notes: '',
+    assetId: '',
+    syncToFinance: true,
   });
 
   const resetVehicleForm = () => {
@@ -182,6 +189,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       currency: maintenanceForm.currency,
       serviceProvider: maintenanceForm.serviceProvider || undefined,
       notes: maintenanceForm.notes || undefined,
+      assetId: maintenanceForm.assetId || undefined,
+      syncToFinance: maintenanceForm.syncToFinance,
     };
 
     if (editingMaintenanceLog) {
@@ -200,6 +209,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       currency: 'EUR',
       serviceProvider: '',
       notes: '',
+      assetId: '',
+      syncToFinance: true,
     });
     setIsMaintenanceDialogOpen(false);
     setEditingMaintenanceLog(null);
@@ -224,6 +235,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       fullTank: fuelForm.fullTank,
       station: fuelForm.station || undefined,
       notes: fuelForm.notes || undefined,
+      assetId: fuelForm.assetId || undefined,
+      syncToFinance: fuelForm.syncToFinance,
     };
 
     if (editingFuelLog) {
@@ -245,6 +258,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       station: '',
       currency: 'EUR',
       notes: '',
+      assetId: '',
+      syncToFinance: true,
     });
     setIsFuelDialogOpen(false);
     setEditingFuelLog(null);
@@ -285,6 +300,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       currency: record.currency,
       serviceProvider: record.serviceProvider || '',
       notes: record.notes || '',
+      assetId: record.assetId || '',
+      syncToFinance: record.syncToFinance ?? true,
     });
     setIsMaintenanceDialogOpen(true);
   };
@@ -303,6 +320,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       station: record.station || '',
       currency: record.currency,
       notes: record.notes || '',
+      assetId: record.assetId || '',
+      syncToFinance: record.syncToFinance ?? true,
     });
     setIsFuelDialogOpen(true);
   };
@@ -491,6 +510,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                       <Input
                         id="insuranceYearlyCost"
                         type="number"
+                        step="0.01"
                         min="0"
                         placeholder="Cost"
                         value={vehicleForm.insuranceYearlyCost}
@@ -609,6 +629,35 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                       required
                     />
                   </div>
+                </div>
+
+                <div className="border-t pt-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="maintenance-sync">Sync to Finance</Label>
+                    <Switch
+                      id="maintenance-sync"
+                      checked={maintenanceForm.syncToFinance}
+                      onCheckedChange={(checked) => setMaintenanceForm(prev => ({ ...prev, syncToFinance: checked }))}
+                    />
+                  </div>
+                  {maintenanceForm.syncToFinance && (
+                    <div>
+                      <Label htmlFor="maintenance-asset">Account / Asset</Label>
+                      <Select
+                        value={maintenanceForm.assetId}
+                        onValueChange={(value) => setMaintenanceForm(prev => ({ ...prev, assetId: value }))}
+                      >
+                        <SelectTrigger id="maintenance-asset">
+                          <SelectValue placeholder="Select account" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assets.map(asset => (
+                            <SelectItem key={asset.id} value={asset.id}>{asset.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsMaintenanceDialogOpen(false)}>
@@ -755,6 +804,35 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                       onChange={(e) => setFuelForm(prev => ({ ...prev, station: e.target.value }))}
                     />
                   </div>
+                </div>
+
+                <div className="border-t pt-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="fuel-sync">Sync to Finance</Label>
+                    <Switch
+                      id="fuel-sync"
+                      checked={fuelForm.syncToFinance}
+                      onCheckedChange={(checked) => setFuelForm(prev => ({ ...prev, syncToFinance: checked }))}
+                    />
+                  </div>
+                  {fuelForm.syncToFinance && (
+                    <div>
+                      <Label htmlFor="fuel-asset">Account / Asset</Label>
+                      <Select
+                        value={fuelForm.assetId}
+                        onValueChange={(value) => setFuelForm(prev => ({ ...prev, assetId: value }))}
+                      >
+                        <SelectTrigger id="fuel-asset">
+                          <SelectValue placeholder="Select account" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assets.map(asset => (
+                            <SelectItem key={asset.id} value={asset.id}>{asset.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsFuelDialogOpen(false)}>

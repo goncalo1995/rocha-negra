@@ -19,10 +19,14 @@ export interface Vehicle extends FromDb<Omit<VehicleRow, 'fuel_type' | 'mileage_
 
 export interface MaintenanceRecord extends FromDb<Omit<MaintenanceRow, 'type'>> {
   type: 'oil_change' | 'tire_rotation' | 'brake_service' | 'inspection' | 'repair' | 'other';
+  assetId?: string;
+  syncToFinance?: boolean;
 }
 
 export interface FuelRecord extends FromDb<Omit<FuelRow, 'quantity_unit'>> {
   quantityUnit: 'liters' | 'gallons_us' | 'gallons_uk';
+  assetId?: string;
+  syncToFinance?: boolean;
 }
 
 export interface VehiclesState {

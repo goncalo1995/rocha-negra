@@ -21,11 +21,11 @@ import {
 } from '@/components/ui/select';
 import { Asset, AssetType } from '@/types/finance';
 import { formatCurrency, formatDate } from '@/lib/formatters';
-import { 
-  Plus, 
-  Banknote, 
-  TrendingUp, 
-  Car, 
+import {
+  Plus,
+  Banknote,
+  TrendingUp,
+  Car,
   CreditCard,
   Pencil,
   Trash2,
@@ -34,32 +34,37 @@ import { cn } from '@/lib/utils';
 
 interface AssetManagerProps {
   assets: Asset[];
-  onAddAsset: (asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onAddAsset: (asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => void;
   onUpdateAsset: (id: string, updates: Partial<Asset>) => void;
   onDeleteAsset: (id: string) => void;
 }
 
 const assetTypeConfig: Record<AssetType, { label: string; icon: typeof Banknote; color: string }> = {
-  liquid_cash: { label: 'Liquid Cash', icon: Banknote, color: 'text-success' },
+  cash: { label: 'Cash', icon: Banknote, color: 'text-success' },
+  bank_account: { label: 'Bank Account', icon: Banknote, color: 'text-success' },
+  credit_card: { label: 'Credit Card', icon: Banknote, color: 'text-success' },
   investment: { label: 'Investment', icon: TrendingUp, color: 'text-chart-2' },
-  crypto: { label: 'Cryptocurrency', icon: TrendingUp, color: 'text-chart-4' },
-  physical: { label: 'Physical Asset', icon: Car, color: 'text-chart-3' },
-  liability: { label: 'Liability', icon: CreditCard, color: 'text-destructive' },
+  vehicle: { label: 'Vehicle', icon: Car, color: 'text-chart-3' },
+  property: { label: 'Property', icon: Car, color: 'text-chart-3' },
+  jewelry: { label: 'Jewelry', icon: Car, color: 'text-chart-3' },
+  other: { label: 'Other', icon: Car, color: 'text-chart-3' },
 };
 
 export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset }: AssetManagerProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
-  
+
   // Form state
   const [name, setName] = useState('');
-  const [type, setType] = useState<AssetType>('liquid_cash');
+  const [type, setType] = useState<AssetType>('cash');
   const [currentValue, setCurrentValue] = useState('');
   const [description, setDescription] = useState('');
 
+  const isLiability = type === 'credit_card';
+
   const resetForm = () => {
     setName('');
-    setType('liquid_cash');
+    setType('cash');
     setCurrentValue('');
     setDescription('');
     setEditingAsset(null);
@@ -67,7 +72,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const value = parseFloat(currentValue);
     if (isNaN(value)) return;
 
@@ -75,16 +80,18 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
       onUpdateAsset(editingAsset.id, {
         name,
         type,
-        currentValue: type === 'liability' ? -Math.abs(value) : value,
+        currentValue: isLiability ? -Math.abs(value) : value,
         description,
       });
     } else {
       onAddAsset({
         name,
         type,
-        currentValue: type === 'liability' ? -Math.abs(value) : value,
+        currentValue: isLiability ? -Math.abs(value) : value,
         currency: 'EUR',
         description,
+        institution: '',
+        customFields: {},
       });
     }
 
@@ -146,7 +153,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
                 <Select value={type} onValueChange={(v) => setType(v as AssetType)}>
@@ -154,7 +161,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(Object.entries(assetTypeConfig) as [AssetType, typeof assetTypeConfig.liquid_cash][]).map(
+                    {(Object.entries(assetTypeConfig) as [AssetType, typeof assetTypeConfig.cash][]).map(
                       ([key, config]) => (
                         <SelectItem key={key} value={key}>
                           <div className="flex items-center gap-2">
@@ -167,7 +174,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="value">Current Value (€)</Label>
                 <Input
@@ -180,7 +187,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="description">Description (optional)</Label>
                 <Input
@@ -190,7 +197,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
-              
+
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => { setIsAddDialogOpen(false); resetForm(); }}>
                   Cancel
@@ -216,7 +223,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                   </div>
                   <div className="flex-1">
                     <p className="text-xs text-muted-foreground">{config.label}</p>
-                    <p className={cn('text-lg font-semibold', type === 'liability' ? 'text-destructive' : '')}>
+                    <p className={cn('text-lg font-semibold', isLiability ? 'text-destructive' : '')}>
                       {formatCurrency(Math.abs(total))}
                     </p>
                   </div>
@@ -261,7 +268,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className={cn('font-semibold', asset.type === 'liability' ? 'text-destructive' : 'text-foreground')}>
+                      <p className={cn('font-semibold', isLiability ? 'text-destructive' : 'text-foreground')}>
                         {formatCurrency(asset.currentValue)}
                       </p>
                       <Badge variant="outline" className="text-xs">

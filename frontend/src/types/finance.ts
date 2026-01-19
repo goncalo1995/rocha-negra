@@ -6,7 +6,7 @@ type CategoryRow = Database['public']['Tables']['categories']['Row'];
 type TransactionRow = Database['public']['Tables']['transactions']['Row'];
 type RecurringRuleRow = Database['public']['Tables']['recurring_rules']['Row'];
 
-export type AssetType = 'liquid_cash' | 'investment' | 'crypto' | 'physical' | 'liability';
+export type AssetType = Database['public']['Enums']['asset_type'];
 export type TransactionType = Database['public']['Enums']['transaction_type'];
 export type CategoryNature = Database['public']['Enums']['category_nature'];
 export type RecurringFrequency = Database['public']['Enums']['recurring_frequency'];

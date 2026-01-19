@@ -36,6 +36,8 @@ public class AssetService {
         asset.setName(createDto.name());
         asset.setType(createDto.type());
         asset.setCurrentValue(createDto.currentValue());
+        asset.setDescription(createDto.description());
+        asset.setCustomFields(createDto.customFields());
         asset.setInstitution(createDto.institution());
         asset.setUserId(userId);
 
@@ -67,6 +69,10 @@ public class AssetService {
             asset.setCurrentValue(updateDto.currentValue());
         if (updateDto.institution() != null)
             asset.setInstitution(updateDto.institution());
+        if (updateDto.description() != null)
+            asset.setDescription(updateDto.description());
+        if (updateDto.customFields() != null)
+            asset.setCustomFields(updateDto.customFields());
 
         Asset savedAsset = assetRepository.save(asset);
         return toDto(savedAsset);
@@ -82,6 +88,10 @@ public class AssetService {
                 asset.getName(),
                 asset.getType(),
                 asset.getCurrentValue(),
-                asset.getInstitution());
+                asset.getInstitution(),
+                asset.getDescription(),
+                asset.getCustomFields(),
+                asset.getCreatedAt(),
+                asset.getUpdatedAt());
     }
 }

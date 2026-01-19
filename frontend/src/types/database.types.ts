@@ -24,7 +24,7 @@ export type Database = {
           id: string
           institution: string | null
           name: string
-          type: string
+          type: Database["public"]["Enums"]["asset_type"]
           updated_at: string | null
           user_id: string
         }
@@ -37,7 +37,7 @@ export type Database = {
           id?: string
           institution?: string | null
           name: string
-          type: string
+          type: Database["public"]["Enums"]["asset_type"]
           updated_at?: string | null
           user_id: string
         }
@@ -50,7 +50,7 @@ export type Database = {
           id?: string
           institution?: string | null
           name?: string
-          type?: string
+          type?: Database["public"]["Enums"]["asset_type"]
           updated_at?: string | null
           user_id?: string
         }
@@ -363,6 +363,27 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          currency: string
+          fuel_unit: string
+          mileage_unit: string
+          user_id: string
+        }
+        Insert: {
+          currency: string
+          fuel_unit: string
+          mileage_unit: string
+          user_id: string
+        }
+        Update: {
+          currency?: string
+          fuel_unit?: string
+          mileage_unit?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string | null
@@ -470,7 +491,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      asset_type: "liquid_cash" | "investment" | "physical" | "liability"
+      asset_type:
+        | "bank_account"
+        | "cash"
+        | "credit_card"
+        | "investment"
+        | "property"
+        | "vehicle"
+        | "jewelry"
+        | "other"
       assettype:
         | "bank_account"
         | "cash"
@@ -478,6 +507,8 @@ export type Database = {
         | "investment"
         | "other"
         | "property"
+        | "jewelry"
+        | "vehicle"
       category_nature: "fixed" | "variable" | "savings" | "emergency"
       categorynature: "emergency" | "fixed" | "savings" | "variable"
       recurring_frequency: "weekly" | "monthly" | "yearly" | "quarterly"
@@ -611,7 +642,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      asset_type: ["liquid_cash", "investment", "physical", "liability"],
+      asset_type: [
+        "bank_account",
+        "cash",
+        "credit_card",
+        "investment",
+        "property",
+        "vehicle",
+        "jewelry",
+        "other",
+      ],
       assettype: [
         "bank_account",
         "cash",
@@ -619,6 +659,8 @@ export const Constants = {
         "investment",
         "other",
         "property",
+        "jewelry",
+        "vehicle",
       ],
       category_nature: ["fixed", "variable", "savings", "emergency"],
       categorynature: ["emergency", "fixed", "savings", "variable"],

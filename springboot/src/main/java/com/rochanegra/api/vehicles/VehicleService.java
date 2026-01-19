@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -61,6 +62,23 @@ public class VehicleService {
             recurringRuleService.createRecurringRule(ruleDto, userId);
         }
 
+        // Add inspection recurring rule (annual) if year is provided or insurance info
+        // exists
+        if (savedVehicle.getYear() != null || createDto.insuranceRenewalDate() != null) {
+            LocalDate inspectionDate = createDto.insuranceRenewalDate() != null
+                    ? createDto.insuranceRenewalDate().plusMonths(6)
+                    : LocalDate.now().plusYears(1);
+
+            RecurringRuleCreateDto inspectionRuleDto = new RecurringRuleCreateDto(
+                    "Inspection: " + savedVehicle.getName(),
+                    BigDecimal.ZERO,
+                    RecurringFrequency.yearly,
+                    inspectionDate,
+                    null,
+                    null);
+            recurringRuleService.createRecurringRule(inspectionRuleDto, userId);
+        }
+
         return toDto(savedVehicle);
     }
 
@@ -102,15 +120,18 @@ public class VehicleService {
             vehicleRepository.save(vehicle);
         }
 
-        TransactionCreateDto transactionDto = new TransactionCreateDto(
-                logDto.cost().negate(),
-                "Maintenance (" + logDto.type() + "): " + vehicle.getName(),
-                logDto.date(),
-                TransactionType.expense,
-                null, // TODO: Link to a "Vehicle Maintenance" category ID
-                null // TODO: Link to the asset (bank account) used for payment
-        );
-        transactionService.createTransaction(transactionDto, userId);
+        // Create transaction only if syncToFinance is true
+        if (Boolean.TRUE.equals(logDto.syncToFinance())) {
+            TransactionCreateDto transactionDto = new TransactionCreateDto(
+                    logDto.cost().negate(),
+                    "Maintenance (" + logDto.type() + "): " + vehicle.getName(),
+                    logDto.date(),
+                    TransactionType.expense,
+                    null, // TODO: Link to a "Vehicle Maintenance" category ID
+                    logDto.assetId() // Link to chosen asset
+            );
+            transactionService.createTransaction(transactionDto, userId);
+        }
 
         return toDto(savedLog);
     }
@@ -166,14 +187,18 @@ public class VehicleService {
             vehicleRepository.save(vehicle);
         }
 
-        TransactionCreateDto transactionDto = new TransactionCreateDto(
-                logDto.totalCost().negate(),
-                "Fuel: " + vehicle.getName(),
-                logDto.date(),
-                TransactionType.expense,
-                null,
-                null);
-        transactionService.createTransaction(transactionDto, userId);
+        // Create transaction only if syncToFinance is true
+        if (Boolean.TRUE.equals(logDto.syncToFinance())) {
+            TransactionCreateDto transactionDto = new TransactionCreateDto(
+                    logDto.totalCost().negate(),
+                    "Fuel: " + vehicle.getName(),
+                    logDto.date(),
+                    TransactionType.expense,
+                    null,
+                    logDto.assetId() // Link to chosen asset
+            );
+            transactionService.createTransaction(transactionDto, userId);
+        }
 
         return toDto(savedLog);
     }

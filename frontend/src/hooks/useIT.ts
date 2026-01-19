@@ -20,7 +20,7 @@ export function useIT() {
 
   // Get default asset for domain payments
   const getDefaultAsset = useCallback(() => {
-    return assets.find(a => a.type === 'liquid_cash') || assets[0];
+    return assets.find(a => a.type === 'cash') || assets[0];
   }, [assets]);
 
   // Domain operations
