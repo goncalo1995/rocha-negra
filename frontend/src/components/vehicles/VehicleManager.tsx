@@ -13,6 +13,7 @@ import { Vehicle, MaintenanceRecord, FuelRecord, FuelType } from '@/types/vehicl
 import { formatCurrency } from '@/lib/formatters';
 import { format, differenceInDays } from 'date-fns';
 import { useFinance } from '@/hooks/useFinance';
+import { VehicleCard } from './VehicleCard';
 
 interface VehicleManagerProps {
   vehicles: Vehicle[];
@@ -85,9 +86,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
     fuelUnit: 'liters' as 'liters' | 'gallons_us' | 'gallons_uk',
     insuranceProvider: '',
     insurancePolicyNumber: '',
-    insuranceExpirationDate: '',
-    insuranceYearlyCost: '',
-    insuranceRenewalDate: '',
     notes: '',
   });
 
@@ -135,9 +133,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       fuelUnit: 'liters',
       insuranceProvider: '',
       insurancePolicyNumber: '',
-      insuranceExpirationDate: '',
-      insuranceYearlyCost: '',
-      insuranceRenewalDate: '',
       notes: '',
     });
     setEditingVehicle(null);
@@ -147,6 +142,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
     e.preventDefault();
 
     const vehicleData = {
+      assetId: fuelForm.assetId,
       name: vehicleForm.name || `${vehicleForm.make} ${vehicleForm.model} ${vehicleForm.year}`,
       make: vehicleForm.make,
       model: vehicleForm.model,
@@ -159,9 +155,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       fuelUnit: vehicleForm.fuelUnit,
       insuranceProvider: vehicleForm.insuranceProvider || undefined,
       insurancePolicyNumber: vehicleForm.insurancePolicyNumber || undefined,
-      insuranceExpirationDate: vehicleForm.insuranceExpirationDate || undefined,
-      insuranceYearlyCost: parseFloat(vehicleForm.insuranceYearlyCost) || undefined,
-      insuranceRenewalDate: vehicleForm.insuranceRenewalDate || undefined,
       notes: vehicleForm.notes || undefined,
     };
 
@@ -220,15 +213,14 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
     e.preventDefault();
 
     const quantity = parseFloat(fuelForm.quantity) || 0;
-    const pricePerUnit = parseFloat(fuelForm.pricePerUnit) || 0;
-    const totalCost = parseFloat(fuelForm.totalCost) || (quantity * pricePerUnit);
+    // const pricePerUnit = parseFloat(fuelForm.pricePerUnit) || 0;
+    const totalCost = parseFloat(fuelForm.totalCost)
 
     const fuelData = {
       vehicleId: fuelForm.vehicleId,
       date: fuelForm.date,
       quantity,
       quantityUnit: fuelForm.quantityUnit,
-      pricePerUnit,
       totalCost,
       currency: fuelForm.currency,
       mileageAtFill: parseFloat(fuelForm.mileageAtFill) || 0,
@@ -251,9 +243,9 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       date: format(new Date(), 'yyyy-MM-dd'),
       quantity: '',
       quantityUnit: (vehicles.find(v => v.id === fuelForm.vehicleId)?.fuelUnit) || 'liters',
-      pricePerUnit: '',
       totalCost: '',
       mileageAtFill: '',
+      pricePerUnit: '',
       fullTank: true,
       station: '',
       currency: 'EUR',
@@ -280,9 +272,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       fuelUnit: (vehicle).fuelUnit || 'liters',
       insuranceProvider: (vehicle).insuranceProvider || '',
       insurancePolicyNumber: vehicle.insurancePolicyNumber || '',
-      insuranceExpirationDate: vehicle.insuranceExpirationDate || '',
-      insuranceYearlyCost: vehicle.insuranceYearlyCost?.toString() || '',
-      insuranceRenewalDate: vehicle.insuranceRenewalDate || '',
       notes: vehicle.notes || '',
     });
     setIsVehicleDialogOpen(true);
@@ -313,7 +302,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       date: record.date,
       quantity: record.quantity.toString(),
       quantityUnit: record.quantityUnit,
-      pricePerUnit: record.pricePerUnit.toString(),
+      pricePerUnit: "0", //record.pricePerUnit.toString(),
       totalCost: record.totalCost.toString(),
       mileageAtFill: record.mileageAtFill.toString(),
       fullTank: record.fullTank,
@@ -324,16 +313,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       syncToFinance: record.syncToFinance ?? true,
     });
     setIsFuelDialogOpen(true);
-  };
-
-  const getInsuranceStatus = (expirationDate?: string) => {
-    if (!expirationDate) return null;
-    const days = differenceInDays(new Date(expirationDate), new Date());
-    if (days < 0) return { label: 'Expired', variant: 'destructive' as const };
-    if (days <= 30) return { label: `${days}d left`, variant: 'destructive' as const };
-    if (days <= 90) return { label: `${days}d left`, variant: 'outline' as const };
-
-    return { label: format(new Date(expirationDate), 'MMM yyyy'), variant: 'secondary' as const };
   };
 
   return (
@@ -494,36 +473,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
                         placeholder="Policy #"
                         value={vehicleForm.insurancePolicyNumber}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, insurancePolicyNumber: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="insuranceExpirationDate">Expiration</Label>
-                      <Input
-                        id="insuranceExpirationDate"
-                        type="date"
-                        value={vehicleForm.insuranceExpirationDate}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, insuranceExpirationDate: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="insuranceYearlyCost">Yearly Cost</Label>
-                      <Input
-                        id="insuranceYearlyCost"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Cost"
-                        value={vehicleForm.insuranceYearlyCost}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, insuranceYearlyCost: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="insuranceRenewalDate">Next Renewal</Label>
-                      <Input
-                        id="insuranceRenewalDate"
-                        type="date"
-                        value={vehicleForm.insuranceRenewalDate}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, insuranceRenewalDate: e.target.value }))}
                       />
                     </div>
                   </div>
@@ -858,189 +807,16 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       ) : (
         <div className="space-y-6">
           {vehicles.map((vehicle) => {
-            const vehicleMaintenanceRecords = maintenanceRecords.filter(m => m.vehicleId === vehicle.id);
-            const vehicleFuelRecords = fuelRecords.filter(f => f.vehicleId === vehicle.id);
-            const efficiency = getFuelEfficiency(vehicle.id);
-            const insuranceStatus = getInsuranceStatus(vehicle.insuranceExpirationDate);
-
-            return (
-              <Card key={vehicle.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                        <Car className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{vehicle.name}</CardTitle>
-                        <CardDescription>
-                          {vehicle.licensePlate && `${vehicle.licensePlate} • `}
-                          {vehicle.currentMileage.toLocaleString()} {vehicle.mileageUnit}
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {insuranceStatus && (
-                        <Badge variant={insuranceStatus.variant} className="gap-1">
-                          <Shield className="h-3 w-3" />
-                          {insuranceStatus.label}
-                        </Badge>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditVehicle(vehicle)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                        onClick={() => onDeleteVehicle(vehicle.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-3 mb-4">
-                    <div className="rounded-lg border p-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Fuel className="h-4 w-4" />
-                        <span>Fuel Efficiency</span>
-                      </div>
-                      <p className="mt-1 text-lg font-semibold">
-                        {efficiency !== null
-                          ? `${efficiency.toFixed(1)} ${vehicle.mileageUnit}/${vehicle.fuelType === 'electric' ? 'kWh' : 'L'}`
-                          : 'N/A'}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Wrench className="h-4 w-4" />
-                        <span>Maintenance (This Year)</span>
-                      </div>
-                      <p className="mt-1 text-lg font-semibold">
-                        {formatCurrency(
-                          vehicleMaintenanceRecords
-                            .filter(m => new Date(m.date).getFullYear() === new Date().getFullYear())
-                            .reduce((sum, m) => sum + m.cost, 0)
-                        )}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Gauge className="h-4 w-4" />
-                        <span>Fuel (This Year)</span>
-                      </div>
-                      <p className="mt-1 text-lg font-semibold">
-                        {formatCurrency(
-                          vehicleFuelRecords
-                            .filter(f => new Date(f.date).getFullYear() === new Date().getFullYear())
-                            .reduce((sum, f) => sum + f.totalCost, 0)
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  <Tabs defaultValue="maintenance" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="maintenance">
-                        Maintenance ({vehicleMaintenanceRecords.length})
-                      </TabsTrigger>
-                      <TabsTrigger value="fuel">
-                        Fuel ({vehicleFuelRecords.length})
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="maintenance" className="mt-4">
-                      {vehicleMaintenanceRecords.length === 0 ? (
-                        <p className="py-4 text-center text-sm text-muted-foreground">No maintenance records yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {vehicleMaintenanceRecords
-                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                            .slice(0, 5)
-                            .map((record) => (
-                              <div key={record.id} className="flex items-center justify-between rounded-lg border p-3">
-                                <div>
-                                  <p className="font-medium">{record.description}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {format(new Date(record.date), 'MMM d, yyyy')} • {record.mileageAtService.toLocaleString()} {vehicle.mileageUnit}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="font-medium text-destructive mr-2">-{formatCurrency(record.cost)}</span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => handleEditMaintenance(record)}
-                                  >
-                                    <Edit2 className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-destructive"
-                                    onClick={() => onDeleteMaintenanceRecord(record.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </TabsContent>
-                    <TabsContent value="fuel" className="mt-4">
-                      {vehicleFuelRecords.length === 0 ? (
-                        <p className="py-4 text-center text-sm text-muted-foreground">No fuel records yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {vehicleFuelRecords
-                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                            .slice(0, 5)
-                            .map((record) => (
-                              <div key={record.id} className="flex items-center justify-between rounded-lg border p-3">
-                                <div>
-                                  <p className="font-medium">
-                                    {record.quantity} {record.quantityUnit === 'liters' ? 'L' : 'gal'}
-                                    {record.station && ` at ${record.station}`}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {format(new Date(record.date), 'MMM d, yyyy')} • {record.mileageAtFill.toLocaleString()} {vehicle.mileageUnit}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="font-medium text-destructive mr-2">-{formatCurrency(record.totalCost)}</span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => handleEditFuel(record)}
-                                  >
-                                    <Edit2 className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-destructive"
-                                    onClick={() => onDeleteFuelRecord(record.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-            );
+            return <VehicleCard key={vehicle.id} vehicle={vehicle}
+              maintenanceRecords={maintenanceRecords.filter(m => m.vehicleId === vehicle.id)}
+              fuelRecords={fuelRecords.filter(f => f.vehicleId === vehicle.id)}
+              onDeleteVehicle={onDeleteVehicle}
+              onDeleteMaintenanceRecord={onDeleteMaintenanceRecord}
+              onDeleteFuelRecord={onDeleteFuelRecord}
+              handleEditVehicle={handleEditVehicle}
+              handleEditMaintenance={handleEditMaintenance}
+              handleEditFuel={handleEditFuel}
+            />
           })}
         </div>
       )}

@@ -4,19 +4,21 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public record FuelLogCreateDto(
-        BigDecimal quantity,
-        String quantityUnit,
-        BigDecimal pricePerUnit,
-        BigDecimal totalCost,
-        String currency,
-        Integer mileageAtFill,
+        @NotNull BigDecimal quantity,
+        @NotBlank String quantityUnit,
+        @NotNull BigDecimal totalCost,
+        @NotBlank String currency,
+        @NotNull LocalDate date,
+        @NotNull Double mileageAtFill,
         Boolean fullTank,
         String station,
         String notes,
-        LocalDate date,
-        BigDecimal normalizedQuantityLiters,
-        Double normalizedMileageKm,
-        UUID assetId,
-        Boolean syncToFinance) {
+        // --- Fields for cross-module logic ---
+        @NotNull Boolean syncToFinance,
+        UUID assetId // Required if syncToFinance is true
+) {
 }

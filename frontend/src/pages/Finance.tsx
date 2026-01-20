@@ -19,6 +19,7 @@ import {
   isBefore,
   addMonths,
   parseISO,
+  addDays,
   addWeeks,
 } from 'date-fns';
 
@@ -55,15 +56,15 @@ const Finance = () => {
     transactions.forEach(t => {
       const date = parseISO(t.date);
       if (isAfter(date, monthStart) && isBefore(date, monthEnd)) {
-        const category = categories.find(c => c.id === t.categoryId);
+        const category = categories.find(c => c.id === t.category_id);
         events.push({
           id: t.id,
           date,
           title: t.description || category?.name || 'Transaction',
-          amount: t.amount,
+          amount: t.amount_original,
           type: 'transaction',
           transactionType: t.type,
-          categoryId: t.categoryId,
+          categoryId: t.category_id,
           isPast: isBefore(date, now),
         });
       }
@@ -71,14 +72,15 @@ const Finance = () => {
 
     // Add recurring rule occurrences
     recurringRules.forEach(rule => {
-      if (!rule.isActive) return;
+      if (!rule.is_active) return;
 
-      const dueDate = parseISO(rule.nextDueDate);
+      const dueDate = parseISO(rule.next_due_date);
       let current = new Date(dueDate);
 
       // Find occurrences in the month
       while (isBefore(current, monthStart)) {
         switch (rule.frequency) {
+          case 'daily': current = addDays(current, 1); break;
           case 'weekly': current = addWeeks(current, 1); break;
           case 'monthly': current = addMonths(current, 1); break;
           case 'quarterly': current = addMonths(current, 3); break;
@@ -90,11 +92,11 @@ const Finance = () => {
         events.push({
           id: `recurring-${rule.id}`,
           date: current,
-          title: rule.name || 'Recurring',
-          amount: rule.projectedAmount,
+          title: rule.description || 'Recurring',
+          amount: rule.amount,
           type: 'recurring',
           transactionType: rule.type || 'expense',
-          categoryId: rule.categoryId,
+          categoryId: rule.category_id,
           isPast: isBefore(current, now),
         });
       }
@@ -115,18 +117,20 @@ const Finance = () => {
       let projectedExpenses = 0;
 
       recurringRules.forEach(rule => {
-        if (!rule.isActive) return;
+        if (!rule.is_active) return;
 
-        let monthlyAmount = rule.projectedAmount;
-        if (rule.frequency === 'weekly') monthlyAmount *= 4;
+        // ASSUMPTION: rule.amount is in the user's base currency.
+        let monthlyAmount = rule.amount;
+        if (rule.frequency === 'daily') monthlyAmount *= 30;
+        else if (rule.frequency === 'weekly') monthlyAmount *= 4;
         else if (rule.frequency === 'quarterly') monthlyAmount /= 3;
         else if (rule.frequency === 'yearly') monthlyAmount /= 12;
 
-        if ((rule.type || 'expense') === 'income') projectedIncome += monthlyAmount;
-        else projectedExpenses += monthlyAmount;
+        if (rule.type === 'income') projectedIncome += monthlyAmount;
+        else projectedExpenses += monthlyAmount; // It's already negative
       });
 
-      const projectedBalance = projectedIncome - projectedExpenses;
+      const projectedBalance = projectedIncome + projectedExpenses;
       cumulativeBalance += projectedBalance;
 
       result.push({

@@ -3,10 +3,13 @@ package com.rochanegra.api.finance.assets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.rochanegra.api.core.SanitizationService;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 
 @Service
@@ -14,6 +17,7 @@ import com.rochanegra.api.exception.ResourceNotFoundException;
 public class AssetService {
 
     private final AssetRepository assetRepository;
+    private final SanitizationService sanitizationService;
 
     public void updateBalance(UUID assetId, java.math.BigDecimal amount,
             com.rochanegra.api.finance.types.TransactionType type) {
@@ -31,14 +35,34 @@ public class AssetService {
         assetRepository.save(asset);
     }
 
+    public void updateAssetDetails(UUID assetId, AssetUpdateDto updateDto) {
+        Asset asset = assetRepository.findById(assetId)
+                .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
+
+        asset.setName(updateDto.name());
+        asset.setType(updateDto.type());
+        asset.setCurrency(updateDto.currency());
+        asset.setCurrentValue(updateDto.currentValue());
+        asset.setInstitution(updateDto.institution());
+        asset.setDescription(updateDto.description());
+        // asset.setCustomFields(updateDto.customFields());
+
+        assetRepository.save(asset);
+    }
+
     public AssetDto createAsset(AssetCreateDto createDto, UUID userId) {
         Asset asset = new Asset();
-        asset.setName(createDto.name());
+        // Sanitize all string inputs
+        asset.setName(sanitizationService.sanitize(createDto.name()));
+        asset.setInstitution(sanitizationService.sanitize(createDto.institution()));
+        asset.setDescription(sanitizationService.sanitize(createDto.description()));
+
+        // Sanitize the custom fields map
+        asset.setCustomFields(sanitizationService.sanitizeMap(createDto.customFields()));
+
         asset.setType(createDto.type());
-        asset.setCurrentValue(createDto.currentValue());
-        asset.setDescription(createDto.description());
-        asset.setCustomFields(createDto.customFields());
-        asset.setInstitution(createDto.institution());
+        asset.setCurrency(createDto.currency());
+        asset.setCurrentValue(createDto.initialValue());
         asset.setUserId(userId);
 
         Asset savedAsset = assetRepository.save(asset);
@@ -55,27 +79,6 @@ public class AssetService {
         Asset asset = assetRepository.findById(assetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
         return toDto(asset);
-    }
-
-    public AssetDto updateAsset(UUID assetId, AssetCreateDto updateDto) {
-        Asset asset = assetRepository.findById(assetId)
-                .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
-
-        if (updateDto.name() != null)
-            asset.setName(updateDto.name());
-        if (updateDto.type() != null)
-            asset.setType(updateDto.type());
-        if (updateDto.currentValue() != null)
-            asset.setCurrentValue(updateDto.currentValue());
-        if (updateDto.institution() != null)
-            asset.setInstitution(updateDto.institution());
-        if (updateDto.description() != null)
-            asset.setDescription(updateDto.description());
-        if (updateDto.customFields() != null)
-            asset.setCustomFields(updateDto.customFields());
-
-        Asset savedAsset = assetRepository.save(asset);
-        return toDto(savedAsset);
     }
 
     public void deleteAsset(UUID assetId) {

@@ -9,7 +9,7 @@ public record MaintenanceLogDto(
                 UUID vehicleId,
                 String type,
                 String description,
-                Integer mileageAtService,
+                Double mileageAtService,
                 BigDecimal cost,
                 String currency,
                 String serviceProvider,

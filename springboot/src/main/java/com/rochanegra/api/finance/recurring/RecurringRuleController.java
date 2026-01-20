@@ -1,6 +1,8 @@
 package com.rochanegra.api.finance.recurring;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,15 @@ public class RecurringRuleController {
 
     private final RecurringRuleService recurringRuleService;
 
+    @PostMapping
+    public ResponseEntity<RecurringRuleDto> createRecurringRule(
+            @RequestBody @Valid RecurringRuleCreateDto createDto, // Add @Valid for validation
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        RecurringRuleDto newRule = recurringRuleService.createRule(createDto, userId);
+        return new ResponseEntity<>(newRule, HttpStatus.CREATED);
+    }
+
     @GetMapping
     public ResponseEntity<List<RecurringRuleDto>> getMyRules(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
@@ -23,19 +34,15 @@ public class RecurringRuleController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<RecurringRuleDto> getRule(@PathVariable UUID id) {
-        return ResponseEntity.ok(recurringRuleService.getRecurringRule(id));
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<RecurringRuleDto> updateRule(@PathVariable UUID id,
-            @Valid @RequestBody RecurringRuleCreateDto updateDto) {
-        return ResponseEntity.ok(recurringRuleService.updateRecurringRule(id, updateDto));
+    public ResponseEntity<RecurringRuleDto> getRule(@PathVariable UUID id, Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(recurringRuleService.getRuleById(id, userId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRule(@PathVariable UUID id) {
-        recurringRuleService.deleteRecurringRule(id);
+    public ResponseEntity<Void> deleteRule(@PathVariable UUID id, Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        recurringRuleService.deleteRule(id, userId);
         return ResponseEntity.noContent().build();
     }
 }

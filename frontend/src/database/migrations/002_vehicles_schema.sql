@@ -4,25 +4,26 @@
 CREATE TABLE public.vehicles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  asset_id UUID REFERENCES public.assets(id) ON DELETE SET NULL, -- Link to the financial asset
   name TEXT NOT NULL,
   make TEXT,
   model TEXT,
   year INT,
   vin TEXT,
   license_plate TEXT,
-  fuel_type TEXT,
   current_mileage DOUBLE PRECISION,
-  mileage_unit TEXT,
-  fuel_unit TEXT,
+  mileage_unit TEXT DEFAULT 'km', -- 'km' or 'mi'
+  fuel_type TEXT,
+  fuel_unit TEXT DEFAULT 'liters', -- 'liters', 'gallons_us', 'gallons_uk'
   insurance_provider TEXT,
   insurance_policy_number TEXT,
-  insurance_expiration_date TEXT,
-  insurance_yearly_cost DECIMAL(10, 2),
-  insurance_renewal_date DATE,
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.vehicles ADD CONSTRAINT check_mileage_unit CHECK (mileage_unit IN ('km', 'mi'));
+ALTER TABLE public.vehicles ADD CONSTRAINT check_fuel_unit CHECK (fuel_unit IN ('liters', 'gallons_us', 'gallons_uk'));
 
 -- 2. Create maintenance_logs table
 CREATE TABLE public.maintenance_logs (
@@ -31,7 +32,7 @@ CREATE TABLE public.maintenance_logs (
   vehicle_id UUID REFERENCES public.vehicles(id) ON DELETE CASCADE NOT NULL,
   type TEXT NOT NULL,
   description TEXT NOT NULL,
-  mileage_at_service INT,
+  mileage_at_service DOUBLE PRECISION,
   cost DECIMAL(10, 2) NOT NULL CHECK (cost >= 0),
   currency TEXT DEFAULT 'EUR',
   service_provider TEXT,
@@ -46,19 +47,18 @@ CREATE TABLE public.fuel_logs (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   vehicle_id UUID REFERENCES public.vehicles(id) ON DELETE CASCADE NOT NULL,
   quantity DECIMAL(10, 3) NOT NULL,
-  quantity_unit TEXT,
-  price_per_unit DECIMAL(10, 3),
+  quantity_unit TEXT NOT NULL,
   total_cost DECIMAL(10, 2) NOT NULL CHECK (total_cost >= 0),
   currency TEXT DEFAULT 'EUR',
-  mileage_at_fill INT,
+  mileage_at_fill DOUBLE PRECISION,
   full_tank BOOLEAN DEFAULT FALSE,
   station TEXT,
   notes TEXT,
-  normalized_quantity_liters DECIMAL(10, 3) NOT NULL,
-  normalized_mileage_km DOUBLE PRECISION NOT NULL,
   date DATE NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.fuel_logs ADD CONSTRAINT check_fuel_log_quantity_unit CHECK (quantity_unit IN ('liters', 'gallons_us', 'gallons_uk'));
 
 -- 4. Create indexes
 CREATE INDEX idx_vehicles_user_id ON public.vehicles(user_id);

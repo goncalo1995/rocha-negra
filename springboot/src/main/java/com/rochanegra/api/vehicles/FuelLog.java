@@ -29,7 +29,7 @@ public class FuelLog {
     @Column(name = "quantity_unit")
     private String quantityUnit;
 
-    @Column(name = "price_per_unit", precision = 10, scale = 3)
+    @Transient
     private BigDecimal pricePerUnit;
 
     @Column(name = "total_cost", nullable = false, precision = 10, scale = 2)
@@ -38,7 +38,7 @@ public class FuelLog {
     private String currency;
 
     @Column(name = "mileage_at_fill")
-    private Integer mileageAtFill;
+    private Double mileageAtFill;
 
     @Column(name = "full_tank")
     private Boolean fullTank;
@@ -47,10 +47,10 @@ public class FuelLog {
 
     private String notes;
 
-    @Column(name = "normalized_quantity_liters", nullable = false, precision = 10, scale = 3)
+    @Transient
     private BigDecimal normalizedQuantityLiters;
 
-    @Column(name = "normalized_mileage_km", nullable = false)
+    @Transient
     private Double normalizedMileageKm;
 
     @Column(nullable = false)

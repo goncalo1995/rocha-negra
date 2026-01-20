@@ -4,10 +4,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record UserProfileDto(
-        UUID id,
-        UUID userId,
-        String email,
-        String fullName,
-        String currency,
-        Instant createdAt) {
+                UUID id,
+                UUID userId,
+                String email,
+                String fullName,
+                Instant createdAt) {
 }

@@ -2,15 +2,22 @@ package com.rochanegra.api.vehicles;
 
 import com.rochanegra.api.finance.transactions.TransactionCreateDto;
 import com.rochanegra.api.finance.transactions.TransactionService;
+import com.rochanegra.api.finance.types.AssetType;
 import com.rochanegra.api.finance.types.TransactionType;
+
 import com.rochanegra.api.finance.recurring.RecurringRuleCreateDto;
 import com.rochanegra.api.finance.recurring.RecurringRuleService;
+import com.rochanegra.api.finance.assets.AssetCreateDto;
+import com.rochanegra.api.finance.assets.AssetDto;
+import com.rochanegra.api.finance.assets.AssetService;
+import com.rochanegra.api.finance.categories.Category;
+import com.rochanegra.api.finance.categories.CategoryService;
 import com.rochanegra.api.finance.recurring.RecurringFrequency;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -22,14 +29,28 @@ public class VehicleService {
     private final VehicleRepository vehicleRepository;
     private final MaintenanceLogRepository maintenanceLogRepository;
     private final FuelLogRepository fuelLogRepository;
-
     private final TransactionService transactionService;
     private final RecurringRuleService recurringRuleService;
+    private final AssetService assetService;
+    private final CategoryService categoryService;
 
     @Transactional
     public VehicleDto createVehicle(VehicleCreateDto createDto, UUID userId) {
+        // Step 1: Create the financial Asset for the vehicle
+        AssetCreateDto assetDto = new AssetCreateDto(
+                createDto.name(),
+                AssetType.vehicle,
+                createDto.currency(),
+                createDto.initialValue(),
+                null,
+                "Make: " + createDto.make() + ", Model: " + createDto.model(),
+                null);
+        AssetDto savedAsset = assetService.createAsset(assetDto, userId);
+
+        // Step 2: Create the Vehicle entity, linking to the asset
         Vehicle vehicle = new Vehicle();
         vehicle.setUserId(userId);
+        vehicle.setAssetId(savedAsset.id());
         vehicle.setName(createDto.name());
         vehicle.setMake(createDto.make());
         vehicle.setModel(createDto.model());
@@ -39,45 +60,40 @@ public class VehicleService {
         vehicle.setFuelType(createDto.fuelType());
         vehicle.setCurrentMileage(createDto.currentMileage());
         vehicle.setMileageUnit(createDto.mileageUnit());
-        vehicle.setFuelUnit(createDto.fuelUnit());
         vehicle.setInsuranceProvider(createDto.insuranceProvider());
         vehicle.setInsurancePolicyNumber(createDto.insurancePolicyNumber());
-        vehicle.setInsuranceExpirationDate(createDto.insuranceExpirationDate());
-        vehicle.setInsuranceYearlyCost(createDto.insuranceYearlyCost());
-        vehicle.setInsuranceRenewalDate(createDto.insuranceRenewalDate());
         vehicle.setNotes(createDto.notes());
+
+        if (createDto.fuelUnit() == null || createDto.fuelUnit().isBlank()) {
+            vehicle.setFuelUnit("liters");
+        } else {
+            vehicle.setFuelUnit(createDto.fuelUnit());
+        }
 
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
 
-        // If insurance info is provided, create a recurring rule
-        if (createDto.insuranceYearlyCost() != null && createDto.insuranceRenewalDate() != null) {
+        // Step 3: Create associated recurring rules (This logic is now clean)
+        // Note: It's better UI/UX for the user to add these manually after creation.
+        // But if you must automate, this is how.
+        if (createDto.insuranceYearlyCost() != null &&
+                createDto.insuranceRenewalDate() != null) {
             RecurringRuleCreateDto ruleDto = new RecurringRuleCreateDto(
                     "Insurance: " + savedVehicle.getName(),
-                    createDto.insuranceYearlyCost().negate(), // Insurance is an expense
                     RecurringFrequency.yearly,
                     createDto.insuranceRenewalDate(),
-                    null, // TODO: Link to an "Insurance" category ID
-                    null // TODO: Link to the asset used for payment
+                    null, // endDate
+                    createDto.insuranceYearlyCost().negate(), // amount
+                    createDto.currency(),
+                    TransactionType.expense,
+                    null, // categoryId
+                    null, // destinationAssetId
+                    createDto.assetId() // The asset to pay FROM
             );
-            recurringRuleService.createRecurringRule(ruleDto, userId);
+            recurringRuleService.createRule(ruleDto, userId);
         }
 
-        // Add inspection recurring rule (annual) if year is provided or insurance info
-        // exists
-        if (savedVehicle.getYear() != null || createDto.insuranceRenewalDate() != null) {
-            LocalDate inspectionDate = createDto.insuranceRenewalDate() != null
-                    ? createDto.insuranceRenewalDate().plusMonths(6)
-                    : LocalDate.now().plusYears(1);
-
-            RecurringRuleCreateDto inspectionRuleDto = new RecurringRuleCreateDto(
-                    "Inspection: " + savedVehicle.getName(),
-                    BigDecimal.ZERO,
-                    RecurringFrequency.yearly,
-                    inspectionDate,
-                    null,
-                    null);
-            recurringRuleService.createRecurringRule(inspectionRuleDto, userId);
-        }
+        // Removed automatic inspection rule - this is better handled by the user in the
+        // UI.
 
         return toDto(savedVehicle);
     }
@@ -121,14 +137,27 @@ public class VehicleService {
         }
 
         // Create transaction only if syncToFinance is true
+        // Create transaction only if syncToFinance is true
         if (Boolean.TRUE.equals(logDto.syncToFinance())) {
+            if (logDto.assetId() == null) {
+                throw new IllegalArgumentException("assetId is required when syncToFinance is true");
+            }
+            // Find the default "Car Maintenance" category for this user.
+            UUID maintenanceCategoryId = categoryService.findCategoryByName(userId, "Car Maintenance")
+                    .map(Category::getId) // Get the ID if found
+                    .orElse(null); // Otherwise, it remains null
+
             TransactionCreateDto transactionDto = new TransactionCreateDto(
                     logDto.cost().negate(),
+                    logDto.currency(),
                     "Maintenance (" + logDto.type() + "): " + vehicle.getName(),
                     logDto.date(),
                     TransactionType.expense,
-                    null, // TODO: Link to a "Vehicle Maintenance" category ID
-                    logDto.assetId() // Link to chosen asset
+                    maintenanceCategoryId, // Link to chosen category
+                    logDto.assetId(), // Link to chosen asset
+                    null, // destinationAssetId
+                    null, // attachmentUrl
+                    null // customFields
             );
             transactionService.createTransaction(transactionDto, userId);
         }
@@ -145,7 +174,6 @@ public class VehicleService {
         newLog.setVehicleId(vehicleId);
         newLog.setQuantity(logDto.quantity());
         newLog.setQuantityUnit(logDto.quantityUnit());
-        newLog.setPricePerUnit(logDto.pricePerUnit());
         newLog.setTotalCost(logDto.totalCost());
         newLog.setCurrency(logDto.currency());
         newLog.setMileageAtFill(logDto.mileageAtFill());
@@ -170,7 +198,8 @@ public class VehicleService {
                 normalizedQuantity = quantity;
                 break;
         }
-        newLog.setNormalizedQuantityLiters(normalizedQuantity.setScale(3, java.math.RoundingMode.HALF_UP));
+        newLog.setNormalizedQuantityLiters(normalizedQuantity.setScale(3,
+                java.math.RoundingMode.HALF_UP));
 
         double normalizedMileage = logDto.mileageAtFill() != null ? logDto.mileageAtFill().doubleValue() : 0.0;
         if ("mi".equalsIgnoreCase(vehicle.getMileageUnit())) {
@@ -191,11 +220,15 @@ public class VehicleService {
         if (Boolean.TRUE.equals(logDto.syncToFinance())) {
             TransactionCreateDto transactionDto = new TransactionCreateDto(
                     logDto.totalCost().negate(),
+                    logDto.currency(),
                     "Fuel: " + vehicle.getName(),
                     logDto.date(),
                     TransactionType.expense,
-                    null,
-                    logDto.assetId() // Link to chosen asset
+                    null, // 5. categoryId
+                    logDto.assetId(), // 6. assetId
+                    null, // 7. destinationAssetId
+                    null, // 8. attachmentUrl
+                    null // 9. customFields
             );
             transactionService.createTransaction(transactionDto, userId);
         }
@@ -231,12 +264,6 @@ public class VehicleService {
             vehicle.setInsuranceProvider(updateDto.insuranceProvider());
         if (updateDto.insurancePolicyNumber() != null)
             vehicle.setInsurancePolicyNumber(updateDto.insurancePolicyNumber());
-        if (updateDto.insuranceExpirationDate() != null)
-            vehicle.setInsuranceExpirationDate(updateDto.insuranceExpirationDate());
-        if (updateDto.insuranceYearlyCost() != null)
-            vehicle.setInsuranceYearlyCost(updateDto.insuranceYearlyCost());
-        if (updateDto.insuranceRenewalDate() != null)
-            vehicle.setInsuranceRenewalDate(updateDto.insuranceRenewalDate());
         if (updateDto.notes() != null)
             vehicle.setNotes(updateDto.notes());
 
@@ -337,8 +364,6 @@ public class VehicleService {
             log.setQuantity(updateDto.quantity());
         if (updateDto.quantityUnit() != null)
             log.setQuantityUnit(updateDto.quantityUnit());
-        if (updateDto.pricePerUnit() != null)
-            log.setPricePerUnit(updateDto.pricePerUnit());
         if (updateDto.totalCost() != null)
             log.setTotalCost(updateDto.totalCost());
         if (updateDto.currency() != null)
@@ -369,7 +394,8 @@ public class VehicleService {
                 normalizedQuantity = quantity;
                 break;
         }
-        log.setNormalizedQuantityLiters(normalizedQuantity.setScale(3, java.math.RoundingMode.HALF_UP));
+        log.setNormalizedQuantityLiters(normalizedQuantity.setScale(3,
+                java.math.RoundingMode.HALF_UP));
 
         double normalizedMileage = log.getMileageAtFill() != null ? log.getMileageAtFill().doubleValue() : 0.0;
         Vehicle vehicle = vehicleRepository.findById(log.getVehicleId()).orElse(null);
@@ -384,23 +410,22 @@ public class VehicleService {
     private VehicleDto toDto(Vehicle vehicle) {
         return new VehicleDto(
                 vehicle.getId(),
+                vehicle.getAssetId(),
                 vehicle.getName(),
                 vehicle.getMake(),
                 vehicle.getModel(),
                 vehicle.getYear(),
                 vehicle.getVin(),
                 vehicle.getLicensePlate(),
-                vehicle.getFuelType(),
                 vehicle.getCurrentMileage(),
                 vehicle.getMileageUnit(),
+                vehicle.getFuelType(),
                 vehicle.getFuelUnit(),
                 vehicle.getInsuranceProvider(),
                 vehicle.getInsurancePolicyNumber(),
-                vehicle.getInsuranceExpirationDate(),
-                vehicle.getInsuranceYearlyCost(),
-                vehicle.getInsuranceRenewalDate(),
                 vehicle.getNotes(),
-                vehicle.getCreatedAt());
+                vehicle.getCreatedAt(),
+                vehicle.getUpdatedAt());
     }
 
     private MaintenanceLogDto toDto(MaintenanceLog log) {
@@ -418,6 +443,18 @@ public class VehicleService {
     }
 
     private FuelLogDto toDto(FuelLog log) {
+        // 1. Calculate the normalized values
+        BigDecimal normalizedQuantity = calculateNormalizedLiters(log.getQuantity(), log.getQuantityUnit());
+
+        // Use the new helper method to get the vehicle's unit
+        String vehicleMileageUnit = getVehicleMileageUnit(log.getVehicleId());
+        Double normalizedMileage = calculateNormalizedKm(log.getMileageAtFill(), vehicleMileageUnit);
+
+        // 2. Set the transient fields (optional, but good for consistency)
+        log.setNormalizedQuantityLiters(normalizedQuantity);
+        log.setNormalizedMileageKm(normalizedMileage);
+
+        // 3. Create the DTO
         return new FuelLogDto(
                 log.getId(),
                 log.getVehicleId(),
@@ -431,7 +468,41 @@ public class VehicleService {
                 log.getStation(),
                 log.getNotes(),
                 log.getDate(),
-                log.getNormalizedQuantityLiters(),
-                log.getNormalizedMileageKm());
+                normalizedQuantity, // Pass the calculated values to the DTO
+                normalizedMileage);
+    }
+
+    // Helper methods for calculation logic
+    private String getVehicleMileageUnit(UUID vehicleId) {
+        // Fetch the vehicle from the database by its ID
+        // .orElseThrow is used to handle the case where the vehicle might not be found
+        return vehicleRepository.findById(vehicleId)
+                // .map() extracts the mileage unit from the found vehicle
+                .map(Vehicle::getMileageUnit)
+                // .orElse() provides a default value ('km') if the vehicle is not found,
+                // preventing a crash, though this case should be rare.
+                .orElse("km");
+    }
+
+    private BigDecimal calculateNormalizedLiters(BigDecimal quantity, String unit) {
+        if (quantity == null || unit == null)
+            return BigDecimal.ZERO;
+
+        // Use a RoundingMode for precision
+        return switch (unit.toLowerCase()) {
+            case "gallons_us" -> quantity.multiply(new BigDecimal("3.78541")).setScale(3, RoundingMode.HALF_UP);
+            case "gallons_uk" -> quantity.multiply(new BigDecimal("4.54609")).setScale(3, RoundingMode.HALF_UP);
+            default -> quantity.setScale(3, RoundingMode.HALF_UP); // Assumes liters
+        };
+    }
+
+    private Double calculateNormalizedKm(Double mileageAtFill, String mileageUnit) {
+        if (mileageAtFill == null || mileageUnit == null)
+            return 0.0;
+        if ("mi".equalsIgnoreCase(mileageUnit)) {
+            // No need to create a BigDecimal for simple multiplication
+            return mileageAtFill * 1.60934;
+        }
+        return mileageAtFill;
     }
 }

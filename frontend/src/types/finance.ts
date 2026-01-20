@@ -1,30 +1,20 @@
 import { Database } from './database.types';
 import { FromDb } from './utils';
 
-type AssetRow = Database['public']['Tables']['assets']['Row'];
-type CategoryRow = Database['public']['Tables']['categories']['Row'];
-type TransactionRow = Database['public']['Tables']['transactions']['Row'];
-type RecurringRuleRow = Database['public']['Tables']['recurring_rules']['Row'];
+export type Transaction = Database['public']['Tables']['transactions']['Row'];
+export type Asset = Database['public']['Tables']['assets']['Row'];
+export type Liability = Database['public']['Tables']['liabilities']['Row'];
+export type Category = Database['public']['Tables']['categories']['Row'];
+
+type RecurringGeneratorRow = Database['public']['Tables']['recurring_generators']['Row'];
 
 export type AssetType = Database['public']['Enums']['asset_type'];
+export type LiabilityType = Database['public']['Enums']['liability_type'];
 export type TransactionType = Database['public']['Enums']['transaction_type'];
 export type CategoryNature = Database['public']['Enums']['category_nature'];
 export type RecurringFrequency = Database['public']['Enums']['recurring_frequency'];
 
-export interface Asset extends FromDb<Omit<AssetRow, 'type'>> {
-  type: AssetType;
-}
-
-export interface Category extends FromDb<Omit<CategoryRow, 'type' | 'nature'>> {
-  type: 'income' | 'expense';
-  nature: CategoryNature;
-}
-
-export interface Transaction extends FromDb<Omit<TransactionRow, 'type'>> {
-  type: TransactionType;
-}
-
-export interface RecurringRule extends FromDb<Omit<RecurringRuleRow, 'frequency'>> {
+export interface RecurringGenerator extends FromDb<Omit<RecurringGeneratorRow, 'frequency'>> {
   frequency: RecurringFrequency;
   // UI-only or transient fields
   name?: string;
@@ -36,6 +26,20 @@ export interface FinanceState {
   categories: Category[];
   transactions: Transaction[];
   recurringRules: RecurringRule[];
+}
+
+// This is the type for VIEWING a recurring rule, matching the DTO
+export interface RecurringRule {
+  id: string; // UUID becomes string
+  description: string;
+  amount: number; // BigDecimal becomes number
+  currency: string;
+  type: TransactionType;
+  frequency: RecurringFrequency;
+  next_due_date: string; // Keep snake_case for consistency
+  is_active: boolean; // Keep snake_case for consistency
+  category_id: string | null;
+  asset_id: string | null;
 }
 
 export interface DashboardMetrics {

@@ -4,15 +4,21 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public record MaintenanceLogCreateDto(
-        String type,
+        @NotBlank String type,
         String description,
-        Integer mileageAtService,
-        BigDecimal cost,
-        String currency,
+        @NotNull BigDecimal cost,
+        @NotNull String currency,
+        @NotNull LocalDate date,
+        Double mileageAtService,
         String serviceProvider,
         String notes,
-        LocalDate date,
-        UUID assetId,
-        Boolean syncToFinance) {
+        String attachmentUrl,
+        // --- Fields for cross-module logic ---
+        @NotNull Boolean syncToFinance,
+        UUID assetId // Required if syncToFinance is true
+) {
 }

@@ -1,6 +1,10 @@
 package com.rochanegra.api.finance.transactions;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -40,8 +44,7 @@ public class TransactionController {
             @RequestParam(required = false) java.time.LocalDate endDate,
             @RequestParam(required = false) UUID categoryId,
             @RequestParam(required = false) UUID assetId,
-            org.springframework.data.domain.Pageable pageable) {
-
+            @PageableDefault(sort = "date", direction = Sort.Direction.DESC) Pageable pageable) {
         UUID userId = UUID.fromString(authentication.getName());
         return transactionService.getTransactions(userId, startDate, endDate, categoryId, assetId, pageable);
     }
@@ -57,7 +60,8 @@ public class TransactionController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteTransaction(@PathVariable UUID id) {
-        transactionService.deleteTransaction(id);
+    public void deleteTransaction(@PathVariable UUID id, Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        transactionService.deleteTransaction(id, userId);
     }
 }

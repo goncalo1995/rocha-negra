@@ -13,8 +13,8 @@ import java.util.UUID;
 
 @Data
 @Entity
-@Table(name = "recurring_rules")
-public class RecurringRule {
+@Table(name = "recurring_generators")
+public class RecurringGenerator {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
@@ -22,25 +22,22 @@ public class RecurringRule {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(name = "category_id")
-    private UUID categoryId;
-
-    @Column(name = "asset_id")
-    private UUID assetId;
+    @Column(nullable = false)
+    private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "recurring_frequency")
     @JdbcType(PostgreSQLEnumJdbcType.class)
     private RecurringFrequency frequency;
 
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
     @Column(name = "next_due_date", nullable = false)
     private LocalDate nextDueDate;
-
-    @Column(name = "projected_amount", nullable = false)
-    private BigDecimal projectedAmount;
-
-    @Column(nullable = false)
-    private String description;
 
     @Column(name = "is_active")
     private boolean isActive = true;

@@ -19,6 +19,9 @@ public class Vehicle {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Column(name = "asset_id", nullable = true)
+    private UUID assetId;
+
     @Column(nullable = false)
     private String name;
     private String make;
@@ -46,15 +49,6 @@ public class Vehicle {
 
     @Column(name = "insurance_policy_number")
     private String insurancePolicyNumber;
-
-    @Column(name = "insurance_expiration_date")
-    private String insuranceExpirationDate;
-
-    @Column(name = "insurance_yearly_cost")
-    private java.math.BigDecimal insuranceYearlyCost;
-
-    @Column(name = "insurance_renewal_date")
-    private java.time.LocalDate insuranceRenewalDate;
 
     private String notes;
 

@@ -23,8 +23,6 @@ public class UserProfileService {
 
         if (updateDto.fullName() != null)
             profile.setFullName(updateDto.fullName());
-        if (updateDto.currency() != null)
-            profile.setCurrency(updateDto.currency());
 
         UserProfile savedProfile = userProfileRepository.save(profile);
         return toDto(savedProfile);
@@ -34,7 +32,6 @@ public class UserProfileService {
         UserProfile profile = new UserProfile();
         profile.setId(userId);
         profile.setEmail(userId.toString() + "@placeholder.com"); // Unique placeholder
-        profile.setCurrency("EUR");
         return userProfileRepository.save(profile);
     }
 
@@ -44,7 +41,6 @@ public class UserProfileService {
                 profile.getId(), // userId is same as id
                 profile.getEmail(),
                 profile.getFullName(),
-                profile.getCurrency(),
                 profile.getCreatedAt());
     }
 }

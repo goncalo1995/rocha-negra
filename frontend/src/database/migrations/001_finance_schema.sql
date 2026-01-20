@@ -2,10 +2,12 @@
 -- Run this in the Supabase SQL Editor
 
 -- 1. Create custom types
-CREATE TYPE public.asset_type AS ENUM ('bank_account', 'cash', 'credit_card', 'investment', 'property', 'vehicle', 'jewelry', 'other');
+CREATE TYPE public.asset_type AS ENUM ('bank_account', 'cash', 'investment', 'property', 'vehicle', 'jewelry', 'other');
+CREATE TYPE public.liability_type AS ENUM ('loan', 'credit_card', 'mortgage', 'other');
 CREATE TYPE public.transaction_type AS ENUM ('income', 'expense', 'transfer');
-CREATE TYPE public.category_nature AS ENUM ('fixed', 'variable', 'savings', 'emergency');
-CREATE TYPE public.recurring_frequency AS ENUM ('weekly', 'monthly', 'quarterly', 'yearly');
+CREATE TYPE public.category_nature AS ENUM ('fixed', 'variable', 'savings', 'investment', 'emergency');
+CREATE TYPE public.recurring_frequency AS ENUM ('daily', 'weekly', 'monthly', 'quarterly', 'yearly');
+CREATE TYPE public.linkable_entity_type AS ENUM ('vehicle', 'liability', 'property', 'project');
 
 -- 2. Create profiles table (links to auth.users)
 CREATE TABLE public.profiles (
@@ -17,15 +19,30 @@ CREATE TABLE public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Create assets table
+-- 3. Create assets and liabilities table
 CREATE TABLE public.assets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,
   type public.asset_type NOT NULL,
-  current_value DECIMAL(15,2) NOT NULL DEFAULT 0,
+  current_value DECIMAL(20,8) NOT NULL DEFAULT 0, -- The native currency of this asset (EUR, USD, BTC, AAPL)
   currency TEXT NOT NULL DEFAULT 'EUR',
   institution TEXT,
+  description TEXT,
+  custom_fields JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE public.liabilities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  type public.liability_type NOT NULL,
+  currency TEXT NOT NULL,
+  initial_amount DECIMAL(15,2) NOT NULL,
+  current_balance DECIMAL(15,2) NOT NULL,
+  interest_rate DECIMAL(5,2),
   description TEXT,
   custom_fields JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -44,57 +61,108 @@ CREATE TABLE public.categories (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Create transactions table
+-- Recurring Generators (The "Template")
+CREATE TABLE public.recurring_generators (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  description TEXT NOT NULL,
+  frequency public.recurring_frequency NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  next_due_date DATE NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Transaction Templates (The "Payload" for a Generator)
+CREATE TABLE public.transaction_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  generator_id UUID REFERENCES public.recurring_generators(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  amount DECIMAL(15,2) NOT NULL,
+  currency TEXT NOT NULL,
+  description_template TEXT, -- e.g., "Payment for {month}"
+  type public.transaction_type NOT NULL,
+  category_id UUID REFERENCES public.categories(id),
+  asset_id UUID REFERENCES public.assets(id),
+  destination_asset_id UUID REFERENCES public.assets(id),
+  effective_from_date DATE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Transactions Table (Pure financial flow, with optional link to generator)
 CREATE TABLE public.transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  amount DECIMAL(15,2) NOT NULL,
+  generator_id UUID REFERENCES public.recurring_generators(id) ON DELETE SET NULL,
+
+  -- Original Amount (in the currency of the asset)
+  amount_original DECIMAL(20, 8) NOT NULL,
+  currency_original TEXT NOT NULL,
+  -- Converted to User's Base Currency
+  amount_base DECIMAL(20, 8) NOT NULL,
+  exchange_rate DECIMAL(20, 8), -- The rate used for the conversion
+
   description TEXT NOT NULL,
-  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  date DATE NOT NULL,
   type public.transaction_type NOT NULL,
-  category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
-  asset_id UUID REFERENCES public.assets(id) ON DELETE SET NULL,
-  is_recurring BOOLEAN DEFAULT FALSE,
-  recurring_rule_id UUID,
+  category_id UUID REFERENCES public.categories(id),
+  asset_id UUID REFERENCES public.assets(id),
+  destination_asset_id UUID REFERENCES public.assets(id),
   attachment_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  custom_fields JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. Create recurring_rules table
-CREATE TABLE public.recurring_rules (
+CREATE TABLE public.transaction_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  transaction_id UUID REFERENCES public.transactions(id) ON DELETE SET NULL,
-  category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
-  asset_id UUID REFERENCES public.assets(id) ON DELETE SET NULL,
-  frequency public.recurring_frequency NOT NULL,
-  next_due_date DATE NOT NULL,
-  projected_amount DECIMAL(15,2) NOT NULL,
-  description TEXT NOT NULL,
-  is_active BOOLEAN DEFAULT TRUE,
+  transaction_id UUID REFERENCES public.transactions(id) ON DELETE CASCADE NOT NULL,
+  entity_id UUID NOT NULL, -- The ID of the vehicle, liability, etc.
+  entity_type public.linkable_entity_type NOT NULL, -- The type of entity being linked
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Add foreign key for recurring_rule_id in transactions
-ALTER TABLE public.transactions 
-ADD CONSTRAINT fk_recurring_rule 
-FOREIGN KEY (recurring_rule_id) REFERENCES public.recurring_rules(id) ON DELETE SET NULL;
+CREATE TABLE public.exchange_rates (
+  id BIGSERIAL PRIMARY KEY,
+  timestamp TIMESTAMPTZ NOT NULL, -- Changed from DATE
+  base_currency TEXT NOT NULL, -- e.g., 'EUR'
+  target_currency TEXT NOT NULL, -- e.g., 'USD'
+  rate DECIMAL(20, 8) NOT NULL,
+);
 
 -- 7. Create indexes for better query performance
 CREATE INDEX idx_assets_user_id ON public.assets(user_id);
 CREATE INDEX idx_categories_user_id ON public.categories(user_id);
-CREATE INDEX idx_transactions_user_id ON public.transactions(user_id);
-CREATE INDEX idx_transactions_date ON public.transactions(date);
-CREATE INDEX idx_transactions_category ON public.transactions(category_id);
-CREATE INDEX idx_recurring_rules_user_id ON public.recurring_rules(user_id);
-CREATE INDEX idx_recurring_rules_next_due ON public.recurring_rules(next_due_date);
+
+CREATE INDEX ON public.assets (user_id);
+CREATE INDEX ON public.liabilities (user_id);
+CREATE INDEX ON public.categories (user_id);
+CREATE INDEX ON public.recurring_generators (user_id, next_due_date, is_active);
+CREATE INDEX ON public.transaction_templates (generator_id, effective_from_date);
+CREATE INDEX ON public.transactions (user_id, date DESC);
+CREATE INDEX ON public.transactions (asset_id);
+CREATE INDEX ON public.transactions (category_id);
+CREATE INDEX ON public.transaction_links (user_id, transaction_id);
+CREATE INDEX ON public.transaction_links (user_id, entity_type, entity_id);
+CREATE INDEX idx_exchange_rates_latest ON public.exchange_rates (base_currency, target_currency, timestamp DESC);
+
+-- Unique constraint to prevent duplicate links
+ALTER TABLE public.transaction_links ADD CONSTRAINT unique_transaction_entity_link UNIQUE (transaction_id, entity_id, entity_type);
+ALTER TABLE public.exchange_rates ADD CONSTRAINT unique_rate_per_day UNIQUE (timestamp, base_currency, target_currency);
 
 -- 8. Enable Row Level Security on ALL tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.liabilities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recurring_generators ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transaction_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.recurring_rules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transaction_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exchange_rates ENABLE ROW LEVEL SECURITY;
 
 -- 9. RLS Policies for profiles
 CREATE POLICY "Users can view own profile"
@@ -132,6 +200,27 @@ CREATE POLICY "Users can update own assets"
 
 CREATE POLICY "Users can delete own assets"
   ON public.assets FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can view own liabilities"
+  ON public.liabilities FOR SELECT
+  TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert own liabilities"
+  ON public.liabilities FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own liabilities"
+  ON public.liabilities FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own liabilities"
+  ON public.liabilities FOR DELETE
   TO authenticated
   USING (user_id = auth.uid());
 
@@ -179,29 +268,79 @@ CREATE POLICY "Users can delete own transactions"
   TO authenticated
   USING (user_id = auth.uid());
 
--- 13. RLS Policies for recurring_rules
-CREATE POLICY "Users can view own recurring rules"
-  ON public.recurring_rules FOR SELECT
+-- 13. RLS Policies for recurring_generators
+CREATE POLICY "Users can view own recurring generators"
+  ON public.recurring_generators FOR SELECT
   TO authenticated
   USING (user_id = auth.uid());
 
-CREATE POLICY "Users can insert own recurring rules"
-  ON public.recurring_rules FOR INSERT
+CREATE POLICY "Users can insert own recurring generators"
+  ON public.recurring_generators FOR INSERT
   TO authenticated
   WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "Users can update own recurring rules"
-  ON public.recurring_rules FOR UPDATE
+CREATE POLICY "Users can update own recurring generators"
+  ON public.recurring_generators FOR UPDATE
   TO authenticated
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "Users can delete own recurring rules"
-  ON public.recurring_rules FOR DELETE
+CREATE POLICY "Users can delete own recurring generators"
+  ON public.recurring_generators FOR DELETE
   TO authenticated
   USING (user_id = auth.uid());
 
--- 14. Create function to handle new user signup
+-- 13. RLS Policies for transaction_templates
+CREATE POLICY "Users can view own transaction_templates"
+  ON public.transaction_templates FOR SELECT
+  TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert own transaction_templates"
+  ON public.transaction_templates FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own transaction_templates"
+  ON public.transaction_templates FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own transaction_templates"
+  ON public.transaction_templates FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid());
+
+-- 14. RLS Policies for transaction_links
+CREATE POLICY "Users can view own transaction_links"
+  ON public.transaction_links FOR SELECT
+  TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert own transaction_links"
+  ON public.transaction_links FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own transaction_links"
+  ON public.transaction_links FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own transaction_links"
+  ON public.transaction_links FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid());
+
+-- 15. RLS Policies for exchange_rates
+CREATE POLICY "Nobody can update exchange_rates"
+  ON public.exchange_rates FOR ALL
+  TO authenticated
+  USING (false);
+
+-- 16. Create function to handle new user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -220,6 +359,7 @@ END;
 $$;
 
 -- 15. Create trigger for new user signup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
@@ -277,3 +417,16 @@ CREATE TRIGGER update_profiles_updated_at
 CREATE TRIGGER update_assets_updated_at
   BEFORE UPDATE ON public.assets
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER update_liabilities_updated_at
+  BEFORE UPDATE ON public.liabilities
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER update_transactions_updated_at
+  BEFORE UPDATE ON public.transactions
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER update_recurring_generators_updated_at
+  BEFORE UPDATE ON public.recurring_generators
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+

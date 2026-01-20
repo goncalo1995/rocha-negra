@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Asset, Category, Transaction, RecurringRule, DashboardMetrics } from '@/types/finance';
+import { Asset, Category, Transaction, DashboardMetrics, RecurringRule } from '@/types/finance';
 import { useCallback, useMemo } from 'react';
 
 export function useFinance() {
@@ -216,42 +216,42 @@ export function useFinance() {
       }
     }
 
-    // 3. Import Recurring Rules (using maps)
-    if (data.recurringRules) {
-      for (const rule of data.recurringRules) {
-        if (!recurringRules.find(r => r.name === rule.name)) {
-          const mappedRule = {
-            ...rule,
-            assetId: assetIdMap[rule.assetId] || rule.assetId,
-            categoryId: categoryIdMap[rule.categoryId] || rule.categoryId,
-          };
-          await addRecurringRule(mappedRule);
-        }
-      }
-    }
+    // // 3. Import Recurring Rules (using maps)
+    // if (data.recurringRules) {
+    //   for (const rule of data.recurringRules) {
+    //     if (!recurringRules.find(r => r.name === rule.name)) {
+    //       const mappedRule = {
+    //         ...rule,
+    //         assetId: assetIdMap[rule.assetId] || rule.assetId,
+    //         categoryId: categoryIdMap[rule.categoryId] || rule.categoryId,
+    //       };
+    //       await addRecurringRule(mappedRule);
+    //     }
+    //   }
+    // }
 
     // 4. Import Transactions (using maps)
-    if (data.transactions) {
-      const transactionsToImport = [];
-      for (const t of data.transactions) {
-        const alreadyExists = transactions.find(
-          existing =>
-            existing.date === t.date &&
-            existing.amount === t.amount &&
-            existing.description === t.description
-        );
-        if (!alreadyExists) {
-          transactionsToImport.push({
-            ...t,
-            assetId: assetIdMap[t.assetId] || t.assetId,
-            categoryId: categoryIdMap[t.categoryId] || t.categoryId,
-          });
-        }
-      }
-      if (transactionsToImport.length > 0) {
-        await addTransactions(transactionsToImport);
-      }
-    }
+    // if (data.transactions) {
+    //   const transactionsToImport = [];
+    //   for (const t of data.transactions) {
+    //     const alreadyExists = transactions.find(
+    //       existing =>
+    //         existing.date === t.date &&
+    //         existing.amount === t.amount &&
+    //         existing.description === t.description
+    //     );
+    //     if (!alreadyExists) {
+    //       transactionsToImport.push({
+    //         ...t,
+    //         assetId: assetIdMap[t.assetId] || t.assetId,
+    //         categoryId: categoryIdMap[t.categoryId] || t.categoryId,
+    //       });
+    //     }
+    //   }
+    //   if (transactionsToImport.length > 0) {
+    //     await addTransactions(transactionsToImport);
+    //   }
+    // }
 
     queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
     queryClient.invalidateQueries({ queryKey: ['transactions'] });

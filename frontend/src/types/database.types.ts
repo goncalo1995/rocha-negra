@@ -89,6 +89,30 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates: {
+        Row: {
+          base_currency: string
+          id: number
+          rate: number
+          target_currency: string
+          timestamp: string
+        }
+        Insert: {
+          base_currency: string
+          id?: number
+          rate: number
+          target_currency: string
+          timestamp: string
+        }
+        Update: {
+          base_currency?: string
+          id?: number
+          rate?: number
+          target_currency?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
       fuel_logs: {
         Row: {
           created_at: string | null
@@ -97,12 +121,9 @@ export type Database = {
           full_tank: boolean | null
           id: string
           mileage_at_fill: number | null
-          normalized_mileage_km: number
-          normalized_quantity_liters: number
           notes: string | null
-          price_per_unit: number | null
           quantity: number
-          quantity_unit: string | null
+          quantity_unit: string
           station: string | null
           total_cost: number
           user_id: string
@@ -115,12 +136,9 @@ export type Database = {
           full_tank?: boolean | null
           id?: string
           mileage_at_fill?: number | null
-          normalized_mileage_km: number
-          normalized_quantity_liters: number
           notes?: string | null
-          price_per_unit?: number | null
           quantity: number
-          quantity_unit?: string | null
+          quantity_unit: string
           station?: string | null
           total_cost: number
           user_id: string
@@ -133,12 +151,9 @@ export type Database = {
           full_tank?: boolean | null
           id?: string
           mileage_at_fill?: number | null
-          normalized_mileage_km?: number
-          normalized_quantity_liters?: number
           notes?: string | null
-          price_per_unit?: number | null
           quantity?: number
-          quantity_unit?: string | null
+          quantity_unit?: string
           station?: string | null
           total_cost?: number
           user_id?: string
@@ -153,6 +168,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      liabilities: {
+        Row: {
+          created_at: string | null
+          currency: string
+          current_balance: number
+          custom_fields: Json | null
+          description: string | null
+          id: string
+          initial_amount: number
+          interest_rate: number | null
+          name: string
+          type: Database["public"]["Enums"]["liability_type"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          currency: string
+          current_balance: number
+          custom_fields?: Json | null
+          description?: string | null
+          id?: string
+          initial_amount: number
+          interest_rate?: number | null
+          name: string
+          type: Database["public"]["Enums"]["liability_type"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string
+          current_balance?: number
+          custom_fields?: Json | null
+          description?: string | null
+          id?: string
+          initial_amount?: number
+          interest_rate?: number | null
+          name?: string
+          type?: Database["public"]["Enums"]["liability_type"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       maintenance_logs: {
         Row: {
@@ -197,13 +257,20 @@ export type Database = {
           user_id?: string
           vehicle_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string | null
-          currency: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -212,7 +279,6 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
-          currency?: string | null
           email?: string | null
           full_name?: string | null
           id: string
@@ -221,7 +287,6 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
-          currency?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -229,63 +294,73 @@ export type Database = {
         }
         Relationships: []
       }
-      recurring_rules: {
+      recurring_generators: {
         Row: {
-          asset_id: string | null
-          category_id: string | null
           created_at: string | null
           description: string
+          end_date: string | null
           frequency: Database["public"]["Enums"]["recurring_frequency"]
           id: string
           is_active: boolean | null
           next_due_date: string
-          projected_amount: number
-          transaction_id: string | null
+          start_date: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          asset_id?: string | null
-          category_id?: string | null
           created_at?: string | null
           description: string
+          end_date?: string | null
           frequency: Database["public"]["Enums"]["recurring_frequency"]
           id?: string
           is_active?: boolean | null
           next_due_date: string
-          projected_amount: number
-          transaction_id?: string | null
+          start_date: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          asset_id?: string | null
-          category_id?: string | null
           created_at?: string | null
           description?: string
+          end_date?: string | null
           frequency?: Database["public"]["Enums"]["recurring_frequency"]
           id?: string
           is_active?: boolean | null
           next_due_date?: string
-          projected_amount?: number
-          transaction_id?: string | null
+          start_date?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transaction_links: {
+        Row: {
+          created_at: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["linkable_entity_type"]
+          id: string
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["linkable_entity_type"]
+          id?: string
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["linkable_entity_type"]
+          id?: string
+          transaction_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "recurring_rules_asset_id_fkey"
-            columns: ["asset_id"]
-            isOneToOne: false
-            referencedRelation: "assets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recurring_rules_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recurring_rules_transaction_id_fkey"
+            foreignKeyName: "transaction_links_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
@@ -293,60 +368,139 @@ export type Database = {
           },
         ]
       }
-      transactions: {
+      transaction_templates: {
         Row: {
           amount: number
           asset_id: string | null
-          attachment_url: string | null
           category_id: string | null
           created_at: string | null
-          custom_fields: Json | null
-          date: string
-          description: string
+          currency: string
+          description_template: string | null
+          destination_asset_id: string | null
+          effective_from_date: string
+          generator_id: string
           id: string
-          is_recurring: boolean | null
-          recurring_rule_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           user_id: string
         }
         Insert: {
           amount: number
           asset_id?: string | null
-          attachment_url?: string | null
           category_id?: string | null
           created_at?: string | null
-          custom_fields?: Json | null
-          date?: string
-          description: string
+          currency: string
+          description_template?: string | null
+          destination_asset_id?: string | null
+          effective_from_date: string
+          generator_id: string
           id?: string
-          is_recurring?: boolean | null
-          recurring_rule_id?: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           user_id: string
         }
         Update: {
           amount?: number
           asset_id?: string | null
-          attachment_url?: string | null
           category_id?: string | null
           created_at?: string | null
-          custom_fields?: Json | null
-          date?: string
-          description?: string
+          currency?: string
+          description_template?: string | null
+          destination_asset_id?: string | null
+          effective_from_date?: string
+          generator_id?: string
           id?: string
-          is_recurring?: boolean | null
-          recurring_rule_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_recurring_rule"
-            columns: ["recurring_rule_id"]
+            foreignKeyName: "transaction_templates_asset_id_fkey"
+            columns: ["asset_id"]
             isOneToOne: false
-            referencedRelation: "recurring_rules"
+            referencedRelation: "assets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transaction_templates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_templates_destination_asset_id_fkey"
+            columns: ["destination_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_templates_generator_id_fkey"
+            columns: ["generator_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_generators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount_base: number
+          amount_original: number
+          asset_id: string | null
+          attachment_url: string | null
+          category_id: string | null
+          created_at: string | null
+          currency_original: string
+          custom_fields: Json | null
+          date: string
+          description: string
+          destination_asset_id: string | null
+          exchange_rate: number | null
+          generator_id: string | null
+          id: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_base: number
+          amount_original: number
+          asset_id?: string | null
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          currency_original: string
+          custom_fields?: Json | null
+          date: string
+          description: string
+          destination_asset_id?: string | null
+          exchange_rate?: number | null
+          generator_id?: string | null
+          id?: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_base?: number
+          amount_original?: number
+          asset_id?: string | null
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          currency_original?: string
+          custom_fields?: Json | null
+          date?: string
+          description?: string
+          destination_asset_id?: string | null
+          exchange_rate?: number | null
+          generator_id?: string | null
+          id?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
           {
             foreignKeyName: "transactions_asset_id_fkey"
             columns: ["asset_id"]
@@ -361,54 +515,44 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_destination_asset_id_fkey"
+            columns: ["destination_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_generator_id_fkey"
+            columns: ["generator_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_generators"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_preferences: {
         Row: {
-          currency: string
-          fuel_unit: string
-          mileage_unit: string
-          user_id: string
-        }
-        Insert: {
-          currency: string
-          fuel_unit: string
-          mileage_unit: string
-          user_id: string
-        }
-        Update: {
-          currency?: string
-          fuel_unit?: string
-          mileage_unit?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_profiles: {
-        Row: {
           created_at: string | null
-          currency: string | null
-          email: string
-          full_name: string | null
           id: string
+          preference_key: string
+          preference_value: Json
           updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
-          currency?: string | null
-          email: string
-          full_name?: string | null
-          id: string
+          id?: string
+          preference_key: string
+          preference_value: Json
           updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
-          currency?: string | null
-          email?: string
-          full_name?: string | null
           id?: string
+          preference_key?: string
+          preference_value?: Json
           updated_at?: string | null
           user_id?: string
         }
@@ -416,16 +560,14 @@ export type Database = {
       }
       vehicles: {
         Row: {
+          asset_id: string | null
           created_at: string | null
           current_mileage: number | null
           fuel_type: string | null
           fuel_unit: string | null
           id: string
-          insurance_expiration_date: string | null
           insurance_policy_number: string | null
           insurance_provider: string | null
-          insurance_renewal_date: string | null
-          insurance_yearly_cost: number | null
           license_plate: string | null
           make: string | null
           mileage_unit: string | null
@@ -438,16 +580,14 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          asset_id?: string | null
           created_at?: string | null
           current_mileage?: number | null
           fuel_type?: string | null
           fuel_unit?: string | null
           id?: string
-          insurance_expiration_date?: string | null
           insurance_policy_number?: string | null
           insurance_provider?: string | null
-          insurance_renewal_date?: string | null
-          insurance_yearly_cost?: number | null
           license_plate?: string | null
           make?: string | null
           mileage_unit?: string | null
@@ -460,16 +600,14 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          asset_id?: string | null
           created_at?: string | null
           current_mileage?: number | null
           fuel_type?: string | null
           fuel_unit?: string | null
           id?: string
-          insurance_expiration_date?: string | null
           insurance_policy_number?: string | null
           insurance_provider?: string | null
-          insurance_renewal_date?: string | null
-          insurance_yearly_cost?: number | null
           license_plate?: string | null
           make?: string | null
           mileage_unit?: string | null
@@ -481,7 +619,15 @@ export type Database = {
           vin?: string | null
           year?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -509,9 +655,16 @@ export type Database = {
         | "property"
         | "jewelry"
         | "vehicle"
-      category_nature: "fixed" | "variable" | "savings" | "emergency"
+      category_nature: "fixed" | "variable" | "savings" | "investment"
       categorynature: "emergency" | "fixed" | "savings" | "variable"
-      recurring_frequency: "weekly" | "monthly" | "yearly" | "quarterly"
+      liability_type: "loan" | "credit_card" | "mortgage" | "other"
+      linkable_entity_type: "vehicle" | "liability" | "property" | "project"
+      recurring_frequency:
+        | "daily"
+        | "weekly"
+        | "monthly"
+        | "quarterly"
+        | "yearly"
       recurringfrequency: "monthly" | "weekly" | "yearly"
       transaction_type: "income" | "expense" | "transfer"
       transactiontype: "expense" | "income" | "transfer"
@@ -662,9 +815,17 @@ export const Constants = {
         "jewelry",
         "vehicle",
       ],
-      category_nature: ["fixed", "variable", "savings", "emergency"],
+      category_nature: ["fixed", "variable", "savings", "investment"],
       categorynature: ["emergency", "fixed", "savings", "variable"],
-      recurring_frequency: ["weekly", "monthly", "yearly", "quarterly"],
+      liability_type: ["loan", "credit_card", "mortgage", "other"],
+      linkable_entity_type: ["vehicle", "liability", "property", "project"],
+      recurring_frequency: [
+        "daily",
+        "weekly",
+        "monthly",
+        "quarterly",
+        "yearly",
+      ],
       recurringfrequency: ["monthly", "weekly", "yearly"],
       transaction_type: ["income", "expense", "transfer"],
       transactiontype: ["expense", "income", "transfer"],

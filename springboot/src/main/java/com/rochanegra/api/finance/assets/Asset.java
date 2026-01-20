@@ -36,6 +36,9 @@ public class Asset {
     @Column(name = "current_value", nullable = false)
     private BigDecimal currentValue;
 
+    @Column(nullable = false)
+    private String currency;
+
     @Column(columnDefinition = "TEXT")
     private String institution; // e.g., "Chase", "Fidelity"
 

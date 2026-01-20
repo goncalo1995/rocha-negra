@@ -32,10 +32,11 @@ public class AssetController {
         return assetService.getAsset(id);
     }
 
-    @PatchMapping("/{id}")
-    public AssetDto updateAsset(@PathVariable UUID id, @Valid @RequestBody AssetCreateDto updateDto) {
-        return assetService.updateAsset(id, updateDto);
-    }
+    // @PatchMapping("/{id}")
+    // public AssetDto updateAsset(@PathVariable UUID id, @Valid @RequestBody
+    // AssetCreateDto updateDto) {
+    // return assetService.updateAsset(id, updateDto);
+    // }
 
     @DeleteMapping("/{id}")
     public void deleteAsset(@PathVariable UUID id) {

@@ -30,7 +30,7 @@ public class MaintenanceLog {
     private String description;
 
     @Column(name = "mileage_at_service")
-    private Integer mileageAtService;
+    private Double mileageAtService;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal cost;

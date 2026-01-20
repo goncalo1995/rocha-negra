@@ -22,18 +22,37 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
+    // --- DEFINE THE PUBLIC URLS ---
+    private static final String[] PUBLIC_URLS = {
+            "/", // The root path
+            "/error", // Spring's default error page
+            // --- SWAGGER UI ---
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/webjars/**"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/v1/**").authenticated() // Secure our API
-                        .anyRequest().permitAll() // Allow health checks, etc.
-                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PUBLIC_URLS).permitAll() // <-- PERMIT all public URLs
+                        .requestMatchers("/api/v1/**").authenticated() // Secure our API
+                        .anyRequest().denyAll() // Deny all other requests
+                )
+                .formLogin(form -> form.disable())
+                .httpBasic(httpBasic -> httpBasic.disable())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // You can still configure the entry point for more customized 401 errors
+        // .exceptionHandling(exceptions ->
+        // exceptions.authenticationEntryPoint(customAuthEntryPoint)
+        // );
 
         return http.build();
     }

@@ -150,10 +150,10 @@ const Home = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
           {modules.map((module) => {
             const Icon = module.icon;
-            
+
             if (!module.enabled) {
               return (
-                <Card 
+                <Card
                   key={module.id}
                   className="relative overflow-hidden border-dashed opacity-50 transition-opacity hover:opacity-70"
                 >
@@ -206,7 +206,7 @@ const Home = () => {
             <div className="flex items-center gap-3">
               <ChartLine className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Active recurring rules:</span>
-              <span className="font-semibold">{recurringRules.filter(r => r.isActive).length}</span>
+              <span className="font-semibold">{recurringRules.filter(r => r.is_active).length}</span>
             </div>
             <Link to="/finance" className="text-sm text-primary hover:underline">
               View all →

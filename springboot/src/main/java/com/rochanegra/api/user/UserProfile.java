@@ -26,9 +26,6 @@ public class UserProfile {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @Column(name = "currency", length = 3)
-    private String currency = "EUR";
-
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

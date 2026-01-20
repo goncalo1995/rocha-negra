@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
 
 interface AssetManagerProps {
   assets: Asset[];
-  onAddAsset: (asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => void;
+  onAddAsset: (asset: Omit<Asset, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => void;
   onUpdateAsset: (id: string, updates: Partial<Asset>) => void;
   onDeleteAsset: (id: string) => void;
 }
@@ -57,7 +57,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
   // Form state
   const [name, setName] = useState('');
   const [type, setType] = useState<AssetType>('cash');
-  const [currentValue, setCurrentValue] = useState('');
+  const [initialValue, setInitialValue] = useState('');
   const [description, setDescription] = useState('');
 
   const isLiability = type === 'credit_card';
@@ -65,7 +65,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
   const resetForm = () => {
     setName('');
     setType('cash');
-    setCurrentValue('');
+    setInitialValue('');
     setDescription('');
     setEditingAsset(null);
   };
@@ -73,25 +73,25 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const value = parseFloat(currentValue);
+    const value = parseFloat(initialValue);
     if (isNaN(value)) return;
 
     if (editingAsset) {
       onUpdateAsset(editingAsset.id, {
         name,
         type,
-        currentValue: isLiability ? -Math.abs(value) : value,
+        current_value: isLiability ? -Math.abs(value) : value,
         description,
       });
     } else {
       onAddAsset({
         name,
         type,
-        currentValue: isLiability ? -Math.abs(value) : value,
+        current_value: isLiability ? -Math.abs(value) : value,
         currency: 'EUR',
         description,
         institution: '',
-        customFields: {},
+        custom_fields: {},
       });
     }
 
@@ -103,7 +103,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
     setEditingAsset(asset);
     setName(asset.name);
     setType(asset.type);
-    setCurrentValue(Math.abs(asset.currentValue).toString());
+    setInitialValue(Math.abs(asset.current_value).toString());
     setDescription(asset.description || '');
     setIsAddDialogOpen(true);
   };
@@ -116,7 +116,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
 
   const totalsByType = (Object.keys(assetTypeConfig) as AssetType[]).map(type => ({
     type,
-    total: (groupedAssets[type] || []).reduce((sum, a) => sum + a.currentValue, 0),
+    total: (groupedAssets[type] || []).reduce((sum, a) => sum + a.current_value, 0),
     count: (groupedAssets[type] || []).length,
   }));
 
@@ -175,18 +175,18 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="value">Current Value (€)</Label>
-                <Input
-                  id="value"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={currentValue}
-                  onChange={(e) => setCurrentValue(e.target.value)}
-                  required
-                />
-              </div>
+              <Label htmlFor="value">
+                {editingAsset ? 'Current Value (€)' : 'Initial Value (€)'}
+              </Label>
+              <Input
+                id="value"
+                type="number"
+                step="0.01"
+                placeholder="1000.00"
+                value={initialValue} // Use the new state variable
+                onChange={(e) => setInitialValue(e.target.value)}
+                required
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description (optional)</Label>
@@ -264,12 +264,12 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{asset.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Updated {formatDate(asset.updatedAt)}
+                        Updated {formatDate(asset.updated_at)}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className={cn('font-semibold', isLiability ? 'text-destructive' : 'text-foreground')}>
-                        {formatCurrency(asset.currentValue)}
+                        {formatCurrency(asset.current_value)}
                       </p>
                       <Badge variant="outline" className="text-xs">
                         {config.label}

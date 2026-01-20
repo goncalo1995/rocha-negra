@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -69,6 +70,10 @@ public class CategoryService {
                 throw new ResourceNotFoundException("Category not found or access denied");
             }
         });
+    }
+
+    public Optional<Category> findCategoryByName(UUID userId, String name) {
+        return categoryRepository.findByUserIdAndNameIgnoreCase(userId, name);
     }
 
     private CategoryDto toDto(Category category) {
