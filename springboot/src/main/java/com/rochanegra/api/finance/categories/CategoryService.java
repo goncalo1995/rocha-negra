@@ -72,8 +72,8 @@ public class CategoryService {
         });
     }
 
-    public Optional<Category> findCategoryByName(UUID userId, String name) {
-        return categoryRepository.findByUserIdAndNameIgnoreCase(userId, name);
+    public Optional<Category> findCategoryBySystemKey(UUID userId, String systemKey) {
+        return categoryRepository.findByUserIdAndSystemKey(userId, systemKey);
     }
 
     private CategoryDto toDto(Category category) {

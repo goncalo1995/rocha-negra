@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.rochanegra.api.core.PageDto;
+
 import jakarta.validation.Valid;
 import java.util.UUID;
 
@@ -38,7 +40,7 @@ public class TransactionController {
     }
 
     @GetMapping
-    public org.springframework.data.domain.Page<TransactionDto> getTransactions(
+    public ResponseEntity<PageDto<TransactionDto>> getTransactions(
             Authentication authentication,
             @RequestParam(required = false) java.time.LocalDate startDate,
             @RequestParam(required = false) java.time.LocalDate endDate,
@@ -46,7 +48,9 @@ public class TransactionController {
             @RequestParam(required = false) UUID assetId,
             @PageableDefault(sort = "date", direction = Sort.Direction.DESC) Pageable pageable) {
         UUID userId = UUID.fromString(authentication.getName());
-        return transactionService.getTransactions(userId, startDate, endDate, categoryId, assetId, pageable);
+        PageDto<TransactionDto> pageDto = transactionService.getTransactions(userId, startDate, endDate, categoryId,
+                assetId, pageable);
+        return ResponseEntity.ok(pageDto);
     }
 
     @GetMapping("/{id}")
@@ -55,8 +59,10 @@ public class TransactionController {
     }
 
     @PatchMapping("/{id}")
-    public TransactionDto updateTransaction(@PathVariable UUID id, @Valid @RequestBody TransactionCreateDto updateDto) {
-        return transactionService.updateTransaction(id, updateDto);
+    public TransactionDto updateTransaction(@PathVariable UUID id, @Valid @RequestBody TransactionUpdateDto updateDto,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        return transactionService.updateTransaction(id, updateDto, userId);
     }
 
     @DeleteMapping("/{id}")

@@ -2,6 +2,7 @@ package com.rochanegra.api.finance.assets;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,33 +20,25 @@ public class AssetService {
     private final AssetRepository assetRepository;
     private final SanitizationService sanitizationService;
 
-    public void updateBalance(UUID assetId, java.math.BigDecimal amount,
-            com.rochanegra.api.finance.types.TransactionType type) {
+    @Transactional
+    public void updateAssetDetails(UUID assetId, AssetUpdateDto updateDto, UUID userId) {
         Asset asset = assetRepository.findById(assetId)
-                .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
+                .filter(a -> a.getUserId().equals(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Asset not found or access denied"));
 
-        if (type == com.rochanegra.api.finance.types.TransactionType.income) {
-            asset.setCurrentValue(asset.getCurrentValue().add(amount));
-        } else if (type == com.rochanegra.api.finance.types.TransactionType.expense) {
-            asset.setCurrentValue(asset.getCurrentValue().subtract(amount));
+        // Sanitize and update only the safe fields
+        if (updateDto.name() != null) {
+            asset.setName(sanitizationService.sanitize(updateDto.name()));
         }
-        // Transfer logic can be added here if needed, or treated as expense/income
-        // depending on context
-
-        assetRepository.save(asset);
-    }
-
-    public void updateAssetDetails(UUID assetId, AssetUpdateDto updateDto) {
-        Asset asset = assetRepository.findById(assetId)
-                .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
-
-        asset.setName(updateDto.name());
-        asset.setType(updateDto.type());
-        asset.setCurrency(updateDto.currency());
-        asset.setCurrentValue(updateDto.currentValue());
-        asset.setInstitution(updateDto.institution());
-        asset.setDescription(updateDto.description());
-        // asset.setCustomFields(updateDto.customFields());
+        if (updateDto.institution() != null) {
+            asset.setInstitution(sanitizationService.sanitize(updateDto.institution()));
+        }
+        if (updateDto.description() != null) {
+            asset.setDescription(sanitizationService.sanitize(updateDto.description()));
+        }
+        if (updateDto.customFields() != null) {
+            asset.setCustomFields(sanitizationService.sanitizeMap(updateDto.customFields()));
+        }
 
         assetRepository.save(asset);
     }
@@ -62,7 +55,7 @@ public class AssetService {
 
         asset.setType(createDto.type());
         asset.setCurrency(createDto.currency());
-        asset.setCurrentValue(createDto.initialValue());
+        asset.setQuantity(createDto.initialValue());
         asset.setUserId(userId);
 
         Asset savedAsset = assetRepository.save(asset);
@@ -90,7 +83,9 @@ public class AssetService {
                 asset.getId(),
                 asset.getName(),
                 asset.getType(),
-                asset.getCurrentValue(),
+                asset.getQuantity(),
+                asset.getBalance(),
+                asset.getCurrency(),
                 asset.getInstitution(),
                 asset.getDescription(),
                 asset.getCustomFields(),

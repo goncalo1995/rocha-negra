@@ -2,18 +2,21 @@ package com.rochanegra.api.finance.liabilities;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.rochanegra.api.exception.ResourceNotFoundException;
+import com.rochanegra.api.core.SanitizationService;
 
 @Service
 @RequiredArgsConstructor
 public class LiabilityService {
 
     private final LiabilityRepository liabilityRepository;
+    private final SanitizationService sanitizationService;
 
     // Same as the AssetService, this method modifies a balance without a
     // corresponding transaction and must be removed.
@@ -62,26 +65,26 @@ public class LiabilityService {
         return toDto(liability);
     }
 
-    public LiabilityDto updateLiability(UUID liabilityId, LiabilityCreateDto updateDto) {
+    @Transactional
+    public LiabilityDto updateLiabilityDetails(UUID liabilityId, LiabilityUpdateDto updateDto, UUID userId) {
+        // Fetch the liability and verify ownership
         Liability liability = liabilityRepository.findById(liabilityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Liability not found"));
+                .filter(l -> l.getUserId().equals(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Liability not found or access denied"));
 
-        if (updateDto.name() != null)
-            liability.setName(updateDto.name());
-        if (updateDto.type() != null)
-            liability.setType(updateDto.type());
-        if (updateDto.currency() != null)
-            liability.setCurrency(updateDto.currency());
-        if (updateDto.initialAmount() != null)
-            liability.setInitialAmount(updateDto.initialAmount());
-        if (updateDto.currentBalance() != null)
-            liability.setCurrentBalance(updateDto.currentBalance());
-        if (updateDto.interestRate() != null)
+        // Sanitize and update only the safe, editable fields
+        if (updateDto.name() != null) {
+            liability.setName(sanitizationService.sanitize(updateDto.name()));
+        }
+        if (updateDto.interestRate() != null) {
             liability.setInterestRate(updateDto.interestRate());
-        if (updateDto.description() != null)
-            liability.setDescription(updateDto.description());
-        if (updateDto.customFields() != null)
-            liability.setCustomFields(updateDto.customFields());
+        }
+        if (updateDto.description() != null) {
+            liability.setDescription(sanitizationService.sanitize(updateDto.description()));
+        }
+        if (updateDto.customFields() != null) {
+            liability.setCustomFields(sanitizationService.sanitizeMap(updateDto.customFields()));
+        }
 
         Liability savedLiability = liabilityRepository.save(liability);
         return toDto(savedLiability);

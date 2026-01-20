@@ -57,7 +57,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
   // Form state
   const [name, setName] = useState('');
   const [type, setType] = useState<AssetType>('cash');
-  const [initialValue, setInitialValue] = useState('');
+  const [currentValue, setCurrentValue] = useState('');
   const [description, setDescription] = useState('');
 
   const isLiability = type === 'credit_card';
@@ -65,7 +65,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
   const resetForm = () => {
     setName('');
     setType('cash');
-    setInitialValue('');
+    setCurrentValue('');
     setDescription('');
     setEditingAsset(null);
   };
@@ -73,7 +73,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const value = parseFloat(initialValue);
+    const value = parseFloat(currentValue);
     if (isNaN(value)) return;
 
     if (editingAsset) {
@@ -103,7 +103,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
     setEditingAsset(asset);
     setName(asset.name);
     setType(asset.type);
-    setInitialValue(Math.abs(asset.current_value).toString());
+    setCurrentValue(Math.abs(asset.current_value).toString());
     setDescription(asset.description || '');
     setIsAddDialogOpen(true);
   };
@@ -183,8 +183,8 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                 type="number"
                 step="0.01"
                 placeholder="1000.00"
-                value={initialValue} // Use the new state variable
-                onChange={(e) => setInitialValue(e.target.value)}
+                value={currentValue} // Use the new state variable
+                onChange={(e) => setCurrentValue(e.target.value)}
                 required
               />
 
@@ -263,9 +263,9 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{asset.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                      {/* <p className="text-xs text-muted-foreground">
                         Updated {formatDate(asset.updated_at)}
-                      </p>
+                      </p> */}
                     </div>
                     <div className="text-right">
                       <p className={cn('font-semibold', isLiability ? 'text-destructive' : 'text-foreground')}>

@@ -14,6 +14,12 @@ export type TransactionType = Database['public']['Enums']['transaction_type'];
 export type CategoryNature = Database['public']['Enums']['category_nature'];
 export type RecurringFrequency = Database['public']['Enums']['recurring_frequency'];
 
+export const LIQUID_ASSET_TYPES: AssetType[] = [
+  'bank_account',
+  'cash',
+  'credit_card',
+];
+
 export interface RecurringGenerator extends FromDb<Omit<RecurringGeneratorRow, 'frequency'>> {
   frequency: RecurringFrequency;
   // UI-only or transient fields
@@ -36,10 +42,23 @@ export interface RecurringRule {
   currency: string;
   type: TransactionType;
   frequency: RecurringFrequency;
-  next_due_date: string; // Keep snake_case for consistency
-  is_active: boolean; // Keep snake_case for consistency
-  category_id: string | null;
-  asset_id: string | null;
+  nextDueDate: string; // Keep snake_case for consistency
+  isActive: boolean; // Keep snake_case for consistency
+  categoryId: string | null;
+  assetId: string | null;
+}
+
+export interface RecurringRuleCreate {
+  description: string;
+  frequency: RecurringFrequency;
+  startDate: string; // 'YYYY-MM-DD'
+  endDate?: string | null;
+  amount: number;
+  currency: string;
+  type: TransactionType;
+  categoryId: string | null;
+  assetId: string | null;
+  destinationAssetId?: string | null;
 }
 
 export interface DashboardMetrics {
@@ -72,4 +91,19 @@ export interface CalendarEvent {
   transactionType?: TransactionType;
   categoryId?: string;
   isPast: boolean;
+}
+
+export interface FuelLogCreateDto {
+  quantity: number;
+  quantityUnit: string;
+  totalCost: number;
+  currency: string;
+  date: string;
+  mileageAtFill: number;
+  fullTank: boolean;
+  station: string;
+  notes: string;
+  // --- Fields for cross-module logic ---
+  syncToFinance: boolean;
+  assetId: string; // Required if syncToFinance is true        
 }

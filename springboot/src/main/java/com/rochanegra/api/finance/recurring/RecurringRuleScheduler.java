@@ -81,7 +81,7 @@ public class RecurringRuleScheduler {
 
             // Find the correct financial template for this specific occurrence date
             TransactionTemplate activeTemplate = templateRepository
-                    .findActiveTemplateForGenerator(generator.getId(), nextDateToProcess)
+                    .findRelevantTemplateForGenerator(generator.getId(), nextDateToProcess)
                     .orElse(null);
 
             if (activeTemplate == null) {

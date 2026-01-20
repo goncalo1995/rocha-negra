@@ -7,13 +7,15 @@ import java.util.Map;
 import java.util.UUID;
 
 public record AssetDto(
-        UUID id,
-        String name,
-        AssetType type,
-        BigDecimal currentValue,
-        String institution,
-        String description,
-        Map<String, Object> customFields,
-        Instant createdAt,
-        Instant updatedAt) {
+                UUID id,
+                String name,
+                AssetType type,
+                BigDecimal quantity,
+                BigDecimal balance,
+                String currency,
+                String institution,
+                String description,
+                Map<String, Object> customFields,
+                Instant createdAt,
+                Instant updatedAt) {
 }

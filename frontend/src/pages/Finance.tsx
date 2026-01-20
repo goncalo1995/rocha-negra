@@ -72,9 +72,9 @@ const Finance = () => {
 
     // Add recurring rule occurrences
     recurringRules.forEach(rule => {
-      if (!rule.is_active) return;
+      if (!rule.isActive) return;
 
-      const dueDate = parseISO(rule.next_due_date);
+      const dueDate = parseISO(rule.nextDueDate);
       let current = new Date(dueDate);
 
       // Find occurrences in the month
@@ -96,7 +96,7 @@ const Finance = () => {
           amount: rule.amount,
           type: 'recurring',
           transactionType: rule.type || 'expense',
-          categoryId: rule.category_id,
+          categoryId: rule.categoryId,
           isPast: isBefore(current, now),
         });
       }
@@ -117,7 +117,7 @@ const Finance = () => {
       let projectedExpenses = 0;
 
       recurringRules.forEach(rule => {
-        if (!rule.is_active) return;
+        if (!rule.isActive) return;
 
         // ASSUMPTION: rule.amount is in the user's base currency.
         let monthlyAmount = rule.amount;
@@ -234,6 +234,7 @@ const Finance = () => {
               recurringRules={recurringRules}
               categories={categories}
               assets={assets}
+              baseCurrency={"EUR"}
               onAddRule={addRecurringRule}
               onUpdateRule={updateRecurringRule}
               onDeleteRule={deleteRecurringRule}

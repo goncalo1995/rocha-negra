@@ -10,7 +10,7 @@ public record AssetCreateDto(
                 @NotBlank String name,
                 @NotNull AssetType type,
                 @NotBlank String currency, // The native currency of this asset (e.g., "USD", "EUR", "BTC")
-                @NotNull BigDecimal initialValue, // The initial value in its native currency
+                BigDecimal initialValue, // The current value in its native currency
                 String institution,
                 String description,
                 Map<String, Object> customFields) {

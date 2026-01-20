@@ -23,6 +23,9 @@ public class Category {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Column(name = "system_key", nullable = false)
+    private String systemKey;
+
     @Column(nullable = false)
     private String name;
 

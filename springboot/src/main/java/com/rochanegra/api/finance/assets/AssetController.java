@@ -1,6 +1,8 @@
 package com.rochanegra.api.finance.assets;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -32,11 +34,15 @@ public class AssetController {
         return assetService.getAsset(id);
     }
 
-    // @PatchMapping("/{id}")
-    // public AssetDto updateAsset(@PathVariable UUID id, @Valid @RequestBody
-    // AssetCreateDto updateDto) {
-    // return assetService.updateAsset(id, updateDto);
-    // }
+    @PatchMapping("/{assetId}")
+    public ResponseEntity<AssetDto> updateAsset(
+            @PathVariable UUID assetId,
+            @RequestBody @Valid AssetUpdateDto updateDto, // Use the new, safe DTO
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        assetService.updateAssetDetails(assetId, updateDto, userId);
+        return ResponseEntity.ok().build();
+    }
 
     @DeleteMapping("/{id}")
     public void deleteAsset(@PathVariable UUID id) {

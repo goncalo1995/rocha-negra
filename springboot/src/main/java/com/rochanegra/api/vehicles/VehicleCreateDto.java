@@ -4,12 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import jakarta.validation.constraints.NotNull;
-
 // DTO for creating a new vehicle
 public record VehicleCreateDto(
                 String name,
-                @NotNull BigDecimal initialValue, // The market value of the car when adding it
+                BigDecimal initialValue, // The market value of the car when adding it
                 String currency,
                 String make,
                 String model,

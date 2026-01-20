@@ -10,6 +10,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.rochanegra.api.exception.ResourceNotFoundException;
+import com.rochanegra.api.finance.recurring.dto.GeneratorUpdateDto;
+import com.rochanegra.api.finance.recurring.dto.TemplateCreateDto;
 
 @Service
 @RequiredArgsConstructor
@@ -58,11 +60,10 @@ public class RecurringRuleService {
 
         return generators.stream().map(generator -> {
             // For each generator, we must find its currently active template
-            TransactionTemplate activeTemplate = templateRepository
-                    .findActiveTemplateForGenerator(generator.getId(), today)
-                    .orElse(null); // Handle case where there might be no active template
-
-            return toDto(generator, activeTemplate);
+            TransactionTemplate relevantTemplate = templateRepository
+                    .findRelevantTemplateForGenerator(generator.getId(), today)
+                    .orElse(null);
+            return toDto(generator, relevantTemplate);
         }).collect(Collectors.toList());
     }
 
@@ -74,11 +75,11 @@ public class RecurringRuleService {
                 .filter(g -> g.getUserId().equals(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("Recurring rule not found"));
 
-        TransactionTemplate activeTemplate = templateRepository
-                .findActiveTemplateForGenerator(generator.getId(), LocalDate.now())
+        TransactionTemplate relevantTemplate = templateRepository
+                .findRelevantTemplateForGenerator(generator.getId(), LocalDate.now())
                 .orElse(null);
 
-        return toDto(generator, activeTemplate);
+        return toDto(generator, relevantTemplate);
     }
 
     /**
@@ -93,6 +94,47 @@ public class RecurringRuleService {
         generatorRepository.delete(generator);
     }
 
+    @Transactional
+    public RecurringRuleDto updateGeneratorDetails(UUID generatorId, GeneratorUpdateDto updateDto, UUID userId) {
+        RecurringGenerator generator = generatorRepository.findByIdAndUserId(generatorId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Generator not found"));
+
+        // Update only the generator's own fields
+        if (updateDto.description() != null)
+            generator.setDescription(updateDto.description());
+        if (updateDto.frequency() != null)
+            generator.setFrequency(updateDto.frequency());
+        if (updateDto.isActive() != null)
+            generator.setActive(updateDto.isActive());
+        if (updateDto.startDate() != null)
+            generator.setStartDate(updateDto.startDate());
+        if (updateDto.endDate() != null)
+            generator.setEndDate(updateDto.endDate());
+
+        RecurringGenerator savedGenerator = generatorRepository.save(generator);
+        return toDto(savedGenerator,
+                templateRepository.findRelevantTemplateForGenerator(generatorId, LocalDate.now()).orElse(null));
+    }
+
+    @Transactional
+    public RecurringRuleDto addNewTemplate(UUID generatorId, TemplateCreateDto templateDto, UUID userId) {
+        RecurringGenerator generator = generatorRepository.findByIdAndUserId(generatorId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Generator not found"));
+
+        // Create a NEW template, linked to the existing generator
+        TransactionTemplate newTemplate = new TransactionTemplate();
+        newTemplate.setGeneratorId(generator.getId());
+        newTemplate.setUserId(userId);
+        newTemplate.setAmount(templateDto.amount());
+        newTemplate.setCurrency(templateDto.currency());
+        newTemplate.setEffectiveFromDate(templateDto.effectiveFromDate());
+        newTemplate.setCategoryId(templateDto.categoryId());
+        newTemplate.setAssetId(templateDto.assetId());
+        newTemplate.setType(templateDto.type());
+
+        TransactionTemplate savedTemplate = templateRepository.save(newTemplate);
+        return toDto(generator, savedTemplate);
+    }
     // --- HELPER METHODS ---
 
     /**

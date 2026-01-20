@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -17,5 +18,7 @@ public interface RecurringGeneratorRepository extends JpaRepository<RecurringGen
 
     // This method is needed by getRulesForUser
     List<RecurringGenerator> findByUserId(UUID userId);
+
+    Optional<RecurringGenerator> findByIdAndUserId(UUID generatorId, UUID userId);
 
 }

@@ -143,9 +143,9 @@ public class VehicleService {
                 throw new IllegalArgumentException("assetId is required when syncToFinance is true");
             }
             // Find the default "Car Maintenance" category for this user.
-            UUID maintenanceCategoryId = categoryService.findCategoryByName(userId, "Car Maintenance")
-                    .map(Category::getId) // Get the ID if found
-                    .orElse(null); // Otherwise, it remains null
+            UUID maintenanceCategoryId = categoryService.findCategoryBySystemKey(userId, "CAT_CAR_MAINTENANCE")
+                    .map(Category::getId)
+                    .orElse(null);
 
             TransactionCreateDto transactionDto = new TransactionCreateDto(
                     logDto.cost().negate(),
@@ -218,6 +218,11 @@ public class VehicleService {
 
         // Create transaction only if syncToFinance is true
         if (Boolean.TRUE.equals(logDto.syncToFinance())) {
+            if (logDto.assetId() == null) {
+                // Throw a specific exception that the GlobalExceptionHandler can turn into a
+                // 400 Bad Request
+                throw new IllegalArgumentException("assetId is required when syncToFinance is true.");
+            }
             TransactionCreateDto transactionDto = new TransactionCreateDto(
                     logDto.totalCost().negate(),
                     logDto.currency(),

@@ -14,6 +14,7 @@ import { formatCurrency } from '@/lib/formatters';
 import { format, differenceInDays } from 'date-fns';
 import { useFinance } from '@/hooks/useFinance';
 import { VehicleCard } from './VehicleCard';
+import { AddFuelDialog } from './AddFuelDialog';
 
 interface VehicleManagerProps {
   vehicles: Vehicle[];
@@ -67,6 +68,8 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isFuelDialogOpen, setIsFuelDialogOpen] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [editingMaintenanceLog, setEditingMaintenanceLog] = useState<MaintenanceRecord | null>(null);
   const [editingFuelLog, setEditingFuelLog] = useState<FuelRecord | null>(null);
@@ -312,6 +315,11 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       assetId: record.assetId || '',
       syncToFinance: record.syncToFinance ?? true,
     });
+    setIsFuelDialogOpen(true);
+  };
+
+  const openFuelDialogForVehicle = (vehicleId: string) => {
+    setSelectedVehicleId(vehicleId);
     setIsFuelDialogOpen(true);
   };
 
@@ -808,6 +816,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
         <div className="space-y-6">
           {vehicles.map((vehicle) => {
             return <VehicleCard key={vehicle.id} vehicle={vehicle}
+              baseCurrency={"EUR"}
               maintenanceRecords={maintenanceRecords.filter(m => m.vehicleId === vehicle.id)}
               fuelRecords={fuelRecords.filter(f => f.vehicleId === vehicle.id)}
               onDeleteVehicle={onDeleteVehicle}
@@ -820,6 +829,15 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
           })}
         </div>
       )}
+
+      {/* <AddFuelDialog
+        isOpen={isFuelDialogOpen}
+        onOpenChange={setIsFuelDialogOpen}
+        vehicles={vehicles}
+        assets={assets}
+        defaultVehicleId={selectedVehicleId}
+        onAddFuelLog={addFuelLog}
+      /> */}
     </div>
   );
 };

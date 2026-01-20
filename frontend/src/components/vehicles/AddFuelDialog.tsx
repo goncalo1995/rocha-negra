@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Vehicle } from '@/types/vehicles';
-import { Asset } from '@/types/finance';
+import { Asset, LIQUID_ASSET_TYPES, FuelLogCreateDto, AssetType } from '@/types/finance';
+import { Switch } from '../ui/switch';
 
 interface AddFuelDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     vehicles: Vehicle[];
     assets: Asset[];
-    //   onAddFuelLog: (logData: FuelLogCreateDto) => void;
+    defaultVehicleId?: string | null;
+    onAddFuelLog: (logData: FuelLogCreateDto) => void;
 }
 
 const initialFormState = {
@@ -51,6 +53,11 @@ export function AddFuelDialog({ isOpen, onOpenChange, vehicles, assets }: AddFue
             }
         }
     }, [form.quantity, form.pricePerUnit, form.totalCost, lastEdited]);
+
+    // Memoize the filtered list for performance
+    const liquidAssets = useMemo(() => {
+        return assets.filter(asset => LIQUID_ASSET_TYPES.includes(asset.type));
+    }, [assets]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -131,6 +138,34 @@ export function AddFuelDialog({ isOpen, onOpenChange, vehicles, assets }: AddFue
                     </div>
 
                     {/* ... other fields like Full Tank, Station, Sync to Finance ... */}
+                    <div className="border-t pt-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="fuel-sync">Sync to Finance</Label>
+                            <Switch
+                                id="fuel-sync"
+                                checked={form.syncToFinance}
+                                onCheckedChange={(checked) => setForm(prev => ({ ...prev, syncToFinance: checked }))}
+                            />
+                        </div>
+                        {form.syncToFinance && (
+                            <div>
+                                <Label htmlFor="fuel-asset">Account / Asset</Label>
+                                <Select
+                                    value={form.assetId}
+                                    onValueChange={(value) => setForm(prev => ({ ...prev, assetId: value }))}
+                                >
+                                    <SelectTrigger id="fuel-asset">
+                                        <SelectValue placeholder="Select account" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {assets.map(asset => (
+                                            <SelectItem key={asset.id} value={asset.id}>{asset.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex justify-end gap-2">
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

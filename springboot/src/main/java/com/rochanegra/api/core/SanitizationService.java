@@ -1,6 +1,5 @@
 package com.rochanegra.api.core;
 
-import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import org.owasp.html.Sanitizers;
 import org.springframework.stereotype.Service;

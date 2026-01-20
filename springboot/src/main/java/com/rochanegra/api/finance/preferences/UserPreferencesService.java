@@ -32,4 +32,23 @@ public class UserPreferencesService {
         return "EUR";
     }
 
+    public String getMeasurementSystem(UUID userId) {
+        // Query the repository for the specific preference key
+        UserPreference measurementPref = userPreferencesRepository
+                .findByUserIdAndPreferenceKey(userId, "measurement_system")
+                // If not found, we must return a default value.
+                .orElse(null);
+
+        if (measurementPref != null) {
+            // The value is stored as JSONB. We need to parse it.
+            // Assuming it's stored as a simple string like "\"metric\""
+            String measurementJson = measurementPref.getPreferenceValue().toString();
+            // Remove quotes from the JSON string
+            return measurementJson.replace("\"", "");
+        }
+
+        // Return a system-wide default if the user hasn't set one
+        return "metric";
+    }
+
 }

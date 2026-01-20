@@ -7,12 +7,8 @@ import java.util.UUID;
 import com.rochanegra.api.finance.types.AssetType;
 
 public record AssetUpdateDto(
-        UUID id,
-        String name,
-        AssetType type,
-        String currency,
-        BigDecimal currentValue,
-        String institution,
-        String description,
-        Map<String, String> customFields) {
+                String name,
+                String institution,
+                String description,
+                Map<String, Object> customFields) {
 }

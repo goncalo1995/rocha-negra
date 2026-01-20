@@ -1,6 +1,8 @@
 package com.rochanegra.api.finance.liabilities;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -33,9 +35,14 @@ public class LiabilityController {
         return liabilityService.getLiability(id);
     }
 
-    @PatchMapping("/{id}")
-    public LiabilityDto updateLiability(@PathVariable UUID id, @Valid @RequestBody LiabilityCreateDto updateDto) {
-        return liabilityService.updateLiability(id, updateDto);
+    @PatchMapping("/{liabilityId}")
+    public ResponseEntity<LiabilityDto> updateLiability(
+            @PathVariable UUID liabilityId,
+            @RequestBody @Valid LiabilityUpdateDto updateDto,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        LiabilityDto updatedLiability = liabilityService.updateLiabilityDetails(liabilityId, updateDto, userId);
+        return ResponseEntity.ok(updatedLiability);
     }
 
     @DeleteMapping("/{id}")

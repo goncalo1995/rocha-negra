@@ -33,8 +33,11 @@ public class Asset {
     @JdbcType(PostgreSQLEnumJdbcType.class)
     private AssetType type;
 
-    @Column(name = "current_value", nullable = false)
-    private BigDecimal currentValue;
+    @Column(precision = 20, scale = 8)
+    private BigDecimal quantity;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal balance;
 
     @Column(nullable = false)
     private String currency;

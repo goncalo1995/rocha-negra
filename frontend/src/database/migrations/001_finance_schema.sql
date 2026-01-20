@@ -2,7 +2,7 @@
 -- Run this in the Supabase SQL Editor
 
 -- 1. Create custom types
-CREATE TYPE public.asset_type AS ENUM ('bank_account', 'cash', 'investment', 'property', 'vehicle', 'jewelry', 'other');
+CREATE TYPE public.asset_type AS ENUM ('bank_account', 'cash', 'investment', 'crypto', 'stock', 'property', 'vehicle', 'jewelry', 'other');
 CREATE TYPE public.liability_type AS ENUM ('loan', 'credit_card', 'mortgage', 'other');
 CREATE TYPE public.transaction_type AS ENUM ('income', 'expense', 'transfer');
 CREATE TYPE public.category_nature AS ENUM ('fixed', 'variable', 'savings', 'investment', 'emergency');
@@ -25,8 +25,14 @@ CREATE TABLE public.assets (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,
   type public.asset_type NOT NULL,
-  current_value DECIMAL(20,8) NOT NULL DEFAULT 0, -- The native currency of this asset (EUR, USD, BTC, AAPL)
+
+  -- For unit-based assets (crypto, stocks)
   currency TEXT NOT NULL DEFAULT 'EUR',
+  quantity DECIMAL(20,8), -- The number of units held (e.g., 0.003)
+  -- For currency-based assets (bank accounts, cash)
+  -- The 'currency' column above will hold 'EUR', 'USD', etc.
+  balance DECIMAL(15, 2), -- The amount of money in the account
+
   institution TEXT,
   description TEXT,
   custom_fields JSONB,
@@ -53,12 +59,14 @@ CREATE TABLE public.liabilities (
 CREATE TABLE public.categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  system_key TEXT, -- e.g., 'CAT_FUEL', 'CAT_SALARY', 'CAT_MAINTENANCE'
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
   nature public.category_nature NOT NULL,
   icon_slug TEXT NOT NULL DEFAULT 'circle',
   color TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT unique_system_key_per_user UNIQUE (user_id, system_key)
 );
 
 -- Recurring Generators (The "Template")
@@ -372,23 +380,23 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.categories (user_id, name, type, nature, icon_slug, color) VALUES
-    (NEW.id, 'Salary', 'income', 'fixed', 'wallet', '#10b981'),
-    (NEW.id, 'Freelance', 'income', 'variable', 'briefcase', '#06b6d4'),
-    (NEW.id, 'Investments', 'income', 'variable', 'trending-up', '#8b5cf6'),
-    (NEW.id, 'Housing', 'expense', 'fixed', 'home', '#f59e0b'),
-    (NEW.id, 'Insurance', 'expense', 'fixed', 'shield', '#6366f1'),
-    (NEW.id, 'Utilities', 'expense', 'fixed', 'zap', '#ec4899'),
-    (NEW.id, 'Car Maintenance', 'expense', 'variable', 'car', '#ef4444'),
-    (NEW.id, 'Fuel', 'expense', 'variable', 'fuel', '#f97316'),
-    (NEW.id, 'Groceries', 'expense', 'variable', 'shopping-cart', '#84cc16'),
-    (NEW.id, 'Dining Out', 'expense', 'variable', 'utensils', '#14b8a6'),
-    (NEW.id, 'Friends & Social', 'expense', 'variable', 'users', '#a855f7'),
-    (NEW.id, 'Entertainment', 'expense', 'variable', 'tv', '#f43f5e'),
-    (NEW.id, 'Healthcare', 'expense', 'variable', 'heart-pulse', '#22c55e'),
-    (NEW.id, 'Shopping', 'expense', 'variable', 'shopping-bag', '#3b82f6'),
-    (NEW.id, 'Emergency Fund', 'expense', 'emergency', 'alert-triangle', '#eab308'),
-    (NEW.id, 'Savings', 'expense', 'savings', 'piggy-bank', '#10b981');
+  INSERT INTO public.categories (user_id, system_key, name, type, nature, icon_slug, color) VALUES
+    (NEW.id, 'CAT_SALARY', 'Salary', 'income', 'fixed', 'wallet', '#10b981'),
+    (NEW.id, 'CAT_FREELANCE', 'Freelance', 'income', 'variable', 'briefcase', '#06b6d4'),
+    (NEW.id, 'CAT_INVESTMENTS', 'Investments', 'income', 'variable', 'trending-up', '#8b5cf6'),
+    (NEW.id, 'CAT_HOUSING', 'Housing', 'expense', 'fixed', 'home', '#f59e0b'),
+    (NEW.id, 'CAT_INSURANCE', 'Insurance', 'expense', 'fixed', 'shield', '#6366f1'),
+    (NEW.id, 'CAT_UTILITIES', 'Utilities', 'expense', 'fixed', 'zap', '#ec4899'),
+    (NEW.id, 'CAT_CAR_MAINTENANCE', 'Car Maintenance', 'expense', 'variable', 'car', '#ef4444'),
+    (NEW.id, 'CAT_FUEL', 'Fuel', 'expense', 'variable', 'fuel', '#f97316'),
+    (NEW.id, 'CAT_GROCERIES', 'Groceries', 'expense', 'variable', 'shopping-cart', '#84cc16'),
+    (NEW.id, 'CAT_DINING_OUT', 'Dining Out', 'expense', 'variable', 'utensils', '#14b8a6'),
+    (NEW.id, 'CAT_FRIENDS_SOCIAL', 'Friends & Social', 'expense', 'variable', 'users', '#a855f7'),
+    (NEW.id, 'CAT_ENTERTAINMENT', 'Entertainment', 'expense', 'variable', 'tv', '#f43f5e'),
+    (NEW.id, 'CAT_HEALTHCARE', 'Healthcare', 'expense', 'variable', 'heart-pulse', '#22c55e'),
+    (NEW.id, 'CAT_SHOPPING', 'Shopping', 'expense', 'variable', 'shopping-bag', '#3b82f6'),
+    (NEW.id, 'CAT_EMERGENCY_FUND', 'Emergency Fund', 'expense', 'emergency', 'alert-triangle', '#eab308'),
+    (NEW.id, 'CAT_SAVINGS', 'Savings', 'expense', 'savings', 'piggy-bank', '#10b981');
   RETURN NEW;
 END;
 $$;

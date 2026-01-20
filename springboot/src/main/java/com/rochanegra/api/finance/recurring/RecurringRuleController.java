@@ -6,6 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import com.rochanegra.api.finance.recurring.dto.GeneratorUpdateDto;
+import com.rochanegra.api.finance.recurring.dto.TemplateCreateDto;
+
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -44,5 +48,40 @@ public class RecurringRuleController {
         UUID userId = UUID.fromString(authentication.getName());
         recurringRuleService.deleteRule(id, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    // @PatchMapping("/{ruleId}")
+    // public ResponseEntity<RecurringRuleDto> updateRecurringRule(
+    // @PathVariable UUID ruleId,
+    // @RequestBody @Valid RecurringRuleUpdateDto updateDto,
+    // Authentication authentication) {
+    // UUID userId = UUID.fromString(authentication.getName());
+    // RecurringRuleDto updatedRule = recurringRuleService.updateRule(ruleId,
+    // updateDto, userId);
+    // return ResponseEntity.ok(updatedRule);
+    // }
+
+    /**
+     * Endpoint for simple updates to the generator itself (description, frequency,
+     * etc.)
+     */
+    @PatchMapping("/{generatorId}")
+    public ResponseEntity<RecurringRuleDto> updateGeneratorDetails(
+            @PathVariable UUID generatorId,
+            @RequestBody GeneratorUpdateDto updateDto,
+            Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.ok(recurringRuleService.updateGeneratorDetails(generatorId, updateDto, userId));
+    }
+
+    /** Endpoint to change the financial details by creating a NEW template. */
+    @PostMapping("/{generatorId}/templates")
+    public ResponseEntity<RecurringRuleDto> addNewTemplate(
+            @PathVariable UUID generatorId,
+            @RequestBody TemplateCreateDto templateDto,
+            Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(recurringRuleService.addNewTemplate(generatorId, templateDto, userId));
     }
 }
