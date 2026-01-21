@@ -8,10 +8,10 @@ export const cvData = {
         imageUrl: "https://files.rochanegra.com/cv/image-cv.jpeg", // Place your image in the `public` folder
         profile: `I am deeply passionate about developing technological solutions that streamline everyday tasks and enhance efficiency. With a strong focus on problem-solving, I aim to create systems that simplify complex processes and improve user experiences. I have a particular interest in chatbots and automation, and by combining my technical expertise with a keen understanding of user needs, I strive to build intuitive, scalable solutions that drive both productivity and ease of use.`,
         contacts: [
-            { type: 'email', value: 'your.email@example.com', href: 'mailto:your.email@example.com' },
-            { type: 'phone', value: '+351 123 456 789', href: 'tel:+351123456789' },
-            { type: 'linkedin', value: 'linkedin.com/in/yourprofile', href: 'https://linkedin.com/in/yourprofile' },
-            { type: 'github', value: 'github.com/yourusername', href: 'https://github.com/yourusername' },
+            { type: 'email', value: 'cerejagoncalo@gmail.com', href: 'mailto:cerejagoncalo@gmail.com' },
+            { type: 'phone', value: '+351 910 399 266', href: 'tel:+351910399266' },
+            { type: 'linkedin', value: 'linkedin.com/in/gonçalo-pereira', href: 'https://linkedin.com/in/gonçalo-pereira' },
+            { type: 'github', value: 'github.com/goncalo1995', href: 'https://github.com/goncalo1995' },
         ]
     },
     sections: [
