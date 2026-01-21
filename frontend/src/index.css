@@ -22,7 +22,7 @@
     --secondary-foreground: 0 0% 95%;
 
     --muted: 220 10% 15%;
-    --muted-foreground: 220 10% 60%;
+    --muted-foreground: 220 10% 40%;
 
     --accent: 152 60% 45%;
     --accent-foreground: 0 0% 98%;
@@ -147,7 +147,14 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

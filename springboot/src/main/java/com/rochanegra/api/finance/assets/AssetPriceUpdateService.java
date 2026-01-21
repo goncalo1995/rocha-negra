@@ -26,11 +26,12 @@ public class AssetPriceUpdateService {
     private static final String COINGECKO_API_URL = "https://api.coingecko.com/api/v3/simple/price";
 
     /**
-     * This method runs automatically every hour.
+     * This method runs automatically every day.
      * You can change the schedule using cron expressions or fixed rates.
-     * "fixedRate = 3600000" means 1 hour in milliseconds.
+     * "fixedRate = 86400000" means 1 day in milliseconds.
+     * hourly gets rate limited on coin gecko without api token
      */
-    @Scheduled(fixedRate = 3600000, initialDelay = 60000) // Run 1 minute after startup, then every hour
+    @Scheduled(fixedRate = 86400000, initialDelay = 60000) // Run 1 minute after startup, then every day
     @Transactional
     public void updateMarketAssetPrices() {
         log.info("Starting scheduled job: Update Market Asset Prices...");

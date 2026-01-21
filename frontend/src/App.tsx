@@ -10,6 +10,9 @@ import IT from "./pages/IT";
 import Vehicles from "./pages/Vehicles";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import { CVPage } from "./pages/CVPage";
+import { SkillsPage } from "./pages/SkillsPage";
+import { PortfolioPage } from "./pages/PortfolioPage";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +71,11 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            <Route path="/cv" element={<CVPage />} />
+            <Route path="/cv/skills" element={<SkillsPage />} />
+            <Route path="/cv/portfolio" element={<PortfolioPage />} />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
