@@ -26,7 +26,7 @@ public class SecurityConfig {
         private static final String[] CORS_URLS = {
                         "http://localhost:8080", // Local development
                         "http://localhost:8081", // Local development
-                        "http://rochanegra-dev.vercel.app", // Development environment
+                        "https://rochanegra-dev.vercel.app", // Development environment
                         "https://dev.rochanegra.com" // Development environment
         };
 
