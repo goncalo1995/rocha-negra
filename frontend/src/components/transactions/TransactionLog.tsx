@@ -87,10 +87,10 @@ export function TransactionLog({
   const startEdit = (t: Transaction) => {
     setEditingTransaction(t);
     setEditForm({
-      amount: t.amount_original.toString(),
+      amount: t.amountOriginal.toString(),
       description: t.description,
-      categoryId: t.category_id,
-      assetId: t.asset_id,
+      categoryId: t.categoryId,
+      assetId: t.assetId,
       date: t.date.split('T')[0],
     });
   };
@@ -100,10 +100,10 @@ export function TransactionLog({
     if (!editingTransaction || !onUpdateTransaction) return;
 
     onUpdateTransaction(editingTransaction.id, {
-      amount_original: parseFloat(editForm.amount),
+      amountOriginal: parseFloat(editForm.amount),
       description: editForm.description,
-      category_id: editForm.categoryId,
-      asset_id: editForm.assetId,
+      categoryId: editForm.categoryId,
+      assetId: editForm.assetId,
       date: editForm.date,
     });
     setEditingTransaction(null);
@@ -139,7 +139,7 @@ export function TransactionLog({
         // Search filter
         if (searchQuery) {
           const searchLower = searchQuery.toLowerCase();
-          const category = categories.find(c => c.id === t.category_id);
+          const category = categories.find(c => c.id === t.categoryId);
           const matchesSearch =
             t.description.toLowerCase().includes(searchLower) ||
             category?.name.toLowerCase().includes(searchLower);
@@ -158,11 +158,11 @@ export function TransactionLog({
         if (typeFilter !== 'all' && t.type !== typeFilter) return false;
 
         // Category filter
-        if (categoryFilter !== 'all' && t.category_id !== categoryFilter) return false;
+        if (categoryFilter !== 'all' && t.categoryId !== categoryFilter) return false;
 
         // Nature filter
         if (natureFilter !== 'all') {
-          const category = categories.find(c => c.id === t.category_id);
+          const category = categories.find(c => c.id === t.categoryId);
           if (category?.nature !== natureFilter) return false;
         }
 
@@ -394,8 +394,8 @@ export function TransactionLog({
           ) : (
             <div className="space-y-2">
               {filteredTransactions.map((transaction) => {
-                const category = categories.find(c => c.id === transaction.category_id);
-                const asset = assets.find(a => a.id === transaction.asset_id);
+                const category = categories.find(c => c.id === transaction.categoryId);
+                const asset = assets.find(a => a.id === transaction.assetId);
                 const Icon = getTransactionIcon(transaction.type);
                 const colorClass = getTransactionColor(transaction.type);
 
@@ -419,7 +419,7 @@ export function TransactionLog({
                             {category.nature === 'fixed' ? 'Need' : category.nature === 'variable' ? 'Want' : 'Save'}
                           </Badge>
                         )}
-                        {transaction.generator_id && (
+                        {transaction.generatorId && (
                           <Badge variant="outline" className="text-xs shrink-0">
                             Recurring
                           </Badge>
@@ -438,7 +438,7 @@ export function TransactionLog({
                       <div>
                         <p className={cn('font-semibold', colorClass)}>
                           {transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : ''}
-                          {formatCurrency(transaction.amount_original)}
+                          {formatCurrency(transaction.amountOriginal || transaction.amountBase, transaction.currencyOriginal || "EUR")}
                         </p>
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

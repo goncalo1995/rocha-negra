@@ -18,25 +18,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Transaction, Category, Asset, TransactionType, RecurringRule, RecurringFrequency } from '@/types/finance';
+import { Transaction, Category, Asset, TransactionType, RecurringRule, RecurringFrequency, TransactionCreateDto } from '@/types/finance';
 import { Plus, ArrowDownLeft, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { addMonths, addWeeks, addQuarters, addYears, setDate } from 'date-fns';
+import { addMonths, addWeeks, addQuarters, addYears, setDate, addDays } from 'date-fns';
 
 interface QuickAddButtonProps {
   categories: Category[];
   assets: Asset[];
-  onAddTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  onAddTransaction: (transaction: TransactionCreateDto) => void;
   onAddRecurringRule?: (rule: Omit<RecurringRule, 'id'>) => void;
 }
 
 function getNextDueDate(frequency: RecurringFrequency, dayOfMonth: number): string {
   const now = new Date();
   let nextDate = setDate(now, dayOfMonth);
-  
+
   // If the day has passed this period, move to next period
   if (nextDate <= now) {
     switch (frequency) {
+      case 'daily':
+        nextDate = addDays(nextDate, 1);
+        break;
       case 'weekly':
         nextDate = addWeeks(nextDate, 1);
         break;
@@ -51,7 +54,7 @@ function getNextDueDate(frequency: RecurringFrequency, dayOfMonth: number): stri
         break;
     }
   }
-  
+
   return nextDate.toISOString();
 }
 
@@ -60,8 +63,10 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [currency, setCurrency] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [assetId, setAssetId] = useState('');
+  const [destinationAssetId, setDestinationAssetId] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
   const [dayOfMonth, setDayOfMonth] = useState('1');
@@ -79,7 +84,7 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const parsedAmount = parseFloat(amount);
     const parsedDayOfMonth = parseInt(dayOfMonth) || 1;
     if (isNaN(parsedAmount) || !categoryId || !assetId) return;
@@ -87,7 +92,8 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
     // Always add the transaction
     onAddTransaction({
       type,
-      amount: parsedAmount,
+      amountOriginal: parsedAmount,
+      currencyOriginal: currency || "EUR",
       description: description || 'Quick transaction',
       date: new Date().toISOString(),
       categoryId,
@@ -95,28 +101,11 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
       isRecurring,
     });
 
-    // If recurring, also create a recurring rule
-    if (isRecurring && onAddRecurringRule) {
-      onAddRecurringRule({
-        name: description || `Recurring ${type}`,
-        categoryId,
-        assetId,
-        type,
-        frequency,
-        dayOfMonth: parsedDayOfMonth,
-        nextDueDate: getNextDueDate(frequency, parsedDayOfMonth),
-        projectedAmount: parsedAmount,
-        description: description || `Recurring ${type}`,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      });
-    }
-
     resetForm();
     setIsOpen(false);
   };
 
-  const filteredCategories = categories.filter(c => 
+  const filteredCategories = categories.filter(c =>
     type === 'income' ? c.type === 'income' : c.type === 'expense'
   );
 
@@ -126,12 +115,11 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
     { value: 'transfer' as const, label: 'Transfer', icon: ArrowLeftRight, color: 'text-muted-foreground border-muted' },
   ];
 
-  const frequencyOptions: { value: RecurringFrequency; label: string }[] = [
-    { value: 'weekly', label: 'Weekly' },
-    { value: 'monthly', label: 'Monthly' },
-    { value: 'quarterly', label: 'Quarterly' },
-    { value: 'yearly', label: 'Yearly' },
-  ];
+  const swapAssets = () => {
+    const temp = assetId;
+    setAssetId(destinationAssetId);
+    setDestinationAssetId(temp);
+  };
 
   return (
     <>
@@ -153,7 +141,7 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
               Log an expense, income, or transfer quickly.
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Transaction Type Selector */}
             <div className="flex gap-2">
@@ -194,6 +182,63 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
               />
             </div>
 
+            {/* --- NEW DYNAMIC ASSET SELECTORS --- */}
+            {type === 'transfer' ? (
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <Label>From</Label>
+                  <Select value={assetId} onValueChange={setAssetId} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assets.map((asset) => (
+                        <SelectItem key={asset.id} value={asset.id}>
+                          {asset.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button type="button" variant="ghost" size="icon" onClick={() => { swapAssets() }}>
+                  <ArrowLeftRight className="h-4 w-4" />
+                </Button>
+
+                <div className="flex-1">
+                  <Label>To</Label>
+                  <Select value={destinationAssetId} onValueChange={setDestinationAssetId} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assets.map((asset) => (
+                        <SelectItem key={asset.id} value={asset.id}>
+                          {asset.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>{type === 'income' ? 'To Account' : 'From Account'}</Label>
+                <Select value={assetId} onValueChange={setAssetId} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assets.map((asset) => (
+                      <SelectItem key={asset.id} value={asset.id}>
+                        {asset.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Category */}
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
@@ -205,23 +250,6 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
                   {filteredCategories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Asset/Account */}
-            <div className="space-y-2">
-              <Label htmlFor="asset">From Account</Label>
-              <Select value={assetId} onValueChange={setAssetId} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {assets.filter(a => a.type !== 'liability').map((asset) => (
-                    <SelectItem key={asset.id} value={asset.id}>
-                      {asset.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -242,7 +270,7 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
             </div>
 
             {/* Recurring Toggle */}
-            <div className="flex items-center justify-between rounded-lg border p-3">
+            {/* <div className="flex items-center justify-between rounded-lg border p-3">
               <div>
                 <Label htmlFor="recurring" className="font-medium">Recurring</Label>
                 <p className="text-xs text-muted-foreground">This happens regularly</p>
@@ -254,7 +282,6 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
               />
             </div>
 
-            {/* Recurring Options - Show when recurring is enabled */}
             {isRecurring && (
               <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
                 <div className="space-y-2">
@@ -284,7 +311,7 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
                   />
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Submit */}
             <div className="flex gap-2">

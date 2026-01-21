@@ -8,6 +8,7 @@ import { RecurringRule, Category, Asset, TransactionType } from '@/types/finance
 import { formatCurrency } from '@/lib/utils'; // Assuming you have these formatters
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/formatters';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 interface RecurringRulesManagerProps {
   recurringRules: RecurringRule[];
@@ -31,22 +32,44 @@ export function RecurringRulesManager({ recurringRules, categories, assets, base
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<RecurringRule | null>(null);
 
-  const { activeRules, inactiveRules, monthlyProjection } = useMemo(() => {
-    const active = recurringRules.filter(r => r.isActive);
-    const inactive = recurringRules.filter(r => !r.isActive);
+  const groupedRules = useMemo(() => {
+    const groups: Record<string, RecurringRule[]> = {
+      fixed: [],     // 'Mandatory'
+      variable: [],  // 'Variable / Nice-to-have'
+      savings: [],   // 'Savings & Investments'
+      investment: [],
+      emergency: [],
+      uncategorized: []
+    };
 
-    const projection = active.reduce((sum, rule) => {
-      // Logic to convert various frequencies to a monthly amount for projection
-      let monthlyAmount = rule.amount;
-      if (rule.frequency === 'weekly') monthlyAmount *= (52 / 12);
-      if (rule.frequency === 'daily') monthlyAmount *= 30;
-      if (rule.frequency === 'quarterly') monthlyAmount /= 3;
-      if (rule.frequency === 'yearly') monthlyAmount /= 12;
-      return sum + monthlyAmount;
-    }, 0);
+    recurringRules.forEach(rule => {
+      const category = categories.find(c => c.id === rule.categoryId);
+      const nature = category?.nature || 'uncategorized';
+      if (groups[nature]) {
+        groups[nature].push(rule);
+      } else {
+        groups.uncategorized.push(rule);
+      }
+    });
+    return groups;
+  }, [recurringRules, categories]);
 
-    return { activeRules: active, inactiveRules: inactive, monthlyProjection: projection };
-  }, [recurringRules]);
+  // const { activeRules, inactiveRules, monthlyProjection } = useMemo(() => {
+  //   const active = recurringRules.filter(r => r.isActive);
+  //   const inactive = recurringRules.filter(r => !r.isActive);
+
+  //   const projection = active.reduce((sum, rule) => {
+  //     // Logic to convert various frequencies to a monthly amount for projection
+  //     let monthlyAmount = rule.amount;
+  //     if (rule.frequency === 'weekly') monthlyAmount *= (52 / 12);
+  //     if (rule.frequency === 'daily') monthlyAmount *= 30;
+  //     if (rule.frequency === 'quarterly') monthlyAmount /= 3;
+  //     if (rule.frequency === 'yearly') monthlyAmount /= 12;
+  //     return sum + monthlyAmount;
+  //   }, 0);
+
+  //   return { activeRules: active, inactiveRules: inactive, monthlyProjection: projection };
+  // }, [recurringRules]);
 
   const handleAddClick = () => {
     setEditingRule(null);
@@ -74,7 +97,54 @@ export function RecurringRulesManager({ recurringRules, categories, assets, base
         </Button>
       </div>
 
-      <Card>
+      <Accordion type="multiple" defaultValue={['fixed', 'variable']}>
+        {Object.entries(groupedRules).map(([nature, rules]) => {
+          if (rules.length === 0) return null; // Don't show empty groups
+
+          return (
+            <AccordionItem value={nature} key={nature}>
+              <AccordionTrigger>
+                {nature.charAt(0).toUpperCase() + nature.slice(1)} ({rules.length})
+              </AccordionTrigger>
+              <AccordionContent>
+                {rules.map(rule => {
+                  const category = categories.find(c => c.id === rule.categoryId);
+                  return (
+                    // Your existing rule display card/row component goes here
+                    <div key={rule.id} className="flex items-center gap-4 py-3 border-b last:border-b-0">
+                      <div className={`p-2 rounded-lg ${rule.type === 'income' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
+                        {rule.type === 'income' ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{rule.description}</p>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          <Badge variant="outline">{frequencyLabels[rule.frequency]}</Badge>
+                          <span>•</span>
+                          <span>{category?.name || 'Uncategorized'}</span>
+                          <Calendar className="h-3 w-3" />
+                          <span>Next: {formatDate(rule.nextDueDate)}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-semibold ${rule.type === 'income' ? 'text-success' : 'text-destructive'}`}>
+                          {formatCurrency(rule.amount, rule.currency)}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => toggleActive(rule)}><Pause className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleEditClick(rule)}><Pencil className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => onDeleteRule(rule.id)}><Trash2 className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
+
+      {/* <Card>
         <CardHeader><CardTitle>Projected Monthly Net</CardTitle></CardHeader>
         <CardContent>
           <p className={`text-2xl font-bold ${monthlyProjection >= 0 ? 'text-success' : 'text-destructive'}`}>
@@ -125,14 +195,13 @@ export function RecurringRulesManager({ recurringRules, categories, assets, base
           <CardContent>
             {inactiveRules.map(rule => (
               <div key={rule.id} className="flex items-center gap-4 py-3 border-b opacity-60">
-                {/* ... display logic for inactive rules ... */}
                 <div className="flex-1"><p>{rule.description}</p></div>
                 <Button size="icon" variant="ghost" onClick={() => toggleActive(rule)}><Play className="h-4 w-4" /></Button>
               </div>
             ))}
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       <AddEditRuleDialog
         isOpen={isDialogOpen}

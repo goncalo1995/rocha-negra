@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 
 import com.rochanegra.api.core.SanitizationService;
 import com.rochanegra.api.exception.ResourceNotFoundException;
+import com.rochanegra.api.finance.types.AssetType;
 
 @Service
 @RequiredArgsConstructor
@@ -45,18 +47,31 @@ public class AssetService {
 
     public AssetDto createAsset(AssetCreateDto createDto, UUID userId) {
         Asset asset = new Asset();
+        asset.setUserId(userId);
         // Sanitize all string inputs
         asset.setName(sanitizationService.sanitize(createDto.name()));
         asset.setInstitution(sanitizationService.sanitize(createDto.institution()));
         asset.setDescription(sanitizationService.sanitize(createDto.description()));
-
-        // Sanitize the custom fields map
         asset.setCustomFields(sanitizationService.sanitizeMap(createDto.customFields()));
-
         asset.setType(createDto.type());
         asset.setCurrency(createDto.currency());
-        asset.setQuantity(createDto.initialValue());
-        asset.setUserId(userId);
+
+        // Default the value to zero if the user provides null or doesn't send the
+        // field.
+        BigDecimal value = createDto.initialValue() != null ? createDto.initialValue() : BigDecimal.ZERO;
+
+        List<AssetType> balanceBasedTypes = List.of(AssetType.bank_account, AssetType.cash, AssetType.credit_card);
+
+        if (balanceBasedTypes.contains(createDto.type())) {
+            // It's a cash-like asset, so we set its balance.
+            asset.setBalance(value);
+            asset.setQuantity(null); // Ensure the other field is null
+        } else {
+            // It's a unit-based asset (vehicle, property, stock, crypto). We set its
+            // quantity.
+            asset.setQuantity(value);
+            asset.setBalance(null); // Ensure the other field is null
+        }
 
         Asset savedAsset = assetRepository.save(asset);
         return toDto(savedAsset);

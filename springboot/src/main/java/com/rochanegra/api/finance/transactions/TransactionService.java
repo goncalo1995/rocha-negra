@@ -41,7 +41,17 @@ public class TransactionService {
     public TransactionDto createTransaction(TransactionCreateDto createDto, UUID userId) {
         // 1. Get User's Base Currency for reporting
         String baseCurrency = preferencesService.getBaseCurrency(userId);
-        TransactionType type = determineTransactionType(createDto); // (income, expense, transfer)
+        TransactionType type = createDto.type();
+
+        // Now, we VALIDATE the amount against the type.
+        // An expense should have a negative amount, income should have a positive
+        // amount.
+        // If the client sends a mismatch, we can either fix it or reject it. Fixing it
+        // is more user-friendly.
+        BigDecimal correctedAmountOriginal = createDto.amountOriginal().abs(); // Start with a positive value
+        if (type == TransactionType.expense || type == TransactionType.transfer) {
+            correctedAmountOriginal = correctedAmountOriginal.negate();
+        }
 
         // 2. Fetch the Primary Asset to understand the context
         Asset primaryAsset = assetRepository.findById(createDto.assetId())
@@ -59,7 +69,14 @@ public class TransactionService {
             // Example: Spent $10 USD (amountOriginal), rate is 0.92 EUR/USD, asset is in
             // EUR.
             // The asset's balance must change by -10.00 * 0.92 = -9.20 EUR.
-            BigDecimal balanceChange = createDto.amountOriginal().multiply(rate);
+            BigDecimal balanceChange = correctedAmountOriginal.multiply(rate);
+
+            // If it's an expense or transfer out, the change to the primary asset is
+            // negative.
+            if (type == TransactionType.expense || type == TransactionType.transfer) {
+                balanceChange = balanceChange.negate();
+            }
+
             BigDecimal currentBalance = primaryAsset.getBalance() != null ? primaryAsset.getBalance() : BigDecimal.ZERO;
             primaryAsset.setBalance(currentBalance.add(balanceChange));
         } else if (primaryAsset.getQuantity() != null) { // It's a unit-based asset (e.g., crypto)
@@ -119,14 +136,13 @@ public class TransactionService {
         Transaction transaction = new Transaction();
         transaction.setUserId(userId);
         transaction.setGeneratorId(null); // This is a manual, one-off transaction
-
+        transaction.setType(type);
         transaction.setAmountOriginal(createDto.amountOriginal());
         transaction.setCurrencyOriginal(createDto.currencyOriginal());
         transaction.setAmountBase(amountBase);
         transaction.setDescription(createDto.description());
         transaction.setExchangeRate(exchangeRate);
         transaction.setDate(createDto.date());
-        transaction.setType(type);
         transaction.setCategoryId(createDto.categoryId());
         transaction.setAssetId(createDto.assetId());
         transaction.setDestinationAssetId(createDto.destinationAssetId());
@@ -411,14 +427,6 @@ public class TransactionService {
 
             return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
-    }
-
-    private TransactionType determineTransactionType(TransactionCreateDto dto) {
-        if (dto.destinationAssetId() != null) {
-            return TransactionType.transfer;
-        }
-        // Amount can now be positive or negative from the DTO
-        return dto.amountOriginal().signum() >= 0 ? TransactionType.income : TransactionType.expense;
     }
 
     // --- PRIVATE HELPER FOR BALANCE UPDATES ---

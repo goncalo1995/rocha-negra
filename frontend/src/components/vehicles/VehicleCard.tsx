@@ -45,11 +45,11 @@ const LogList = ({ records, vehicle, currency, type, onEdit, onDelete }: any) =>
                     ) : (
                         <div>
                             <p className="font-medium">
-                                {record.quantity} {record.quantity_unit.startsWith('gallons') ? 'gal' : 'L'}
+                                {record.quantity} {record.quantity_unit?.startsWith('gallons') ? 'gal' : 'L'}
                                 {record.station && ` at ${record.station}`}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                                {format(new Date(record.date), 'MMM d, yyyy')} • {record.mileage_at_fill.toLocaleString()} {vehicle.mileage_unit}
+                                {format(new Date(record.date), 'MMM d, yyyy')} • {record.mileage_at_fill?.toLocaleString()} {vehicle.mileage_unit}
                             </p>
                         </div>
                     )}

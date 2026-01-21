@@ -99,17 +99,18 @@ public class RecurringRuleService {
         RecurringGenerator generator = generatorRepository.findByIdAndUserId(generatorId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Generator not found"));
 
+        // System.out.println("Updating generator: " + generator.toString());
         // Update only the generator's own fields
         if (updateDto.description() != null)
             generator.setDescription(updateDto.description());
-        if (updateDto.frequency() != null)
-            generator.setFrequency(updateDto.frequency());
-        if (updateDto.isActive() != null)
-            generator.setActive(updateDto.isActive());
-        if (updateDto.startDate() != null)
-            generator.setStartDate(updateDto.startDate());
-        if (updateDto.endDate() != null)
-            generator.setEndDate(updateDto.endDate());
+        // if (updateDto.frequency() != null)
+        // generator.setFrequency(updateDto.frequency());
+        // if (updateDto.isActive() != null)
+        // generator.setActive(updateDto.isActive());
+        // if (updateDto.startDate() != null)
+        // generator.setStartDate(updateDto.startDate());
+        // if (updateDto.endDate() != null)
+        // generator.setEndDate(updateDto.endDate());
 
         RecurringGenerator savedGenerator = generatorRepository.save(generator);
         return toDto(savedGenerator,

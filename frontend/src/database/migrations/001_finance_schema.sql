@@ -65,9 +65,13 @@ CREATE TABLE public.categories (
   nature public.category_nature NOT NULL,
   icon_slug TEXT NOT NULL DEFAULT 'circle',
   color TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  CONSTRAINT unique_system_key_per_user UNIQUE (user_id, system_key)
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- This creates a unique constraint that ONLY applies to non-null system keys.
+CREATE UNIQUE INDEX unique_system_key_per_user_if_not_null
+ON public.categories (user_id, system_key)
+WHERE (system_key IS NOT NULL);
 
 -- Recurring Generators (The "Template")
 CREATE TABLE public.recurring_generators (

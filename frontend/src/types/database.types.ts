@@ -16,40 +16,43 @@ export type Database = {
     Tables: {
       assets: {
         Row: {
+          balance: number | null
           created_at: string | null
           currency: string
-          current_value: number
           custom_fields: Json | null
           description: string | null
           id: string
           institution: string | null
           name: string
+          quantity: number | null
           type: Database["public"]["Enums"]["asset_type"]
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          balance?: number | null
           created_at?: string | null
-          currency?: string
-          current_value?: number
+          currency: string
           custom_fields?: Json | null
           description?: string | null
-          id?: string
+          id: string
           institution?: string | null
           name: string
+          quantity?: number | null
           type: Database["public"]["Enums"]["asset_type"]
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          balance?: number | null
           created_at?: string | null
           currency?: string
-          current_value?: number
           custom_fields?: Json | null
           description?: string | null
           id?: string
           institution?: string | null
           name?: string
+          quantity?: number | null
           type?: Database["public"]["Enums"]["asset_type"]
           updated_at?: string | null
           user_id?: string
@@ -64,6 +67,7 @@ export type Database = {
           id: string
           name: string
           nature: Database["public"]["Enums"]["category_nature"]
+          system_key: string | null
           type: string
           user_id: string
         }
@@ -74,6 +78,7 @@ export type Database = {
           id?: string
           name: string
           nature: Database["public"]["Enums"]["category_nature"]
+          system_key?: string | null
           type: string
           user_id: string
         }
@@ -84,6 +89,7 @@ export type Database = {
           id?: string
           name?: string
           nature?: Database["public"]["Enums"]["category_nature"]
+          system_key?: string | null
           type?: string
           user_id?: string
         }
@@ -646,6 +652,8 @@ export type Database = {
         | "vehicle"
         | "jewelry"
         | "other"
+        | "crypto"
+        | "stock"
       assettype:
         | "bank_account"
         | "cash"
@@ -655,7 +663,12 @@ export type Database = {
         | "property"
         | "jewelry"
         | "vehicle"
-      category_nature: "fixed" | "variable" | "savings" | "investment"
+      category_nature:
+        | "fixed"
+        | "variable"
+        | "savings"
+        | "investment"
+        | "emergency"
       categorynature: "emergency" | "fixed" | "savings" | "variable"
       liability_type: "loan" | "credit_card" | "mortgage" | "other"
       linkable_entity_type: "vehicle" | "liability" | "property" | "project"
@@ -804,6 +817,8 @@ export const Constants = {
         "vehicle",
         "jewelry",
         "other",
+        "crypto",
+        "stock",
       ],
       assettype: [
         "bank_account",
@@ -815,7 +830,13 @@ export const Constants = {
         "jewelry",
         "vehicle",
       ],
-      category_nature: ["fixed", "variable", "savings", "investment"],
+      category_nature: [
+        "fixed",
+        "variable",
+        "savings",
+        "investment",
+        "emergency",
+      ],
       categorynature: ["emergency", "fixed", "savings", "variable"],
       liability_type: ["loan", "credit_card", "mortgage", "other"],
       linkable_entity_type: ["vehicle", "liability", "property", "project"],

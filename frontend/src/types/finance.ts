@@ -1,11 +1,11 @@
 import { Database } from './database.types';
 import { FromDb } from './utils';
 
-export type Transaction = Database['public']['Tables']['transactions']['Row'];
 export type Asset = Database['public']['Tables']['assets']['Row'];
 export type Liability = Database['public']['Tables']['liabilities']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
 
+type TransactionRow = Database['public']['Tables']['transactions']['Row'];
 type RecurringGeneratorRow = Database['public']['Tables']['recurring_generators']['Row'];
 
 export type AssetType = Database['public']['Enums']['asset_type'];
@@ -19,6 +19,8 @@ export const LIQUID_ASSET_TYPES: AssetType[] = [
   'cash',
   'credit_card',
 ];
+
+export interface Transaction extends FromDb<TransactionRow> { }
 
 export interface RecurringGenerator extends FromDb<Omit<RecurringGeneratorRow, 'frequency'>> {
   frequency: RecurringFrequency;
@@ -42,6 +44,8 @@ export interface RecurringRule {
   currency: string;
   type: TransactionType;
   frequency: RecurringFrequency;
+  startDate: string;
+  endDate?: string | null;
   nextDueDate: string; // Keep snake_case for consistency
   isActive: boolean; // Keep snake_case for consistency
   categoryId: string | null;
@@ -59,6 +63,17 @@ export interface RecurringRuleCreate {
   categoryId: string | null;
   assetId: string | null;
   destinationAssetId?: string | null;
+}
+
+export interface RecurringRuleUpdateDto {
+  id: string;
+  description: string;
+  type: TransactionType;
+  frequency: RecurringFrequency;
+  startDate: string;
+  isActive: boolean;
+  categoryId: string | null;
+  assetId: string | null;
 }
 
 export interface DashboardMetrics {
@@ -91,6 +106,27 @@ export interface CalendarEvent {
   transactionType?: TransactionType;
   categoryId?: string;
   isPast: boolean;
+}
+
+export interface AssetCreateDto {
+  name: string;
+  type: AssetType;
+  currency: string;
+  initialValue: number;
+  institution: string;
+  description: string;
+  customFields: Record<string, string>;
+}
+
+export interface TransactionCreateDto {
+  type: TransactionType;
+  amountOriginal: number;
+  currencyOriginal: string;
+  description: string;
+  date: string;
+  categoryId: string;
+  assetId: string;
+  isRecurring: boolean;
 }
 
 export interface FuelLogCreateDto {

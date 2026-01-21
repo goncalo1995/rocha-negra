@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Asset, AssetType } from '@/types/finance';
+import { Asset, AssetCreateDto, AssetType } from '@/types/finance';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import {
   Plus,
@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
 
 interface AssetManagerProps {
   assets: Asset[];
-  onAddAsset: (asset: Omit<Asset, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => void;
+  onAddAsset: (asset: AssetCreateDto) => void;
   onUpdateAsset: (id: string, updates: Partial<Asset>) => void;
   onDeleteAsset: (id: string) => void;
 }
@@ -44,6 +44,8 @@ const assetTypeConfig: Record<AssetType, { label: string; icon: typeof Banknote;
   bank_account: { label: 'Bank Account', icon: Banknote, color: 'text-success' },
   credit_card: { label: 'Credit Card', icon: Banknote, color: 'text-success' },
   investment: { label: 'Investment', icon: TrendingUp, color: 'text-chart-2' },
+  crypto: { label: 'Crypto', icon: TrendingUp, color: 'text-success' },
+  stock: { label: 'Stock', icon: TrendingUp, color: 'text-success' },
   vehicle: { label: 'Vehicle', icon: Car, color: 'text-chart-3' },
   property: { label: 'Property', icon: Car, color: 'text-chart-3' },
   jewelry: { label: 'Jewelry', icon: Car, color: 'text-chart-3' },
@@ -80,18 +82,18 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
       onUpdateAsset(editingAsset.id, {
         name,
         type,
-        current_value: isLiability ? -Math.abs(value) : value,
+        // initial_value: isLiability ? -Math.abs(value) : value,
         description,
       });
     } else {
       onAddAsset({
         name,
         type,
-        current_value: isLiability ? -Math.abs(value) : value,
+        initialValue: isLiability ? -Math.abs(value) : value,
         currency: 'EUR',
         description,
         institution: '',
-        custom_fields: {},
+        customFields: {},
       });
     }
 
@@ -103,7 +105,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
     setEditingAsset(asset);
     setName(asset.name);
     setType(asset.type);
-    setCurrentValue(Math.abs(asset.current_value).toString());
+    setCurrentValue(Math.abs(asset.balance || asset.quantity || 0).toString());
     setDescription(asset.description || '');
     setIsAddDialogOpen(true);
   };
@@ -116,9 +118,24 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
 
   const totalsByType = (Object.keys(assetTypeConfig) as AssetType[]).map(type => ({
     type,
-    total: (groupedAssets[type] || []).reduce((sum, a) => sum + a.current_value, 0),
+    total: (groupedAssets[type] || []).reduce((sum, a) => sum + (a.balance || a.quantity || 0), 0),
     count: (groupedAssets[type] || []).length,
   }));
+
+  // A helper function to get the display value of an asset
+  const getAssetDisplayValue = (asset: Asset, baseCurrency: string) => {
+    if (asset.balance !== null) {
+      // It's a currency-based asset, just format the balance.
+      return formatCurrency(asset.balance, asset.currency);
+    }
+    if (asset.quantity !== null) {
+      // It's a unit-based asset. For V1, we don't have live prices,
+      // so we can't show a monetary value. We should show the quantity.
+      // In V2, you would call getLatestPrice(asset.currency) here.
+      return `${asset.quantity.toLocaleString()} ${asset.currency}`;
+    }
+    return formatCurrency(0, baseCurrency); // Fallback for assets with no value
+  };
 
   return (
     <div className="space-y-6">
@@ -269,7 +286,7 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                     </div>
                     <div className="text-right">
                       <p className={cn('font-semibold', isLiability ? 'text-destructive' : 'text-foreground')}>
-                        {formatCurrency(asset.current_value)}
+                        {getAssetDisplayValue(asset, "EUR")}
                       </p>
                       <Badge variant="outline" className="text-xs">
                         {config.label}

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { RecurringRule, RecurringRuleCreate, Category, Asset, TransactionType, RecurringFrequency, LIQUID_ASSET_TYPES } from '@/types/finance';
 import { format } from 'date-fns';
+import { RecurringRuleUpdateDto } from '@/types/finance';
 
 interface AddEditRuleDialogProps {
     isOpen: boolean;
@@ -16,7 +17,7 @@ interface AddEditRuleDialogProps {
     assets: Asset[];
     baseCurrency: string;
     onAddRule: (rule: RecurringRuleCreate) => void;
-    onUpdateRule: (id: string, updates: Partial<RecurringRule>) => void;
+    onUpdateRule: (id: string, updates: Partial<RecurringRuleUpdateDto>) => void;
 }
 
 const frequencies: RecurringFrequency[] = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
@@ -34,6 +35,7 @@ export function AddEditRuleDialog({ isOpen, onOpenChange, editingRule, categorie
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
     const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [categoryId, setCategoryId] = useState('');
     const [assetId, setAssetId] = useState('');
 
@@ -45,6 +47,7 @@ export function AddEditRuleDialog({ isOpen, onOpenChange, editingRule, categorie
                 setAmount(Math.abs(editingRule.amount).toString());
                 setFrequency(editingRule.frequency);
                 setStartDate(editingRule.nextDueDate); // Use next_due_date as a sensible default
+                setEndDate(editingRule.endDate || '');
                 setCategoryId(editingRule.categoryId || '');
                 setAssetId(editingRule.assetId || '');
             } else {
@@ -54,6 +57,7 @@ export function AddEditRuleDialog({ isOpen, onOpenChange, editingRule, categorie
                 setAmount('');
                 setFrequency('monthly');
                 setStartDate(format(new Date(), 'yyyy-MM-dd'));
+                setEndDate(format(new Date(), 'yyyy-MM-dd'));
                 setCategoryId('');
                 setAssetId('');
             }
@@ -71,15 +75,15 @@ export function AddEditRuleDialog({ isOpen, onOpenChange, editingRule, categorie
         if (editingRule) {
             // For V1, a simple description update is a safe bet.
             // A full update requires more complex backend endpoints.
-            onUpdateRule(editingRule.id, { description });
+            onUpdateRule(editingRule.id, { description, startDate, categoryId, assetId });
             toast.success("Rule description updated.");
         } else {
             const ruleData: RecurringRuleCreate = {
                 description,
                 frequency,
                 startDate,
-                endDate: null,
-                amount: type === 'expense' ? -parsedAmount : parsedAmount,
+                endDate,
+                amount: type === 'expense' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount), // Set sign based on type
                 currency: baseCurrency,
                 type,
                 categoryId: categoryId || null,
@@ -103,8 +107,10 @@ export function AddEditRuleDialog({ isOpen, onOpenChange, editingRule, categorie
                     <DialogDescription>Set up a bill, subscription, or recurring income.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                    {/* Form fields: Type toggle, Description, Amount, Start Date, Frequency, Category, Asset */}
-                    {/* This part of your old code was quite good, just needs to be adapted to the new state variables */}
+                    <div className="flex gap-2">
+                        <Button type="button" variant={type === 'expense' ? 'destructive' : 'outline'} onClick={() => setType('expense')}>Expense</Button>
+                        <Button type="button" variant={type === 'income' ? 'success' : 'outline'} onClick={() => setType('income')}>Income</Button>
+                    </div>
                     <div className="space-y-2">
                         <Label>Description</Label>
                         <Input value={description} onChange={(e) => setDescription(e.target.value)} required />
@@ -126,7 +132,27 @@ export function AddEditRuleDialog({ isOpen, onOpenChange, editingRule, categorie
                         <Label>First Payment Date</Label>
                         <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
                     </div>
+                    <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+                    </div>
                     {/* ... etc. for Category and Asset selects ... */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Category</Label>
+                            <Select value={categoryId} onValueChange={(v) => setCategoryId(v)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>{filteredCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Asset</Label>
+                            <Select value={assetId} onValueChange={(v) => setAssetId(v)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>{liquidAssets.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+                    </div>
                     <div className="flex justify-end gap-2">
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                         <Button type="submit">{editingRule ? 'Save Changes' : 'Add Rule'}</Button>

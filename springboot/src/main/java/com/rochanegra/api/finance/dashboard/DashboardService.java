@@ -82,13 +82,13 @@ public class DashboardService {
 
         BigDecimal totalNetWorth = calculateNetWorth(userId);
 
-        BigDecimal monthlyIncome = transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(userId,
+        BigDecimal monthlyIncome = transactionRepository.sumAmountBaseByUserIdAndTypeAndDateBetween(userId,
                 TransactionType.income,
                 firstDayOfMonth, lastDayOfMonth);
         if (monthlyIncome == null)
             monthlyIncome = BigDecimal.ZERO;
 
-        BigDecimal monthlyExpenses = transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(userId,
+        BigDecimal monthlyExpenses = transactionRepository.sumAmountBaseByUserIdAndTypeAndDateBetween(userId,
                 TransactionType.expense, firstDayOfMonth, lastDayOfMonth);
         if (monthlyExpenses == null)
             monthlyExpenses = BigDecimal.ZERO;
