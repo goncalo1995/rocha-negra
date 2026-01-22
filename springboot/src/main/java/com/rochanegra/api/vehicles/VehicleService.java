@@ -87,7 +87,8 @@ public class VehicleService {
                     TransactionType.expense,
                     null, // categoryId
                     null, // destinationAssetId
-                    createDto.assetId() // The asset to pay FROM
+                    createDto.assetId(), // The asset to pay FROM
+                    null // Custom fields
             );
             recurringRuleService.createRule(ruleDto, userId);
         }

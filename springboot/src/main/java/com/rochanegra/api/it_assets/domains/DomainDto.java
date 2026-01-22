@@ -9,11 +9,11 @@ import com.rochanegra.api.it_assets.domains.dto.PriceHistoryDto;
 
 public record DomainDto(
         UUID id,
-        UUID recurringGeneratorId,
         String name,
         String registrar,
         LocalDate registrationDate,
         LocalDate expirationDate,
+        String status,
         boolean autoRenew,
         String notes,
         BigDecimal currentPrice, // The most recent price

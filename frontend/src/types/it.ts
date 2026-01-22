@@ -5,6 +5,7 @@ export interface Domain {
   registrar: string | null;
   registrationDate: string; // 'YYYY-MM-DD'
   expirationDate: string;
+  status: string;
   autoRenew: boolean;
   notes: string | null;
   currentPrice: number;
@@ -24,6 +25,7 @@ export interface DomainCreate {
   registrar: string | null;
   registrationDate: string;
   expirationDate: string;
+  status: string;
   autoRenew: boolean;
   notes: string | null;
   // Financial details for creating the recurring rule
@@ -37,8 +39,12 @@ export interface DomainCreate {
 export interface DomainUpdate {
   name?: string;
   registrar?: string;
+  registrationDate?: string;
   expirationDate?: string;
+  status?: string;
   autoRenew?: boolean;
+  currentPrice?: number;
+  currency?: string;
   notes?: string;
 }
 

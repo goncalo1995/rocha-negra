@@ -12,6 +12,7 @@ const IT = () => {
     domains,
     metrics,
     addDomain,
+    addDomainsBulk,
     updateDomain,
     deleteDomain,
   } = useIT();
@@ -75,6 +76,7 @@ const IT = () => {
         <DomainManager
           domains={domains}
           onAddDomain={addDomain}
+          onAddDomainsBulk={addDomainsBulk}
           onUpdateDomain={updateDomain}
           onDeleteDomain={deleteDomain}
           baseCurrency={"EUR"}

@@ -13,12 +13,28 @@ import java.util.UUID;
 @Repository
 public interface RecurringGeneratorRepository extends JpaRepository<RecurringGenerator, UUID> {
 
-    @Query("SELECT r FROM RecurringGenerator r WHERE r.isActive = true AND r.nextDueDate <= :currentDate")
-    List<RecurringGenerator> findDueAndActive(@Param("currentDate") LocalDate currentDate);
+        @Query("SELECT r FROM RecurringGenerator r WHERE r.isActive = true AND r.nextDueDate <= :currentDate")
+        List<RecurringGenerator> findDueAndActive(@Param("currentDate") LocalDate currentDate);
 
-    // This method is needed by getRulesForUser
-    List<RecurringGenerator> findByUserId(UUID userId);
+        List<RecurringGenerator> findByUserId(UUID userId);
 
-    Optional<RecurringGenerator> findByIdAndUserId(UUID generatorId, UUID userId);
+        Optional<RecurringGenerator> findByIdAndUserId(UUID generatorId, UUID userId);
 
+        @Query(value = """
+                        SELECT * FROM recurring_generators rg
+                        WHERE rg.custom_fields ->> :key = :value
+                        LIMIT 1
+                        """, nativeQuery = true)
+        Optional<RecurringGenerator> findByCustomField(
+                        @Param("key") String key,
+                        @Param("value") String value);
+
+        // If you sometimes want multiple matches:
+        @Query(value = """
+                        SELECT * FROM recurring_generators rg
+                        WHERE rg.custom_fields ->> :key = :value
+                        """, nativeQuery = true)
+        List<RecurringGenerator> findAllByCustomField(
+                        @Param("key") String key,
+                        @Param("value") String value);
 }

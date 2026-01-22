@@ -4,11 +4,15 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
-import java.math.BigDecimal;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
+
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -42,7 +46,16 @@ public class RecurringGenerator {
     @Column(name = "is_active")
     private boolean isActive = true;
 
+    @Type(JsonType.class)
+    @Column(name = "custom_fields", columnDefinition = "jsonb")
+    private Map<String, Object> customFields;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
 }

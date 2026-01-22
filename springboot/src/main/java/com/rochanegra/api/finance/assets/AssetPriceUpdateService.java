@@ -31,78 +31,84 @@ public class AssetPriceUpdateService {
      * "fixedRate = 86400000" means 1 day in milliseconds.
      * hourly gets rate limited on coin gecko without api token
      */
-    @Scheduled(fixedRate = 86400000, initialDelay = 60000) // Run 1 minute after startup, then every day
-    @Transactional
-    public void updateMarketAssetPrices() {
-        log.info("Starting scheduled job: Update Market Asset Prices...");
+    // @Scheduled(fixedRate = 86400000, initialDelay = 60000) // Run 1 minute after
+    // startup, then every day
+    // @Transactional
+    // public void updateMarketAssetPrices() {
+    // log.info("Starting scheduled job: Update Market Asset Prices...");
 
-        // 1. Find all assets that are unit-based (crypto, stock, etc.) and have a
-        // quantity
-        List<Asset> marketAssets = assetRepository.findByTypeInAndQuantityIsNotNull(
-                List.of(AssetType.crypto, AssetType.stock, AssetType.investment));
+    // // 1. Find all assets that are unit-based (crypto, stock, etc.) and have a
+    // // quantity
+    // List<Asset> marketAssets = assetRepository.findByTypeInAndQuantityIsNotNull(
+    // List.of(AssetType.crypto, AssetType.stock, AssetType.investment));
 
-        if (marketAssets.isEmpty()) {
-            log.info("No market-based assets found to update. Job finished.");
-            return;
-        }
+    // if (marketAssets.isEmpty()) {
+    // log.info("No market-based assets found to update. Job finished.");
+    // return;
+    // }
 
-        // 2. Group assets by their target currency for efficient API calls
-        // For now, we'll assume a single base currency like EUR. A more advanced
-        // version
-        // could group by user preference.
-        String targetCurrency = "eur";
+    // // 2. Group assets by their target currency for efficient API calls
+    // // For now, we'll assume a single base currency like EUR. A more advanced
+    // // version
+    // // could group by user preference.
+    // String targetCurrency = "eur";
 
-        // 3. Collect all the unique crypto/stock symbols (which we store in
-        // asset.currency)
-        String apiIds = marketAssets.stream()
-                .map(Asset::getCurrency)
-                .map(String::toLowerCase)
-                .distinct()
-                .collect(Collectors.joining(","));
+    // // 3. Collect all the unique crypto/stock symbols (which we store in
+    // // asset.currency)
+    // String apiIds = marketAssets.stream()
+    // .map(Asset::getCurrency)
+    // .map(String::toLowerCase)
+    // .distinct()
+    // .collect(Collectors.joining(","));
 
-        log.info("Fetching prices for IDs: [{}] in currency: {}", apiIds, targetCurrency);
+    // log.info("Fetching prices for IDs: [{}] in currency: {}", apiIds,
+    // targetCurrency);
 
-        try {
-            // 4. Make a single, efficient API call to CoinGecko
-            CoinGeckoPriceDto response = restClient.get()
-                    .uri(COINGECKO_API_URL + "?ids={ids}&vs_currencies={vs_currency}", apiIds, targetCurrency)
-                    .retrieve()
-                    .body(CoinGeckoPriceDto.class);
+    // try {
+    // // 4. Make a single, efficient API call to CoinGecko
+    // CoinGeckoPriceDto response = restClient.get()
+    // .uri(COINGECKO_API_URL + "?ids={ids}&vs_currencies={vs_currency}", apiIds,
+    // targetCurrency)
+    // .retrieve()
+    // .body(CoinGeckoPriceDto.class);
 
-            if (response == null || response.prices() == null) {
-                log.error("Failed to fetch prices from CoinGecko. Response was empty.");
-                return;
-            }
+    // if (response == null || response.prices() == null) {
+    // log.error("Failed to fetch prices from CoinGecko. Response was empty.");
+    // return;
+    // }
 
-            Map<String, Map<String, BigDecimal>> prices = response.prices();
-            log.info("Successfully fetched prices: {}", prices);
+    // Map<String, Map<String, BigDecimal>> prices = response.prices();
+    // log.info("Successfully fetched prices: {}", prices);
 
-            // 5. Iterate through the assets and update their calculated base value
-            for (Asset asset : marketAssets) {
-                String assetSymbol = asset.getCurrency().toLowerCase();
-                if (prices.containsKey(assetSymbol) && prices.get(assetSymbol).containsKey(targetCurrency)) {
-                    BigDecimal latestPrice = prices.get(assetSymbol).get(targetCurrency);
+    // // 5. Iterate through the assets and update their calculated base value
+    // for (Asset asset : marketAssets) {
+    // String assetSymbol = asset.getCurrency().toLowerCase();
+    // if (prices.containsKey(assetSymbol) &&
+    // prices.get(assetSymbol).containsKey(targetCurrency)) {
+    // BigDecimal latestPrice = prices.get(assetSymbol).get(targetCurrency);
 
-                    // The "current value" for a unit-based asset is quantity * price
-                    BigDecimal newBaseValue = asset.getQuantity().multiply(latestPrice);
+    // // The "current value" for a unit-based asset is quantity * price
+    // BigDecimal newBaseValue = asset.getQuantity().multiply(latestPrice);
 
-                    // We will store this calculated value in the 'amount_base' equivalent field on
-                    // the asset
-                    // For now, let's assume we add a new nullable column to Asset:
-                    // 'value_in_base_currency'
+    // // We will store this calculated value in the 'amount_base' equivalent field
+    // on
+    // // the asset
+    // // For now, let's assume we add a new nullable column to Asset:
+    // // 'value_in_base_currency'
 
-                    // Let's stick to the previous design: the 'balance' is for cash assets.
-                    // The "current value" is a calculated concept. So this service doesn't update
-                    // the DB,
-                    // but provides the price on demand. Let's refactor for that.
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error fetching prices from CoinGecko: {}", e.getMessage());
-        }
+    // // Let's stick to the previous design: the 'balance' is for cash assets.
+    // // The "current value" is a calculated concept. So this service doesn't
+    // update
+    // // the DB,
+    // // but provides the price on demand. Let's refactor for that.
+    // }
+    // }
+    // } catch (Exception e) {
+    // log.error("Error fetching prices from CoinGecko: {}", e.getMessage());
+    // }
 
-        log.info("Finished updating market asset prices.");
-    }
+    // log.info("Finished updating market asset prices.");
+    // }
 
     /**
      * Public method that other services (like DashboardService) can call to get a

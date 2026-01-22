@@ -22,6 +22,15 @@ export function useIT() {
     // You should add onError handling with toasts
   });
 
+  const { mutate: addDomainsBulk } = useMutation({
+    mutationFn: (newDomains: DomainCreate[]) => api.post('/domains/bulk', newDomains),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['domains'] });
+      queryClient.invalidateQueries({ queryKey: ['recurring-generators'] }); // Also refetch rules
+    },
+    // You should add onError handling with toasts
+  });
+
   // --- MUTATION: Update a domain ---
   const { mutate: updateDomain } = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: DomainUpdate }) => api.patch(`/domains/${id}`, updates),
@@ -62,7 +71,7 @@ export function useIT() {
       return exp >= now && exp <= endOfYear;
     }).length;
 
-    const annualCost = domains.reduce((sum, d) => sum + d.currentPrice, 0);
+    const annualCost = domains.filter(d => d.status !== 'expired').reduce((sum, d) => sum + d.currentPrice, 0);
 
     const sortedByExpiration = [...domains]
       .filter(d => new Date(d.expirationDate) >= now)
@@ -81,6 +90,7 @@ export function useIT() {
     domains,
     metrics,
     addDomain,
+    addDomainsBulk,
     updateDomain,
     deleteDomain,
   };

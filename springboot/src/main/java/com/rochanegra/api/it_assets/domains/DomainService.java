@@ -7,13 +7,16 @@ import com.rochanegra.api.finance.recurring.RecurringRuleDto;
 import com.rochanegra.api.core.SanitizationService;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import com.rochanegra.api.finance.recurring.RecurringFrequency;
+import com.rochanegra.api.finance.recurring.RecurringGeneratorRepository;
 import com.rochanegra.api.finance.types.TransactionType;
 import com.rochanegra.api.it_assets.domains.dto.DomainCreateDto;
+import com.rochanegra.api.it_assets.domains.dto.DomainUpdateDto;
 import com.rochanegra.api.it_assets.domains.dto.PriceHistoryDto;
 
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +32,7 @@ public class DomainService {
     private final DomainRepository domainRepository;
     private final DomainPriceHistoryRepository priceHistoryRepository;
     private final RecurringRuleService recurringRuleService; // <-- The key integration
+    private final RecurringGeneratorRepository recurringGeneratorRepository;
     private final SanitizationService sanitizationService;
 
     @Transactional(readOnly = true) // Use readOnly for GET methods for a performance boost
@@ -70,26 +74,9 @@ public class DomainService {
 
     @Transactional
     public DomainDto createDomain(DomainCreateDto createDto, UUID userId) {
-        // --- Step 1: Create the Recurring Rule in the Finance module ---
-        RecurringRuleCreateDto ruleDto = new RecurringRuleCreateDto(
-                "Domain Renewal: " + createDto.name(),
-                RecurringFrequency.yearly,
-                createDto.expirationDate(), // The first payment is on the expiration date
-                null, // endDate
-                createDto.currentPrice().negate(), // Expense is negative
-                createDto.currency(),
-                TransactionType.expense,
-                createDto.categoryId(),
-                null, // destinationAssetId
-                createDto.assetId());
-        // This is the call to your existing, robust service!
-        RecurringRuleDto newRule = recurringRuleService.createRule(ruleDto, userId);
-
-        // --- Step 2: Create the Domain entity, linking it to the new recurring rule
-        // ---
+        // --- Step 1: Create the Domain entity
         Domain domain = new Domain();
         domain.setUserId(userId);
-        domain.setRecurringGeneratorId(newRule.id());
         domain.setName(sanitizationService.sanitize(createDto.name()));
         domain.setRegistrar(sanitizationService.sanitize(createDto.registrar()));
         domain.setRegistrationDate(createDto.registrationDate());
@@ -97,6 +84,29 @@ public class DomainService {
         domain.setAutoRenew(createDto.autoRenew());
         domain.setNotes(sanitizationService.sanitize(createDto.notes()));
         Domain savedDomain = domainRepository.save(domain);
+
+        // --- Step 2: Create the Recurring Rule, linking it to the new Domain ID ---
+        if (createDto.autoRenew() && createDto.currentPrice() != null && createDto.currency() != null) {
+            // Create the custom fields map for linking
+            Map<String, Object> linkData = new HashMap<>();
+            linkData.put("linked_entity_type", "domain");
+            linkData.put("linked_entity_id", savedDomain.getId().toString()); // Use the ID we just generated
+
+            RecurringRuleCreateDto ruleDto = new RecurringRuleCreateDto(
+                    "Domain Renewal: " + createDto.name(),
+                    RecurringFrequency.yearly,
+                    createDto.expirationDate(),
+                    null, // endDate
+                    createDto.currentPrice().negate(),
+                    createDto.currency(),
+                    TransactionType.expense,
+                    createDto.categoryId(),
+                    null, // destinationAssetId
+                    createDto.assetId(),
+                    linkData // Pass the map with the link
+            );
+            recurringRuleService.createRule(ruleDto, userId);
+        }
 
         // --- Step 3: Create the initial price history record ---
         DomainPriceHistory priceRecord = new DomainPriceHistory();
@@ -111,20 +121,44 @@ public class DomainService {
         return toDto(savedDomain, List.of(priceRecord));
     }
 
-    public void deleteDomain(UUID id, UUID userId) {
-        // 1. Fetches and validates ownership. Perfect.
-        Domain domain = domainRepository.findById(id)
+    public void deleteDomain(UUID domainId, UUID userId) {
+        // 1. Verify ownership
+        Domain domain = domainRepository.findById(domainId)
                 .filter(d -> d.getUserId().equals(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("Domain not found"));
 
-        // 2. Explicitly deletes the associated recurring rule. This is good!
-        if (domain.getRecurringGeneratorId() != null) {
-            recurringRuleService.deleteRule(domain.getRecurringGeneratorId(), userId);
-        }
+        // 2. Find the associated recurring rule
+        // We create a new repository method for this.
+        recurringGeneratorRepository.findByCustomField("linked_entity_id", domainId.toString())
+                .ifPresent(generator -> {
+                    // 3. If a rule is found, delete it. This will cascade to its templates.
+                    recurringRuleService.deleteRule(generator.getId(), userId);
+                });
 
-        // 3. Deletes the domain itself. This also cascades to delete price history.
-        // Correct.
+        // 4. Delete the domain itself. This will cascade to its price history.
         domainRepository.delete(domain);
+    }
+
+    public DomainDto updateDomain(UUID id, DomainUpdateDto updateDto) {
+        Domain domain = domainRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Domain not found"));
+        domain.setName(updateDto.name());
+        domain.setRegistrar(updateDto.registrar());
+        domain.setRegistrationDate(updateDto.registrationDate());
+        domain.setExpirationDate(updateDto.expirationDate());
+        domain.setStatus(updateDto.status());
+        domain.setAutoRenew(updateDto.autoRenew());
+        domain.setNotes(updateDto.notes());
+        Domain savedDomain = domainRepository.save(domain);
+        return toDto(savedDomain, List.of());
+    }
+
+    @Transactional
+    public List<DomainDto> createDomainsInBulk(List<DomainCreateDto> createDtos, UUID userId) {
+        // Use a stream to call the single createDomain method for each item in the list
+        return createDtos.stream()
+                .map(dto -> createDomain(dto, userId))
+                .collect(Collectors.toList());
     }
 
     private DomainDto toDto(Domain domain, List<DomainPriceHistory> history) {
@@ -139,11 +173,11 @@ public class DomainService {
 
         return new DomainDto(
                 domain.getId(),
-                domain.getRecurringGeneratorId(),
                 domain.getName(),
                 domain.getRegistrar(),
                 domain.getRegistrationDate(),
                 domain.getExpirationDate(),
+                domain.getStatus(),
                 domain.isAutoRenew(),
                 domain.getNotes(),
                 currentPrice,

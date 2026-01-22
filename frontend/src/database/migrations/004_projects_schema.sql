@@ -7,6 +7,7 @@ CREATE TABLE public.domains (
   recurring_generator_id UUID REFERENCES public.recurring_generators(id) ON DELETE SET NULL,
   name TEXT NOT NULL,
   registrar TEXT,
+  status TEXT NOT NULL DEFAULT 'parked', -- 'active', 'parked', 'for_sale', 'expired'
   registration_date DATE NOT NULL,
   expiration_date DATE NOT NULL,
   auto_renew BOOLEAN DEFAULT TRUE,

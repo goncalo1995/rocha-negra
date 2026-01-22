@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.rochanegra.api.it_assets.domains.dto.DomainCreateDto;
+import com.rochanegra.api.it_assets.domains.dto.DomainUpdateDto;
 
 import jakarta.validation.Valid;
 
@@ -41,11 +42,11 @@ public class DomainController {
         return ResponseEntity.ok(domainService.getDomainById(id, userId));
     }
 
-    // @PatchMapping("/{id}")
-    // public ResponseEntity<DomainDto> updateDomain(@PathVariable UUID id,
-    // @Valid @RequestBody DomainCreateDto updateDto) {
-    // return ResponseEntity.ok(domainService.updateDomain(id, updateDto));
-    // }
+    @PatchMapping("/{id}")
+    public ResponseEntity<DomainDto> updateDomain(@PathVariable UUID id,
+            @Valid @RequestBody DomainUpdateDto updateDto) {
+        return ResponseEntity.ok(domainService.updateDomain(id, updateDto));
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDomain(@PathVariable UUID id,
@@ -53,5 +54,14 @@ public class DomainController {
         UUID userId = UUID.fromString(authentication.getName());
         domainService.deleteDomain(id, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<List<DomainDto>> createDomainsInBulk(
+            @RequestBody @Valid List<DomainCreateDto> createDtos,
+            Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        List<DomainDto> newDomains = domainService.createDomainsInBulk(createDtos, userId);
+        return new ResponseEntity<>(newDomains, HttpStatus.CREATED);
     }
 }

@@ -8,17 +8,18 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record DomainCreateDto(
-                @NotBlank String name,
-                String registrar,
-                @NotNull LocalDate registrationDate,
-                @NotNull LocalDate expirationDate,
-                boolean autoRenew,
-                String notes,
-                // Financial details for the recurring rule
-                @NotNull BigDecimal currentPrice,
-                @NotNull String currency,
-                UUID categoryId, // Optional: for the recurring rule
-                UUID assetId // Optional: for the payment asset
+        @NotBlank String name,
+        String registrar,
+        @NotNull LocalDate registrationDate,
+        @NotNull LocalDate expirationDate,
+        String status,
+        boolean autoRenew,
+        String notes,
+        // Financial details for the recurring rule
+        @NotNull BigDecimal currentPrice,
+        @NotNull String currency,
+        UUID categoryId, // Optional: for the recurring rule
+        UUID assetId // Optional: for the payment asset
 ) {
 
 }

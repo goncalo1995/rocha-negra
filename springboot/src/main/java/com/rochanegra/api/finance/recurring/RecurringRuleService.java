@@ -29,6 +29,7 @@ public class RecurringRuleService {
         generator.setStartDate(createDto.startDate());
         generator.setEndDate(createDto.endDate());
         generator.setNextDueDate(createDto.startDate()); // Initial due date is the start date
+        generator.setCustomFields(createDto.customFields());
         generator.setActive(true);
         RecurringGenerator savedGenerator = generatorRepository.save(generator);
 

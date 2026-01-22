@@ -83,6 +83,7 @@ CREATE TABLE public.recurring_generators (
   end_date DATE,
   next_due_date DATE NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
+  custom_fields JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
