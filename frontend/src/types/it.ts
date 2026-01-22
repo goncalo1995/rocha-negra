@@ -1,28 +1,47 @@
 export interface Domain {
   id: string;
-  name: string; // e.g., "example.com"
-  registrar: string; // e.g., "Namecheap", "Cloudflare"
+  recurringGeneratorId: string | null;
+  name: string;
+  registrar: string | null;
+  registrationDate: string; // 'YYYY-MM-DD'
+  expirationDate: string;
+  autoRenew: boolean;
+  notes: string | null;
+  currentPrice: number;
+  currency: string;
+  priceHistory: PriceHistoryDto[];
+}
+
+export interface PriceHistoryDto {
+  price: number;
+  currency: string;
+  effectiveDate: string;
+}
+
+// DTO for CREATING a domain (matches backend DomainCreateDto)
+export interface DomainCreate {
+  name: string;
+  registrar: string | null;
   registrationDate: string;
   expirationDate: string;
   autoRenew: boolean;
-  // Pricing with history for tracking increases
+  notes: string | null;
+  // Financial details for creating the recurring rule
   currentPrice: number;
   currency: string;
-  priceHistory: DomainPriceChange[];
-  // Finance integration
-  linkedRecurringRuleId?: string;
-  linkedAssetId?: string;
-  // Metadata
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
+  categoryId?: string | null;
+  assetId?: string | null;
 }
 
-export interface DomainPriceChange {
-  date: string;
-  price: number;
-  reason?: string; // e.g., "Annual increase", "Promo ended"
+// DTO for UPDATING a domain (matches a future backend DomainUpdateDto)
+export interface DomainUpdate {
+  name?: string;
+  registrar?: string;
+  expirationDate?: string;
+  autoRenew?: boolean;
+  notes?: string;
 }
+
 
 export interface ITState {
   domains: Domain[];

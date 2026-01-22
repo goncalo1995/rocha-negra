@@ -7,15 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Domain } from '@/types/it';
+import { Domain, DomainCreate, DomainUpdate } from '@/types/it';
 import { formatCurrency } from '@/lib/formatters';
 import { format, differenceInDays } from 'date-fns';
 
 interface DomainManagerProps {
   domains: Domain[];
-  onAddDomain: (domain: Omit<Domain, 'id' | 'createdAt' | 'updatedAt' | 'priceHistory'>) => void;
-  onUpdateDomain: (id: string, updates: Partial<Domain>) => void;
+  onAddDomain: (domain: DomainCreate) => void;
+  // --- FIX: The prop type must match what the mutation expects ---
+  onUpdateDomain: (variables: { id: string; updates: DomainUpdate }) => void;
   onDeleteDomain: (id: string) => void;
+  baseCurrency: string;
 }
 
 const DomainManager: React.FC<DomainManagerProps> = ({
@@ -54,18 +56,18 @@ const DomainManager: React.FC<DomainManagerProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingDomain) {
-      onUpdateDomain(editingDomain.id, {
+      const updateData: DomainUpdate = {
         name: formData.name,
         registrar: formData.registrar,
-        registrationDate: formData.registrationDate,
         expirationDate: formData.expirationDate,
         autoRenew: formData.autoRenew,
-        currentPrice: parseFloat(formData.currentPrice) || 0,
-        currency: formData.currency,
         notes: formData.notes,
-      });
+      };
+
+      // --- FIX: Call the mutation with the correct object structure ---
+      onUpdateDomain({ id: editingDomain.id, updates: updateData });
     } else {
       onAddDomain({
         name: formData.name,
@@ -78,7 +80,7 @@ const DomainManager: React.FC<DomainManagerProps> = ({
         notes: formData.notes,
       });
     }
-    
+
     resetForm();
     setIsAddDialogOpen(false);
   };
@@ -103,7 +105,7 @@ const DomainManager: React.FC<DomainManagerProps> = ({
     if (days < 0) return { label: 'Expired', variant: 'destructive' as const };
     if (days <= 30) return { label: `${days}d left`, variant: 'destructive' as const };
     if (days <= 90) return { label: `${days}d left`, variant: 'outline' as const };
-    
+
     return { label: format(new Date(expirationDate), 'MMM d, yyyy'), variant: 'secondary' as const };
   };
 

@@ -1,153 +1,87 @@
-import { useLocalStorage } from './useLocalStorage';
-import { Domain, ITState, ITMetrics, DomainPriceChange } from '@/types/it';
-import { useMemo, useCallback } from 'react';
-import { useFinance } from './useFinance';
-
-const STORAGE_KEY = 'rocha-negra-it';
-
-const initialState: ITState = {
-  domains: [],
-};
+import { Domain, ITMetrics, DomainCreate, DomainUpdate } from '@/types/it';
+import { useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
 
 export function useIT() {
-  const [state, setState] = useLocalStorage<ITState>(STORAGE_KEY, initialState);
-  const { addRecurringRule, deleteRecurringRule, updateRecurringRule, categories, assets } = useFinance();
+  const queryClient = useQueryClient();
 
-  // Get or create IT category
-  const getITCategory = useCallback(() => {
-    return categories.find(c => c.name === 'Subscriptions') || categories[0];
-  }, [categories]);
-
-  // Get default asset for domain payments
-  const getDefaultAsset = useCallback(() => {
-    return assets.find(a => a.type === 'cash') || assets[0];
-  }, [assets]);
+  const { data: domains, isLoading } = useQuery<Domain[]>({
+    queryKey: ['domains'],
+    queryFn: async () => (await api.get('/domains')).data,
+  });
 
   // Domain operations
-  const addDomain = useCallback((domain: Omit<Domain, 'id' | 'createdAt' | 'updatedAt' | 'priceHistory'>) => {
-    const newDomain: Domain = {
-      ...domain,
-      id: crypto.randomUUID(),
-      priceHistory: [{ date: new Date().toISOString(), price: domain.currentPrice }],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  // --- MUTATION: Add a new domain ---
+  const { mutate: addDomain } = useMutation({
+    mutationFn: (newDomain: DomainCreate) => api.post('/domains', newDomain),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['domains'] });
+      queryClient.invalidateQueries({ queryKey: ['recurring-generators'] }); // Also refetch rules
+    },
+    // You should add onError handling with toasts
+  });
 
-    // Auto-create recurring rule for finance sync
-    const category = getITCategory();
-    const asset = getDefaultAsset();
-    
-    if (category && asset) {
-      const rule = addRecurringRule({
-        name: `Domain: ${domain.name}`,
-        categoryId: category.id,
-        assetId: asset.id,
-        type: 'expense',
-        frequency: 'yearly',
-        dayOfMonth: new Date(domain.expirationDate).getDate(),
-        nextDueDate: domain.expirationDate,
-        projectedAmount: domain.currentPrice,
-        description: `Annual renewal for ${domain.name}`,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      });
-      newDomain.linkedRecurringRuleId = rule.id;
-    }
+  // --- MUTATION: Update a domain ---
+  const { mutate: updateDomain } = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: DomainUpdate }) => api.patch(`/domains/${id}`, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['domains'] });
+    },
+  });
 
-    setState(prev => ({ ...prev, domains: [...prev.domains, newDomain] }));
-    return newDomain;
-  }, [setState, addRecurringRule, getITCategory, getDefaultAsset]);
-
-  const updateDomain = useCallback((id: string, updates: Partial<Domain>) => {
-    setState(prev => {
-      const domain = prev.domains.find(d => d.id === id);
-      if (!domain) return prev;
-
-      // Track price changes
-      let priceHistory = domain.priceHistory;
-      if (updates.currentPrice && updates.currentPrice !== domain.currentPrice) {
-        priceHistory = [
-          ...priceHistory,
-          { date: new Date().toISOString(), price: updates.currentPrice }
-        ];
-      }
-
-      // Update linked recurring rule if price or expiration changed
-      if (domain.linkedRecurringRuleId && (updates.currentPrice || updates.expirationDate)) {
-        updateRecurringRule(domain.linkedRecurringRuleId, {
-          projectedAmount: updates.currentPrice ?? domain.currentPrice,
-          nextDueDate: updates.expirationDate ?? domain.expirationDate,
-        });
-      }
-
-      return {
-        ...prev,
-        domains: prev.domains.map(d =>
-          d.id === id
-            ? { ...d, ...updates, priceHistory, updatedAt: new Date().toISOString() }
-            : d
-        ),
-      };
-    });
-  }, [setState, updateRecurringRule]);
-
-  const deleteDomain = useCallback((id: string) => {
-    const domain = state.domains.find(d => d.id === id);
-    if (domain?.linkedRecurringRuleId) {
-      deleteRecurringRule(domain.linkedRecurringRuleId);
-    }
-    setState(prev => ({
-      ...prev,
-      domains: prev.domains.filter(d => d.id !== id),
-    }));
-  }, [setState, state.domains, deleteRecurringRule]);
+  // --- MUTATION: Delete a domain ---
+  const { mutate: deleteDomain } = useMutation({
+    mutationFn: (id: string) => api.delete(`/domains/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['domains'] });
+      queryClient.invalidateQueries({ queryKey: ['recurring-generators'] }); // Refetch rules
+    },
+  });
 
   // Metrics
   const metrics = useMemo((): ITMetrics => {
+    if (!domains) return {
+      totalDomains: 0,
+      expiringThisMonth: 0,
+      expiringThisYear: 0,
+      annualCost: 0,
+      nextRenewal: null,
+    };
     const now = new Date();
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     const endOfYear = new Date(now.getFullYear(), 11, 31);
 
-    const expiringThisMonth = state.domains.filter(d => {
+    const expiringThisMonth = domains.filter(d => {
       const exp = new Date(d.expirationDate);
       return exp >= now && exp <= endOfMonth;
     }).length;
 
-    const expiringThisYear = state.domains.filter(d => {
+    const expiringThisYear = domains.filter(d => {
       const exp = new Date(d.expirationDate);
       return exp >= now && exp <= endOfYear;
     }).length;
 
-    const annualCost = state.domains.reduce((sum, d) => sum + d.currentPrice, 0);
+    const annualCost = domains.reduce((sum, d) => sum + d.currentPrice, 0);
 
-    const sortedByExpiration = [...state.domains]
+    const sortedByExpiration = [...domains]
       .filter(d => new Date(d.expirationDate) >= now)
       .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 
     return {
-      totalDomains: state.domains.length,
+      totalDomains: domains.length,
       expiringThisMonth,
       expiringThisYear,
       annualCost,
       nextRenewal: sortedByExpiration[0] || null,
     };
-  }, [state.domains]);
-
-  // Export/Import
-  const exportData = useCallback((): ITState => state, [state]);
-  const importData = useCallback((data: Partial<ITState>) => {
-    setState(prev => ({
-      domains: data.domains ?? prev.domains,
-    }));
-  }, [setState]);
+  }, [domains]);
 
   return {
-    domains: state.domains,
+    domains,
     metrics,
     addDomain,
     updateDomain,
     deleteDomain,
-    exportData,
-    importData,
   };
 }

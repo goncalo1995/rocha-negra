@@ -63,7 +63,7 @@ const IT = () => {
             <CardHeader className="pb-2">
               <CardDescription>Next Renewal</CardDescription>
               <CardTitle className="text-lg">
-                {metrics.nextRenewal 
+                {metrics.nextRenewal
                   ? `${metrics.nextRenewal.name} (${format(new Date(metrics.nextRenewal.expirationDate), 'MMM d')})`
                   : 'None'}
               </CardTitle>
@@ -77,6 +77,8 @@ const IT = () => {
           onAddDomain={addDomain}
           onUpdateDomain={updateDomain}
           onDeleteDomain={deleteDomain}
+          baseCurrency={"EUR"}
+        // {userPreferences.base_currency}
         />
       </main>
     </div>
