@@ -9,7 +9,7 @@ export const cvData = {
         profile: `I am deeply passionate about developing technological solutions that streamline everyday tasks and enhance efficiency. With a strong focus on problem-solving, I aim to create systems that simplify complex processes and improve user experiences. I have a particular interest in chatbots and automation, and by combining my technical expertise with a keen understanding of user needs, I strive to build intuitive, scalable solutions that drive both productivity and ease of use.`,
         contacts: [
             { type: 'email', value: 'cerejagoncalo@gmail.com', href: 'mailto:cerejagoncalo@gmail.com' },
-            { type: 'phone', value: '+351 910 399 266', href: 'tel:+351910399266' },
+            // { type: 'phone', value: '+351 91', href: 'tel:+351' },
             { type: 'linkedin', value: 'linkedin.com/in/gonçalo-pereira', href: 'https://linkedin.com/in/gonçalo-pereira' },
             { type: 'github', value: 'github.com/goncalo1995', href: 'https://github.com/goncalo1995' },
         ]
@@ -92,11 +92,153 @@ export const cvData = {
     ]
 };
 
+export const experienceData = [
+    {
+        type: 'role', // A full-time role
+        title: "Fullstack Engineer",
+        company: "Feedzai",
+        period: "2024 - 2025",
+        location: "Lisbon, Portugal",
+        summary: "Developed features for large-scale fraud detection systems, built UIs using micro frontends, and managed deployments in a high-security Kubernetes environment.",
+        star: {
+            situation: "Feedzai, a leader in fraud detection, required continuous development of its complex, high-security financial crime monitoring platform.",
+            task: "As a Fullstack Engineer, my role was to develop and maintain features across the stack, from backend data processing to frontend user interfaces, while adhering to strict security and performance standards.",
+            action: [ // Use an array for multiple points
+                "Engineered and maintained backend services in Java (Quarkus), focusing on improving data processing efficiency and scalability.",
+                "Built modern, responsive user interfaces for monitoring tools using React and a micro frontend architecture.",
+                "Managed the full deployment lifecycle, containerizing applications with Docker and orchestrating them with Helm charts in a Kubernetes (EKS) environment.",
+                "Provided technical mentorship and support for the company's Identity and Access Management (IAM) system, built on Keycloak."
+            ],
+            result: "Contributed to a more efficient and secure platform, improved the user experience for financial crime analysts, and strengthened the team's DevOps and security practices."
+        },
+        technologies: ["React", "Java", "Quarkus", "Docker", "Kubernetes", "Helm", "Keycloak"]
+    },
+    {
+        type: 'role', // A long-term consulting role
+        title: "Consultant",
+        company: "Link Consulting",
+        period: "2019 - 2024",
+        location: "Lisbon, Portugal",
+        summary: "Architected and developed sophisticated, client-facing AI and full-stack solutions for major clients in finance, public sector, automotive, and logistics.",
+        // No 'star' here, because the details are in the individual project cards below
+        technologies: ["GCP", "Azure", "Dialogflow", "AdonisJs", "React", "Vue.js", "Quarkus", "Java", "Node.js"]
+    },
+    {
+        type: 'project', // A specific project from the consulting role
+        title: "AI Digital Assistant for Banking",
+        company: "Caixa Geral de Depósitos (CGD)",
+        period: "2021",
+        summary: "Architected and delivered a secure, cloud-native conversational AI solution on GCP to serve internal bank agents and call center operators.",
+        star: {
+            situation: "The bank's internal support teams were overwhelmed with repetitive queries about credit card products, leading to long wait times and inefficiency.",
+            task: "Design and implement a scalable chatbot that could provide instant, accurate answers and integrate with internal systems, while empowering business users to manage the content.",
+            action: [
+                "Architected the solution on Google Cloud Platform using Dialogflow for the core conversational logic and Firestore for a dynamic knowledge base.",
+                "Developed an ETL process to sync information from internal bank systems, ensuring the chatbot's data was always up-to-date.",
+                "Created custom monitoring dashboards in Google Data Studio and BigQuery to provide business stakeholders with actionable insights on user interactions and chatbot performance."
+            ],
+            result: "Dramatically reduced the query load on human agents, provided instant 24/7 support, and gave the business team direct control over the chatbot's responses, leading to greater agility."
+        },
+        technologies: ["Google Dialogflow", "GCP", "BigQuery", "Data Studio", "ETL"]
+    },
+    {
+        type: 'project', // Another project
+        title: "Conversational AI for Public Sector",
+        company: "DGAE & DGC",
+        period: "2020",
+        summary: "Implemented chatbots for government agencies to clarify citizen doubts regarding consumer rights and economic activities.",
+        star: {
+            situation: "The government agencies were overwhelmed with repetitive queries about consumer rights and economic activities, leading to long wait times and inefficiency.",
+            task: "Design and implement a scalable chatbot that could provide instant, accurate answers and integrate with internal systems, while empowering business users to manage the content.",
+            action: [
+                "Architected the solution on Google Cloud Platform using Dialogflow for the core conversational logic and Firestore for a dynamic knowledge base.",
+                "Developed an ETL process to sync information from internal bank systems, ensuring the chatbot's data was always up-to-date.",
+                "Created custom monitoring dashboards in Google Data Studio and BigQuery to provide business stakeholders with actionable insights on user interactions and chatbot performance."
+            ],
+            result: "Dramatically reduced the query load on human agents, provided instant 24/7 support, and gave the business team direct control over the chatbot's responses, leading to greater agility."
+        },
+        technologies: ["Chatbots", "Backoffice", "NLP"]
+    },
+    // ... Add cards for CTT, Hyundai, Carplus, Abu Dhabi, INESC, Self-Employed ...
+    {
+        type: 'education_highlight', // A special type for education
+        title: "Erasmus Exchange Program",
+        company: "Czech Technical University in Prague",
+        period: "Sep 2016 - Feb 2017",
+        summary: "Participated in an international exchange program, focusing on advanced Computer Science topics and achieving a high academic standing.",
+        star: {
+            situation: "As part of my Master's degree, I sought to gain international experience and exposure to different academic approaches in computer science.",
+            task: "To successfully complete a semester abroad, adapt to a new cultural and academic environment, and excel in advanced coursework.",
+            action: ["Enrolled in courses covering topics such as advanced algorithms, distributed systems, and artificial intelligence.", "Collaborated with an international cohort of students on challenging projects, enhancing my teamwork and cross-cultural communication skills."],
+            result: "Achieved an excellent final grade of 18/20, broadened my technical knowledge, and developed valuable soft skills in adaptability and global collaboration."
+        },
+        technologies: ["Computer Science", "Algorithms", "Distributed Systems"]
+    }
+];
+
 
 // Delete the old 'simpleExperience' and 'detailedProjects' arrays.
 // This is now your single source of truth for work experience.
 
 export const workExperience = [
+    {
+        role: "Fullstack Engineer",
+        company: "Feedzai",
+        period: "2024 - 2025",
+        location: "Lisbon, Portugal",
+        // The short, impactful summary for the main view
+        summary: "Developed features for large-scale fraud detection systems, built UIs using micro frontends, and managed deployments in a high-security Kubernetes environment.",
+        // Detailed breakdown of responsibilities for the expanded view
+        details: [
+            {
+                title: "Backend Development (50%)",
+                description: "Engineered and maintained backend services in Java (Quarkus), focusing on improving data processing efficiency and scalability in a high-security environment.",
+                technologies: ["Java", "Quarkus", "Microservices"]
+            },
+            {
+                title: "Frontend Development (30%)",
+                description: "Built modern, responsive user interfaces for financial crime monitoring tools using a micro frontend architecture.",
+                technologies: ["React", "TypeScript", "Micro Frontends"]
+            },
+            {
+                title: "DevOps & Deployment (20%)",
+                description: "Managed the full deployment lifecycle, containerizing applications with Docker and orchestrating them with Helm charts in Kubernetes (AWS EKS), and implementing monitoring with Grafana.",
+                technologies: ["Docker", "Kubernetes", "Helm", "Grafana", "AWS EKS", "Keycloak"]
+            }
+        ],
+        // A comprehensive list for the "Key Technologies" footer
+        technologies: ["React", "Java", "Quarkus", "Docker", "Kubernetes", "Helm", "Grafana", "Keycloak"]
+    },
+    {
+        role: "Consultant",
+        company: "Link Consulting",
+        period: "2019 - 2024 (5 years)",
+        location: "Lisbon, Portugal",
+        summary: "Architected and developed sophisticated, client-facing AI and full-stack solutions for major clients in finance, public sector, automotive, and logistics.",
+        // For this role, the details are a list of key projects
+        details: [
+            {
+                title: "Project: AI Digital Assistant for Banking (CGD)",
+                description: "Architected and delivered a secure, cloud-native conversational AI solution on GCP using Dialogflow. Key features included a dynamic knowledge base managed by business users and custom analytics dashboards in Google Data Studio.",
+                technologies: ["Google Dialogflow", "GCP", "BigQuery", "Data Studio", "ETL"]
+            },
+            {
+                title: "Project: E-Commerce Platform for Automotive (Hyundai/Carplus)",
+                description: "Led development on the 'Click to Buy' platform, establishing a white-label frontend (Vue.js) and a generic backend (Java/Quarkus) on AWS EKS to rapidly onboard new automotive brands.",
+                technologies: ["Vue.js", "Quarkus", "Java", "AWS EKS", "Storybook"]
+            },
+            {
+                title: "Project: 'Fale Connosco' AI Portal (CTT)",
+                description: "Performed full-stack development of a customer support portal, engineering a scalable backend API with AdonisJs (Node.js) and a modern frontend with React.",
+                technologies: ["React", "AdonisJs", "Node.js", "AWS"]
+            },
+        ],
+        technologies: ["Azure", "Dialogflow", "GCP", "AdonisJs", "React", "Vue.js", "Quarkus"]
+    },
+    // ... Add your other roles (Self-Employed, Erasmus) in this same format.
+];
+
+export const workExperienceOld = [
     {
         role: "Fullstack Engineer",
         company: "Feedzai",

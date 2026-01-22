@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { ProjectDetailsModal } from './ProjectDetailsModal';
 import { Button } from '../ui/button';
-import { detailedProjects, simpleExperience } from '@/data/cv/cvData';
+import { detailedProjects, simpleExperience, workExperience } from '@/data/cv/cvData';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 
 const Section = ({ title, children, id }) => (
@@ -14,15 +15,35 @@ const Section = ({ title, children, id }) => (
     </section>
 );
 
+// A new, reusable card component
+const ExperienceCard = ({ item, onCardClick }) => (
+    <Card
+        className="flex flex-col cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1"
+        onClick={() => onCardClick(item)}
+    >
+        <CardHeader>
+            <CardTitle>{item.title}</CardTitle>
+            <CardDescription>{item.company} | {item.period}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-grow flex flex-col justify-between">
+            <p className="text-sm text-muted-foreground mb-4">{item.summary}</p>
+            <div className="flex flex-wrap gap-1">
+                {item.technologies.slice(0, 4).map(tech => <Badge key={tech} variant="secondary">{tech}</Badge>)}
+                {item.technologies.length > 4 && <Badge variant="outline">+{item.technologies.length - 4} more</Badge>}
+            </div>
+        </CardContent>
+    </Card>
+);
+
 export function MainContent({ name, role, profile, experience, achievements }) {
 
-    const [selectedProject, setSelectedProject] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    // const [selectedProject, setSelectedProject] = useState(null);
+    // const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const openProjectModal = (project) => {
-        setSelectedProject(project);
-        setIsModalOpen(true);
-    };
+    // const openProjectModal = (project) => {
+    //     setSelectedProject(project);
+    //     setIsModalOpen(true);
+    // };
 
     return (
         <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
@@ -36,7 +57,110 @@ export function MainContent({ name, role, profile, experience, achievements }) {
             </Section>
 
             <Section title="Work Experience" id="experience">
-                <Accordion type="multiple" className="w-full space-y-4">
+                {/*
+          type="single": Only one item can be open at a time. This prevents the sidebar from jumping.
+          collapsible: Allows closing the currently open item.
+          defaultValue: Starts with the first item (most recent job) open.
+        */}
+                <Accordion type="single" collapsible defaultValue="item-0" className="w-full space-y-4">
+                    {workExperience.map((item, index) => (
+                        <AccordionItem value={`item-${index}`} key={item.company + item.period} className="border-none">
+                            <AccordionTrigger className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg hover:no-underline text-left data-[state=open]:rounded-b-none data-[state=open]:bg-primary/10 transition-all">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{item.role}</h3>
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                                        {item.company} | <span className="text-gray-500 dark:text-gray-400">{item.period}</span>
+                                    </p>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-900/50 rounded-b-lg">
+                                    {/* --- Renders the Detailed Content --- */}
+                                    <div className="space-y-6">
+                                        <p className="text-base text-gray-700 dark:text-gray-300">{item.summary}</p>
+
+                                        <div className="space-y-4">
+                                            {item.details.map(detail => (
+                                                <div key={detail.title} className="pl-4 border-l-2 border-primary/50">
+                                                    <h4 className="font-semibold text-gray-800 dark:text-gray-200">{detail.title}</h4>
+                                                    <p className="text-sm text-muted-foreground mt-1">{detail.description}</p>
+                                                    {detail.technologies && (
+                                                        <div className="mt-2 flex flex-wrap gap-1">
+                                                            {detail.technologies.map(tech => <Badge key={tech} variant="secondary">{tech}</Badge>)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* --- Technology Badges at the Bottom --- */}
+                                    {item.technologies && (
+                                        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-4">
+                                            <h5 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Key Technologies</h5>
+                                            <div className="flex flex-wrap gap-2">
+                                                {item.technologies.map(tech => <Badge key={tech}>{tech}</Badge>)}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+            </Section>
+
+            {/* <Section title="Work Experience" id="experience">
+                <Accordion type="single" defaultValue='item-0' className="w-full space-y-4">
+                    {workExperience.map((item, index) => (
+                        <AccordionItem value={`item-${index}`} key={item.company + item.period} className="border rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 ">
+                            <AccordionTrigger className="p-4 hover:no-underline text-left">
+                                <div>
+                                    <h3 className="text-lg font-semibold">{item.role}</h3>
+                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        {item.company} | <span className="text-gray-500 dark:text-gray-400">{item.period}</span>
+                                    </p>
+                                    <p className="text-sm text-muted-foreground mt-2 pr-4">{item.summary}</p>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <div className="px-4 pb-4 border-t pt-4">
+                                    <div className="space-y-4">
+                                        {item.content?.map((contentItem, idx) => {
+                                            if (contentItem.type === 'intro') {
+                                                return <p key={idx} className="text-muted-foreground">{contentItem.text}</p>;
+                                            }
+                                            if (contentItem.type === 'project_highlight') {
+                                                return (
+                                                    <div key={idx} className="pl-4 border-l-2">
+                                                        <h4 className="font-semibold">{contentItem.title}</h4>
+                                                        <p className="text-sm text-muted-foreground mt-1">{contentItem.description}</p>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+
+                                        {item.responsibilities?.map(resp => (
+                                            <div key={resp.title} className="pl-4 border-l-2">
+                                                <h4 className="font-semibold">{resp.title}</h4>
+                                                <p className="text-sm text-muted-foreground mt-1">{resp.description}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {item.technologies && (
+                                        <div className="border-t pt-3 mt-4">
+                                            <h5 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Key Technologies</h5>
+                                            <div className="flex flex-wrap gap-2">
+                                                {item.technologies.map(tech => <Badge key={tech}>{tech}</Badge>)}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
                     {simpleExperience.map((item, index) => {
                         const detailedProject = detailedProjects.find(p => p.company === item.company && p.period === item.period);
 
@@ -51,7 +175,6 @@ export function MainContent({ name, role, profile, experience, achievements }) {
                                         <p className="text-base text-gray-600 dark:text-gray-400 leading-relaxed italic">{item.summary}</p>
 
 
-                                        {/* --- BADGES AT THE BOTTOM --- */}
                                         {item.technologies && (
                                             <div className="border-t pt-3 mt-4">
                                                 <h5 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Key Technologies</h5>
@@ -64,7 +187,6 @@ export function MainContent({ name, role, profile, experience, achievements }) {
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="px-4 pb-4 space-y-4 border-t pt-4">
-                                        {/* --- NEW: FLEXIBLE CONTENT RENDERER --- */}
                                         {item.content ? (
                                             item.content.map((contentItem, idx) => {
                                                 if (contentItem.type === 'intro') {
@@ -125,7 +247,7 @@ export function MainContent({ name, role, profile, experience, achievements }) {
                         );
                     })}
                 </Accordion>
-            </Section>
+            </Section> */}
 
             {/* <Section title={experience.title} id="experience">
                 {experience.items.map(item => (
@@ -153,11 +275,11 @@ export function MainContent({ name, role, profile, experience, achievements }) {
                 </ul>
             </Section>
 
-            <ProjectDetailsModal
+            {/* <ProjectDetailsModal
                 project={selectedProject}
                 isOpen={isModalOpen}
                 onOpenChange={setIsModalOpen}
-            />
+            /> */}
         </div>
     );
 }

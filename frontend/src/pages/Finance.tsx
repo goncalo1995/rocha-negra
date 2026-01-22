@@ -56,15 +56,15 @@ const Finance = () => {
     transactions.forEach(t => {
       const date = parseISO(t.date);
       if (isAfter(date, monthStart) && isBefore(date, monthEnd)) {
-        const category = categories.find(c => c.id === t.category_id);
+        const category = categories.find(c => c.id === t.categoryId);
         events.push({
           id: t.id,
           date,
           title: t.description || category?.name || 'Transaction',
-          amount: t.amount_original,
+          amount: t.amountOriginal,
           type: 'transaction',
           transactionType: t.type,
-          categoryId: t.category_id,
+          categoryId: t.categoryId,
           isPast: isBefore(date, now),
         });
       }

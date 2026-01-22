@@ -9,6 +9,7 @@ export function formatCurrency(amount: number, currency: string = 'EUR'): string
 
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('pt-PT', {
     day: '2-digit',
     month: 'short',

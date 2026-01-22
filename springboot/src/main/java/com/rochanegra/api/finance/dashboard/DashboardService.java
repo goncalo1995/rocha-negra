@@ -2,7 +2,6 @@ package com.rochanegra.api.finance.dashboard;
 
 import com.rochanegra.api.core.PageDto;
 import com.rochanegra.api.finance.assets.Asset;
-import com.rochanegra.api.finance.assets.AssetPriceUpdateService;
 import com.rochanegra.api.finance.assets.AssetRepository;
 import com.rochanegra.api.finance.liabilities.Liability;
 import com.rochanegra.api.finance.liabilities.LiabilityRepository;
@@ -37,7 +36,6 @@ public class DashboardService {
     private final CurrencyConversionService conversionService;
 
     private final UserPreferencesService userPreferencesService;
-    private final AssetPriceUpdateService assetPriceUpdateService;
 
     public BigDecimal calculateNetWorth(UUID userId) {
         List<Asset> assets = assetRepository.findByUserId(userId);
@@ -56,8 +54,10 @@ public class DashboardService {
                 totalAssets = totalAssets
                         .add(conversionService.convert(asset.getBalance(), asset.getCurrency(), baseCurrency));
             } else if (asset.getQuantity() != null) {
-                BigDecimal marketPrice = assetPriceUpdateService.getLatestPrice(asset.getCurrency(), baseCurrency);
-                totalAssets = totalAssets.add(asset.getQuantity().multiply(marketPrice));
+                // BigDecimal marketPrice =
+                // assetPriceUpdateService.getLatestPrice(asset.getCurrency(), baseCurrency);
+                // totalAssets = totalAssets.add(asset.getQuantity().multiply(marketPrice));
+                System.out.println("FIX Not implemented: Asset quantity: " + asset.getQuantity());
             }
         }
 
