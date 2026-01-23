@@ -206,7 +206,7 @@ const Home = () => {
             <div className="flex items-center gap-3">
               <ChartLine className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Active recurring rules:</span>
-              <span className="font-semibold">{recurringRules.filter(r => r.is_active).length}</span>
+              <span className="font-semibold">{recurringRules.filter(r => r.isActive).length}</span>
             </div>
             <Link to="/finance" className="text-sm text-primary hover:underline">
               View all →

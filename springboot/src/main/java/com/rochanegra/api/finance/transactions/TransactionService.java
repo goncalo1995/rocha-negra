@@ -16,10 +16,12 @@ import com.rochanegra.api.core.PageDto;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import com.rochanegra.api.finance.assets.Asset;
 import com.rochanegra.api.finance.assets.AssetRepository;
-import com.rochanegra.api.finance.assets.AssetService;
 import com.rochanegra.api.finance.preferences.UserPreferencesService;
 import com.rochanegra.api.finance.services.CurrencyConversionService;
 import com.rochanegra.api.finance.types.TransactionType;
+import com.rochanegra.api.links.EntityLinkDto;
+import com.rochanegra.api.links.LinkCreateDto;
+import com.rochanegra.api.links.LinkService;
 
 @Service
 @RequiredArgsConstructor
@@ -27,175 +29,67 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AssetRepository assetRepository;
-    private final AssetService assetService;
     private final CurrencyConversionService conversionService;
     private final UserPreferencesService preferencesService;
+    private final LinkService linkService;
 
-    @Transactional
     public List<TransactionDto> createTransactions(List<TransactionCreateDto> createDtos, UUID userId) {
         return createDtos.stream()
                 .map(dto -> createTransaction(dto, userId))
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public TransactionDto createTransaction(TransactionCreateDto createDto, UUID userId) {
-        // 1. Get User's Base Currency for reporting
-        String baseCurrency = preferencesService.getBaseCurrency(userId);
-        TransactionType type = createDto.type();
+        return createTransactionInternal(createDto, null, userId); // null generatorId for manual transactions
+    }
 
-        // Now, we VALIDATE the amount against the type.
-        // An expense should have a negative amount, income should have a positive
-        // amount.
-        // If the client sends a mismatch, we can either fix it or reject it. Fixing it
-        // is more user-friendly.
-        BigDecimal correctedAmountOriginal = createDto.amountOriginal().abs(); // Start with a positive value
+    @Transactional
+    public TransactionDto createTransactionFromGenerator(TransactionCreateDto createDto, UUID generatorId,
+            UUID userId) {
+        return createTransactionInternal(createDto, generatorId, userId);
+    }
+
+    // --- PRIVATE IMPLEMENTATION ---
+    private TransactionDto createTransactionInternal(TransactionCreateDto createDto, UUID generatorId, UUID userId) {
+        // 1. Determine type and correct amount sign
+        TransactionType type = createDto.type();
+        BigDecimal correctedAmountOriginal = createDto.amountOriginal().abs();
         if (type == TransactionType.expense || type == TransactionType.transfer) {
             correctedAmountOriginal = correctedAmountOriginal.negate();
         }
 
-        // 2. Fetch the Primary Asset to understand the context
-        Asset primaryAsset = assetRepository.findById(createDto.assetId())
-                .orElseThrow(() -> new ResourceNotFoundException("Asset not found"));
-
-        // --- LOGIC FOR UPDATING ASSET VALUE ---
-        // This is the core logic that replaces the old updateBalance method
-        if (primaryAsset.getBalance() != null) { // It's a currency-based asset (e.g., bank account)
-            // 3. Determine the Exchange Rate to use
-            // The rate we need is between the transaction's currency and the asset's
-            // currency.
-            BigDecimal rate = conversionService.getRate(createDto.currencyOriginal(), primaryAsset.getCurrency());
-            // 4. Calculate the change in the ASSET's balance. This is the most important
-            // calculation.
-            // Example: Spent $10 USD (amountOriginal), rate is 0.92 EUR/USD, asset is in
-            // EUR.
-            // The asset's balance must change by -10.00 * 0.92 = -9.20 EUR.
-            BigDecimal balanceChange = correctedAmountOriginal.multiply(rate);
-
-            // If it's an expense or transfer out, the change to the primary asset is
-            // negative.
-            if (type == TransactionType.expense || type == TransactionType.transfer) {
-                balanceChange = balanceChange.negate();
-            }
-
-            BigDecimal currentBalance = primaryAsset.getBalance() != null ? primaryAsset.getBalance() : BigDecimal.ZERO;
-            primaryAsset.setBalance(currentBalance.add(balanceChange));
-        } else if (primaryAsset.getQuantity() != null) { // It's a unit-based asset (e.g., crypto)
-            // For unit-based assets, the amount *is* the change in quantity.
-            // We assume the transaction currency matches the asset's unit (e.g., amount is
-            // in "BTC").
-            if (!createDto.currencyOriginal().equalsIgnoreCase(primaryAsset.getCurrency())) {
-                throw new IllegalArgumentException("Transaction currency must match the unit-based asset's currency");
-            }
-            BigDecimal currentQuantity = primaryAsset.getQuantity() != null ? primaryAsset.getQuantity()
-                    : BigDecimal.ZERO;
-            primaryAsset.setQuantity(currentQuantity.add(createDto.amountOriginal()));
-        }
-        assetRepository.save(primaryAsset);
-
-        // 6. Handle Transfers
-        if (type == TransactionType.transfer && createDto.destinationAssetId() != null) {
-            Asset destinationAsset = assetRepository.findById(createDto.destinationAssetId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Destination asset not found"));
-
-            // Use the absolute value of the original amount for the receiving end of a
-            // transfer
-            BigDecimal positiveAmountOriginal = createDto.amountOriginal().abs();
-
-            if (destinationAsset.getBalance() != null) { // It's a currency-based asset
-                BigDecimal rate = conversionService.getRate(createDto.currencyOriginal(),
-                        destinationAsset.getCurrency());
-                BigDecimal balanceChange = positiveAmountOriginal.multiply(rate); // Change is now positive
-
-                BigDecimal currentBalance = destinationAsset.getBalance() != null ? destinationAsset.getBalance()
-                        : BigDecimal.ZERO;
-                destinationAsset.setBalance(currentBalance.add(balanceChange)); // Correctly adds to the balance
-
-            } else if (destinationAsset.getQuantity() != null) { // It's a unit-based asset
-                if (!createDto.currencyOriginal().equalsIgnoreCase(destinationAsset.getCurrency())) {
-                    // This logic is more complex. For V1, we can enforce that transfer currencies
-                    // must match for quantity assets.
-                    // Or you'd need a crypto-to-crypto exchange rate.
-                    throw new IllegalArgumentException(
-                            "Cross-currency transfers for unit-based assets are not yet supported.");
-                }
-                BigDecimal currentQuantity = destinationAsset.getQuantity() != null ? destinationAsset.getQuantity()
-                        : BigDecimal.ZERO;
-                destinationAsset.setQuantity(currentQuantity.add(positiveAmountOriginal)); // Correctly adds to the
-                                                                                           // quantity
-            }
-            assetRepository.save(destinationAsset);
-        }
-
-        // 7. For reporting, convert the original amount to the user's BASE currency.
-        BigDecimal amountBase = conversionService.convert(
-                createDto.amountOriginal(),
-                createDto.currencyOriginal(),
+        // 2. Calculate base amount for reporting
+        String baseCurrency = preferencesService.getBaseCurrency(userId);
+        BigDecimal amountBase = conversionService.convert(correctedAmountOriginal, createDto.currencyOriginal(),
                 baseCurrency);
         BigDecimal exchangeRate = conversionService.getRate(baseCurrency, createDto.currencyOriginal());
 
+        // 3. Create and Save the Transaction Entity
         Transaction transaction = new Transaction();
         transaction.setUserId(userId);
-        transaction.setGeneratorId(null); // This is a manual, one-off transaction
+        transaction.setGeneratorId(generatorId);
         transaction.setType(type);
-        transaction.setAmountOriginal(createDto.amountOriginal());
+        transaction.setAmountOriginal(correctedAmountOriginal);
         transaction.setCurrencyOriginal(createDto.currencyOriginal());
         transaction.setAmountBase(amountBase);
-        transaction.setDescription(createDto.description());
         transaction.setExchangeRate(exchangeRate);
+        transaction.setDescription(createDto.description());
         transaction.setDate(createDto.date());
         transaction.setCategoryId(createDto.categoryId());
         transaction.setAssetId(createDto.assetId());
         transaction.setDestinationAssetId(createDto.destinationAssetId());
         transaction.setAttachmentUrl(createDto.attachmentUrl());
         transaction.setCustomFields(createDto.customFields());
+        Transaction savedTx = transactionRepository.save(transaction);
 
-        Transaction savedTransaction = transactionRepository.save(transaction);
+        // 4. Apply the financial impact using the single source of truth method
+        applyBalancesForTransaction(savedTx);
 
-        // if (createDto.assetId() != null) {
-        // assetService.updateBalance(createDto.assetId(), createDto.amountOriginal(),
-        // createDto.type());
-        // }
+        // 5. Create any entity links
+        createLinksForTransaction(savedTx, createDto.links(), userId);
 
-        return toDto(savedTransaction);
-    }
-
-    /**
-     * NEW METHOD: Specifically for creating a transaction generated by the
-     * scheduler.
-     * It includes the generatorId to create the link.
-     */
-    @Transactional
-    public TransactionDto createTransactionFromGenerator(TransactionCreateDto createDto, UUID generatorId,
-            UUID userId) {
-
-        // This method can now just call the main create method, after setting the
-        // generatorId
-        // This requires a bit of refactoring, but for now let's keep it simple:
-        String baseCurrency = preferencesService.getBaseCurrency(userId);
-        BigDecimal amountBase = conversionService.convert(createDto.amountOriginal(), createDto.currencyOriginal(),
-                baseCurrency);
-
-        Transaction transaction = new Transaction();
-        transaction.setUserId(userId);
-        transaction.setGeneratorId(generatorId);
-
-        // Map fields from DTO (same as above)
-        transaction.setAmountOriginal(createDto.amountOriginal());
-        transaction.setCurrencyOriginal(createDto.currencyOriginal());
-        transaction.setAmountBase(amountBase);
-        transaction.setDescription(createDto.description());
-        transaction.setDate(createDto.date());
-        transaction.setType(createDto.type());
-        transaction.setCategoryId(createDto.categoryId());
-        transaction.setAssetId(createDto.assetId());
-        transaction.setDestinationAssetId(createDto.destinationAssetId());
-
-        Transaction savedTransaction = transactionRepository.save(transaction);
-
-        // Here you would also add logic to UPDATE the associated Asset's balance
-        // e.g., assetService.updateBalance(createDto.assetId(), createDto.amount());
-
-        return toDto(savedTransaction);
+        return toDto(savedTx);
     }
 
     public TransactionDto getTransaction(UUID id) {
@@ -299,9 +193,13 @@ public class TransactionService {
             Asset primaryAsset = assetRepository.findById(transaction.getAssetId())
                     .orElseThrow(() -> new ResourceNotFoundException("Primary asset for transaction not found"));
 
+            // Get the change amount. For a transfer, the primary asset is always the source
+            // (negative change).
+            BigDecimal changeAmount = transaction.getAmountOriginal();
+
             if (primaryAsset.getBalance() != null) { // It's a currency-based asset
                 BigDecimal balanceChange = conversionService.convert(
-                        transaction.getAmountOriginal(),
+                        changeAmount,
                         transaction.getCurrencyOriginal(),
                         primaryAsset.getCurrency());
                 BigDecimal currentBalance = primaryAsset.getBalance() != null ? primaryAsset.getBalance()
@@ -322,17 +220,16 @@ public class TransactionService {
         }
 
         // --- Destination Asset Logic (for Transfers) ---
-        if (transaction.getDestinationAssetId() != null) {
+        if (transaction.getType() == TransactionType.transfer && transaction.getDestinationAssetId() != null) {
             Asset destAsset = assetRepository.findById(transaction.getDestinationAssetId())
                     .orElseThrow(() -> new ResourceNotFoundException("Destination asset for transaction not found"));
 
-            // The amount for the destination is always the positive version of the original
-            // amount
-            BigDecimal positiveAmountOriginal = transaction.getAmountOriginal().abs();
+            // The destination always receives a positive amount
+            BigDecimal positiveAmount = transaction.getAmountOriginal().abs();
 
             if (destAsset.getBalance() != null) {
                 BigDecimal balanceChange = conversionService.convert(
-                        positiveAmountOriginal,
+                        positiveAmount,
                         transaction.getCurrencyOriginal(),
                         destAsset.getCurrency());
                 BigDecimal currentBalance = destAsset.getBalance() != null ? destAsset.getBalance() : BigDecimal.ZERO;
@@ -346,7 +243,7 @@ public class TransactionService {
                 }
                 BigDecimal currentQuantity = destAsset.getQuantity() != null ? destAsset.getQuantity()
                         : BigDecimal.ZERO;
-                destAsset.setQuantity(currentQuantity.add(positiveAmountOriginal));
+                destAsset.setQuantity(currentQuantity.add(positiveAmount));
                 assetRepository.save(destAsset);
             }
         }
@@ -429,9 +326,19 @@ public class TransactionService {
         };
     }
 
-    // --- PRIVATE HELPER FOR BALANCE UPDATES ---
-    private void updateBalancesForTransaction(Transaction transaction) {
-        updateBalancesForTransaction(transaction, false);
+    private void createLinksForTransaction(Transaction transaction, List<EntityLinkDto> linksToCreate, UUID userId) {
+        if (linksToCreate == null || linksToCreate.isEmpty()) {
+            return;
+        }
+
+        for (EntityLinkDto linkInfo : linksToCreate) {
+            LinkCreateDto linkDto = new LinkCreateDto(
+                    transaction.getId(), "transaction",
+                    linkInfo.entityId(), linkInfo.entityType(),
+                    "FOR" // Or another relation type
+            );
+            linkService.createLink(linkDto, userId);
+        }
     }
 
     private void updateBalancesForTransaction(Transaction transaction, boolean isReverting) {

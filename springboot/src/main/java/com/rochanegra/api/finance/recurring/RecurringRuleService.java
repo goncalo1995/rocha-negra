@@ -156,6 +156,7 @@ public class RecurringRuleService {
                     null, // No type
                     generator.getFrequency(),
                     generator.getNextDueDate(),
+                    generator.getEndDate(),
                     generator.isActive(),
                     null, // No categoryId
                     null // No assetId
@@ -170,6 +171,7 @@ public class RecurringRuleService {
                 template.getType(),
                 generator.getFrequency(),
                 generator.getNextDueDate(),
+                generator.getEndDate(),
                 generator.isActive(),
                 template.getCategoryId(),
                 template.getAssetId());

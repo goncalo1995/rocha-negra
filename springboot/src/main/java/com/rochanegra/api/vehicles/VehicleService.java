@@ -4,7 +4,7 @@ import com.rochanegra.api.finance.transactions.TransactionCreateDto;
 import com.rochanegra.api.finance.transactions.TransactionService;
 import com.rochanegra.api.finance.types.AssetType;
 import com.rochanegra.api.finance.types.TransactionType;
-
+import com.rochanegra.api.links.EntityLinkDto;
 import com.rochanegra.api.finance.recurring.RecurringRuleCreateDto;
 import com.rochanegra.api.finance.recurring.RecurringRuleService;
 import com.rochanegra.api.finance.assets.AssetCreateDto;
@@ -40,7 +40,7 @@ public class VehicleService {
         AssetCreateDto assetDto = new AssetCreateDto(
                 createDto.name(),
                 AssetType.vehicle,
-                createDto.currency(),
+                createDto.currency() != null ? createDto.currency() : "EUR",
                 createDto.initialValue(),
                 null,
                 "Make: " + createDto.make() + ", Model: " + createDto.model(),
@@ -138,28 +138,8 @@ public class VehicleService {
         }
 
         // Create transaction only if syncToFinance is true
-        // Create transaction only if syncToFinance is true
         if (Boolean.TRUE.equals(logDto.syncToFinance())) {
-            if (logDto.assetId() == null) {
-                throw new IllegalArgumentException("assetId is required when syncToFinance is true");
-            }
-            // Find the default "Car Maintenance" category for this user.
-            UUID maintenanceCategoryId = categoryService.findCategoryBySystemKey(userId, "CAT_CAR_MAINTENANCE")
-                    .map(Category::getId)
-                    .orElse(null);
-
-            TransactionCreateDto transactionDto = new TransactionCreateDto(
-                    logDto.cost().negate(),
-                    logDto.currency(),
-                    "Maintenance (" + logDto.type() + "): " + vehicle.getName(),
-                    logDto.date(),
-                    TransactionType.expense,
-                    maintenanceCategoryId, // Link to chosen category
-                    logDto.assetId(), // Link to chosen asset
-                    null, // destinationAssetId
-                    null, // attachmentUrl
-                    null // customFields
-            );
+            TransactionCreateDto transactionDto = buildMaintenanceTransactionDto(logDto, vehicle, userId);
             transactionService.createTransaction(transactionDto, userId);
         }
 
@@ -219,27 +199,76 @@ public class VehicleService {
 
         // Create transaction only if syncToFinance is true
         if (Boolean.TRUE.equals(logDto.syncToFinance())) {
-            if (logDto.assetId() == null) {
-                // Throw a specific exception that the GlobalExceptionHandler can turn into a
-                // 400 Bad Request
-                throw new IllegalArgumentException("assetId is required when syncToFinance is true.");
-            }
-            TransactionCreateDto transactionDto = new TransactionCreateDto(
-                    logDto.totalCost().negate(),
-                    logDto.currency(),
-                    "Fuel: " + vehicle.getName(),
-                    logDto.date(),
-                    TransactionType.expense,
-                    null, // 5. categoryId
-                    logDto.assetId(), // 6. assetId
-                    null, // 7. destinationAssetId
-                    null, // 8. attachmentUrl
-                    null // 9. customFields
-            );
+            TransactionCreateDto transactionDto = buildFuelTransactionDto(logDto, vehicle, userId);
             transactionService.createTransaction(transactionDto, userId);
         }
 
         return toDto(savedLog);
+    }
+
+    // --- NEW PRIVATE "BUILDER" HELPER METHODS ---
+
+    private TransactionCreateDto buildMaintenanceTransactionDto(MaintenanceLogCreateDto logDto, Vehicle vehicle,
+            UUID userId) {
+        if (logDto.assetId() == null) {
+            throw new IllegalArgumentException("assetId is required when syncing maintenance log to finance.");
+        }
+
+        // Find the default "Car Maintenance" category
+        UUID maintenanceCategoryId = categoryService.findCategoryBySystemKey(userId, "CAT_CAR_MAINTENANCE")
+                .map(Category::getId)
+                .orElse(null);
+
+        // Create the link to the vehicle
+        List<EntityLinkDto> links = List.of(
+                new EntityLinkDto(vehicle.getId(), "vehicle"));
+
+        return new TransactionCreateDto(
+                logDto.cost().negate(), // amountOriginal
+                logDto.currency(),
+                "Maintenance (" + logDto.type() + "): " + vehicle.getName(), // description
+                logDto.date(),
+                TransactionType.expense,
+                maintenanceCategoryId,
+                logDto.assetId(),
+                null, // destinationAssetId
+                null, // attachmentUrl
+                null, // customFields
+                links // The new, explicit link to the vehicle
+        );
+    }
+
+    private TransactionCreateDto buildFuelTransactionDto(FuelLogCreateDto logDto, Vehicle vehicle, UUID userId) {
+        if (logDto.assetId() == null) {
+            throw new IllegalArgumentException("assetId is required when syncing fuel log to finance.");
+        }
+
+        // Find the default "Fuel" category
+        UUID fuelCategoryId = categoryService.findCategoryBySystemKey(userId, "CAT_FUEL")
+                .map(Category::getId)
+                .orElse(null);
+
+        // Create the link to the vehicle
+        List<EntityLinkDto> links = List.of(
+                new EntityLinkDto(vehicle.getId(), "vehicle"));
+
+        // Use the total invoice amount for the transaction if provided, otherwise use
+        // the fuel cost
+        BigDecimal transactionAmount = logDto.invoiceAmount() != null ? logDto.invoiceAmount() : logDto.totalCost();
+
+        return new TransactionCreateDto(
+                transactionAmount.negate(), // amountOriginal
+                logDto.currency(),
+                "Fuel: " + vehicle.getName(), // description
+                logDto.date(),
+                TransactionType.expense,
+                fuelCategoryId,
+                logDto.assetId(),
+                null, // destinationAssetId
+                null, // attachmentUrl
+                null, // customFields
+                links // The new, explicit link
+        );
     }
 
     @Transactional

@@ -71,7 +71,7 @@ export function useIT() {
       return exp >= now && exp <= endOfYear;
     }).length;
 
-    const annualCost = domains.filter(d => d.status !== 'expired').reduce((sum, d) => sum + d.currentPrice, 0);
+    const annualCost = domains.filter(d => d.status !== 'expired' && d.autoRenew).reduce((sum, d) => sum + d.currentPrice, 0);
 
     const sortedByExpiration = [...domains]
       .filter(d => new Date(d.expirationDate) >= now)

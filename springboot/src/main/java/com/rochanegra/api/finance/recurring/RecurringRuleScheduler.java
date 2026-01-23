@@ -93,25 +93,11 @@ public class RecurringRuleScheduler {
             }
 
             // Create a real transaction from the template
-            // @NotNull BigDecimal amountOriginal, // The amount in the original currency
-            // @NotBlank String currencyOriginal, // The currency of the transaction (e.g.,
-            // "USD")
-            // @NotNull BigDecimal exchangeRate,
-            TransactionCreateDto transactionDto = new TransactionCreateDto(
-                    activeTemplate.getAmount(),
-                    activeTemplate.getCurrency(),
-                    // BigDecimal.ONE,
-                    generator.getDescription(),
-                    nextDateToProcess, // Use the date of the occurrence we are processing
-                    activeTemplate.getType(),
-                    activeTemplate.getCategoryId(),
-                    activeTemplate.getAssetId(),
-                    activeTemplate.getDestinationAssetId(),
-                    null,
-                    new HashMap<>());
+            TransactionCreateDto transactionDto = buildTransactionDtoFromTemplate(generator, activeTemplate,
+                    nextDateToProcess);
             transactionService.createTransactionFromGenerator(transactionDto, generator.getId(), generator.getUserId());
-            occurrencesProcessed++;
 
+            occurrencesProcessed++;
             // Calculate the next date in the sequence
             nextDateToProcess = calculateNextDueDate(nextDateToProcess, generator.getFrequency());
         }
@@ -121,6 +107,28 @@ public class RecurringRuleScheduler {
         generatorRepository.save(generator);
         log.info("Successfully processed generator ID: {}. Created {} transactions. New next due date: {}",
                 generator.getId(), occurrencesProcessed, generator.getNextDueDate());
+    }
+
+    private TransactionCreateDto buildTransactionDtoFromTemplate(RecurringGenerator generator,
+            TransactionTemplate template, LocalDate transactionDate) {
+        // Here we could extract linking info from the generator's custom fields if
+        // needed
+        // List<EntityLinkDto> links =
+        // parseLinksFromCustomFields(generator.getCustomFields());
+
+        return new TransactionCreateDto(
+                template.getAmount(),
+                template.getCurrency(),
+                generator.getDescription(),
+                transactionDate, // Use the specific date for this occurrence
+                template.getType(),
+                template.getCategoryId(),
+                template.getAssetId(),
+                template.getDestinationAssetId(),
+                null, // attachmentUrl
+                null, // customFields
+                null // links (or parsed from generator's custom fields)
+        );
     }
 
     private LocalDate calculateNextDueDate(LocalDate currentDueDate, RecurringFrequency frequency) {

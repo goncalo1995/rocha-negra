@@ -22,11 +22,11 @@ export function ExpenseBreakdownChart({ transactions, categories }: ExpenseBreak
         const category = categories.find(c => c.id === t.categoryId);
         if (category) {
           if (category.nature === 'fixed') {
-            acc.fixed += t.amount;
+            acc.fixed += t.amountOriginal;
           } else if (category.nature === 'variable') {
-            acc.variable += t.amount;
+            acc.variable += t.amountOriginal;
           } else if (category.nature === 'savings') {
-            acc.savings += t.amount;
+            acc.savings += t.amountOriginal;
           }
         }
         return acc;

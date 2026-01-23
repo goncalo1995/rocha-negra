@@ -158,12 +158,9 @@ CREATE INDEX ON public.transaction_templates (generator_id, effective_from_date)
 CREATE INDEX ON public.transactions (user_id, date DESC);
 CREATE INDEX ON public.transactions (asset_id);
 CREATE INDEX ON public.transactions (category_id);
-CREATE INDEX ON public.transaction_links (user_id, transaction_id);
-CREATE INDEX ON public.transaction_links (user_id, entity_type, entity_id);
 CREATE INDEX idx_exchange_rates_latest ON public.exchange_rates (base_currency, target_currency, timestamp DESC);
 
 -- Unique constraint to prevent duplicate links
-ALTER TABLE public.transaction_links ADD CONSTRAINT unique_transaction_entity_link UNIQUE (transaction_id, entity_id, entity_type);
 ALTER TABLE public.exchange_rates ADD CONSTRAINT unique_rate_per_day UNIQUE (timestamp, base_currency, target_currency);
 
 -- 8. Enable Row Level Security on ALL tables
@@ -325,29 +322,7 @@ CREATE POLICY "Users can delete own transaction_templates"
   TO authenticated
   USING (user_id = auth.uid());
 
--- 14. RLS Policies for transaction_links
-CREATE POLICY "Users can view own transaction_links"
-  ON public.transaction_links FOR SELECT
-  TO authenticated
-  USING (user_id = auth.uid());
-
-CREATE POLICY "Users can insert own transaction_links"
-  ON public.transaction_links FOR INSERT
-  TO authenticated
-  WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY "Users can update own transaction_links"
-  ON public.transaction_links FOR UPDATE
-  TO authenticated
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY "Users can delete own transaction_links"
-  ON public.transaction_links FOR DELETE
-  TO authenticated
-  USING (user_id = auth.uid());
-
--- 15. RLS Policies for exchange_rates
+-- 14. RLS Policies for exchange_rates
 CREATE POLICY "Nobody can update exchange_rates"
   ON public.exchange_rates FOR ALL
   TO authenticated

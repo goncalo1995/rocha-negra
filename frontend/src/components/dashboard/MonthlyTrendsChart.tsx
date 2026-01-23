@@ -33,11 +33,11 @@ export function MonthlyTrendsChart({ transactions }: MonthlyTrendsChartProps) {
 
       const income = monthTransactions
         .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((sum, t) => sum + t.amountOriginal, 0);
 
       const expenses = monthTransactions
         .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((sum, t) => sum + t.amountOriginal, 0);
 
       monthsData.push({
         name: months[month],

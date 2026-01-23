@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarEvent, Category } from '@/types/finance';
 import { formatCurrency } from '@/lib/formatters';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  ArrowUpRight, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpRight,
   ArrowDownLeft,
   Repeat,
   Wrench,
@@ -53,7 +53,7 @@ export function FinanceCalendar({ getCalendarEvents, categories }: FinanceCalend
     return events.filter(event => isSameDay(event.date, day));
   };
 
-  const selectedEvents = selectedDate 
+  const selectedEvents = selectedDate
     ? getEventsForDay(selectedDate)
     : [];
 
@@ -156,7 +156,7 @@ export function FinanceCalendar({ getCalendarEvents, categories }: FinanceCalend
               {Array.from({ length: startOffset }).map((_, i) => (
                 <div key={`empty-${i}`} className="aspect-square" />
               ))}
-              
+
               {days.map(day => {
                 const dayEvents = getEventsForDay(day);
                 const hasEvents = dayEvents.length > 0;
@@ -182,7 +182,7 @@ export function FinanceCalendar({ getCalendarEvents, categories }: FinanceCalend
                     )}>
                       {format(day, 'd')}
                     </span>
-                    
+
                     {hasEvents && (
                       <div className="flex gap-0.5 mt-auto">
                         {hasIncome && (
@@ -204,7 +204,7 @@ export function FinanceCalendar({ getCalendarEvents, categories }: FinanceCalend
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">
-              {selectedDate 
+              {selectedDate
                 ? format(selectedDate, 'EEEE, MMMM d')
                 : 'Select a day'
               }
@@ -222,8 +222,8 @@ export function FinanceCalendar({ getCalendarEvents, categories }: FinanceCalend
                       <div className={cn(
                         'rounded-lg p-2',
                         event.transactionType === 'income' ? 'bg-success/20 text-success' :
-                        event.transactionType === 'expense' ? 'bg-destructive/20 text-destructive' :
-                        'bg-muted text-muted-foreground'
+                          event.transactionType === 'expense' ? 'bg-destructive/20 text-destructive' :
+                            'bg-muted text-muted-foreground'
                       )}>
                         {event.type === 'recurring' ? (
                           <Repeat className="h-4 w-4" />
@@ -242,9 +242,9 @@ export function FinanceCalendar({ getCalendarEvents, categories }: FinanceCalend
                             variant={event.isPast ? 'secondary' : 'outline'}
                             className="text-xs"
                           >
-                            {event.type === 'recurring' ? 'Scheduled' : 
-                             event.type === 'maintenance' ? 'Maintenance' : 
-                             event.isPast ? 'Completed' : 'Pending'}
+                            {event.type === 'recurring' ? 'Scheduled' :
+                              event.type === 'maintenance' ? 'Maintenance' :
+                                event.isPast ? 'Completed' : 'Pending'}
                           </Badge>
                         </div>
                       </div>
@@ -252,7 +252,6 @@ export function FinanceCalendar({ getCalendarEvents, categories }: FinanceCalend
                         'font-semibold',
                         event.transactionType === 'income' ? 'text-success' : 'text-destructive'
                       )}>
-                        {event.transactionType === 'income' ? '+' : '-'}
                         {formatCurrency(event.amount)}
                       </p>
                     </div>

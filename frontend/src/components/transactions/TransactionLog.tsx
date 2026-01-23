@@ -437,7 +437,7 @@ export function TransactionLog({
                     <div className="text-right flex items-center gap-3">
                       <div>
                         <p className={cn('font-semibold', colorClass)}>
-                          {transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : ''}
+                          {/* {transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : ''} */}
                           {formatCurrency(transaction.amountOriginal || transaction.amountBase, transaction.currencyOriginal || "EUR")}
                         </p>
                       </div>
