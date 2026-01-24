@@ -3,20 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Liability, LiabilityType } from '@/types/finance';
+import { Liability, LiabilityCreateDto, LiabilityType, LiabilityUpdateDto } from '@/types/finance';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { Plus, Landmark, CreditCard, Home, Pencil, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 // --- Props for the component ---
 interface LiabilitiesManagerProps {
   liabilities: Liability[];
-  onAddLiability: (liability: Omit<Liability, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => void;
-  onUpdateLiability: (id: string, updates: Partial<Liability>) => void;
-  onDeleteLiability: (id: string) => void;
   baseCurrency: string; // Pass the user's base currency as a prop
+  onAddLiability: (liability: LiabilityCreateDto) => void;
+  onUpdateLiability: (id: string, updates: LiabilityUpdateDto) => void;
+  onDeleteLiability: (id: string) => void;
 }
 
 // --- Configuration for liability types (icons, labels) ---
@@ -27,7 +25,7 @@ const liabilityTypeConfig: Record<LiabilityType, { label: string; icon: React.El
   other: { label: 'Other', icon: Landmark },
 };
 
-export function LiabilitiesManager({ liabilities, onAddLiability, onUpdateLiability, onDeleteLiability, baseCurrency }: LiabilitiesManagerProps) {
+export function LiabilitiesManager({ liabilities, baseCurrency, onAddLiability, onUpdateLiability, onDeleteLiability }: LiabilitiesManagerProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
 
@@ -58,11 +56,11 @@ export function LiabilitiesManager({ liabilities, onAddLiability, onUpdateLiabil
       name,
       type,
       currency: baseCurrency,
-      initial_amount: initial,
-      current_balance: current,
-      interest_rate: parseFloat(interestRate) || undefined,
-      description: '', // Add fields for these if needed
-      custom_fields: {},
+      initialAmount: initial,
+      currentBalance: current,
+      interestRate: parseFloat(interestRate) || undefined,
+      description: '',
+      customFields: {},
     };
 
     if (editingLiability) {

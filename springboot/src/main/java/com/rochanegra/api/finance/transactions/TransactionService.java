@@ -106,18 +106,6 @@ public class TransactionService {
         // Revert the balance changes by passing the negated amount
         updateBalancesForTransaction(transaction, true); // true = isReverting
 
-        // Revert asset balance
-        // if (transaction.getAssetId() != null) {
-        // If it was income, we subtract. If expense, we add.
-        // We can reuse updateBalance but invert the amount logic or type.
-        // Simpler: pass NEGATED amount with SAME type.
-        // updateBalance(income, -100) -> adds -100 = subtract 100.
-        // updateBalance(expense, -100) -> subtracts -100 = adds 100.
-        // assetService.updateBalance(transaction.getAssetId(),
-        // transaction.getAmountOriginal().negate(),
-        // transaction.getType());
-        // }
-
         transactionRepository.delete(transaction);
     }
 
@@ -342,40 +330,54 @@ public class TransactionService {
     }
 
     private void updateBalancesForTransaction(Transaction transaction, boolean isReverting) {
-        BigDecimal amount = transaction.getAmountBase(); // Always use the base amount for consistency
-        if (isReverting) {
-            amount = amount.negate();
-        }
+        // Determine the sign multiplier. If we are reverting, flip the signs.
+        BigDecimal sign = isReverting ? new BigDecimal("-1") : BigDecimal.ONE;
 
         // Update the primary asset
         if (transaction.getAssetId() != null) {
             Asset primaryAsset = assetRepository.findById(transaction.getAssetId()).orElseThrow();
 
-            BigDecimal changeInAssetCurrency = conversionService.convert(amount,
-                    preferencesService.getBaseCurrency(transaction.getUserId()), primaryAsset.getCurrency());
+            // The change is always based on the original amount.
+            // For an expense/transfer, this is already negative.
+            BigDecimal changeAmount = transaction.getAmountOriginal().multiply(sign);
 
-            // GUARD: Get current balance or default to ZERO
-            BigDecimal currentBalance = primaryAsset.getBalance() != null ? primaryAsset.getBalance() : BigDecimal.ZERO;
-
-            if (transaction.getType() == TransactionType.income) {
-                primaryAsset.setBalance(currentBalance.add(changeInAssetCurrency));
-            } else { // Expense or Transfer-out
-                primaryAsset.setBalance(currentBalance.subtract(changeInAssetCurrency));
+            if (primaryAsset.getBalance() != null) {
+                BigDecimal balanceChange = conversionService.convert(changeAmount, transaction.getCurrencyOriginal(),
+                        primaryAsset.getCurrency());
+                // BigDecimal changeInAssetCurrency = conversionService.convert(amount,
+                // preferencesService.getBaseCurrency(transaction.getUserId()),
+                // primaryAsset.getCurrency());
+                BigDecimal currentBalance = primaryAsset.getBalance() != null ? primaryAsset.getBalance()
+                        : BigDecimal.ZERO;
+                primaryAsset.setBalance(currentBalance.add(balanceChange));
+                assetRepository.save(primaryAsset);
+            } else if (primaryAsset.getQuantity() != null) {
+                // TODO FIXME
+                // BigDecimal quantityChange =
+                // changeAmount.divide(primaryAsset.getConversionRate(),
+                // BigDecimal.ROUND_HALF_UP);
+                // BigDecimal currentQuantity = primaryAsset.getQuantity() != null ?
+                // primaryAsset.getQuantity()
+                // : BigDecimal.ZERO;
+                // primaryAsset.setQuantity(currentQuantity.add(quantityChange));
+                // assetRepository.save(primaryAsset);
             }
-            assetRepository.save(primaryAsset);
         }
 
         // Update destination asset for transfers
         if (transaction.getDestinationAssetId() != null) {
-            Asset destAsset = assetRepository.findById(transaction.getDestinationAssetId()).orElseThrow();
-            BigDecimal changeInDestCurrency = conversionService.convert(amount,
-                    preferencesService.getBaseCurrency(transaction.getUserId()), destAsset.getCurrency());
+            Asset destAsset = assetRepository.findById(transaction.getDestinationAssetId()).orElseThrow(/* ... */);
 
-            // GUARD: Get current balance or default to ZERO
-            BigDecimal currentBalance = destAsset.getBalance() != null ? destAsset.getBalance() : BigDecimal.ZERO;
+            // The destination always receives a positive amount, so we use .abs()
+            BigDecimal positiveAmount = transaction.getAmountOriginal().abs().multiply(sign);
 
-            destAsset.setBalance(currentBalance.add(changeInDestCurrency)); // Always adds
-            assetRepository.save(destAsset);
+            if (destAsset.getBalance() != null) {
+                BigDecimal balanceChange = conversionService.convert(positiveAmount, transaction.getCurrencyOriginal(),
+                        destAsset.getCurrency());
+                BigDecimal currentBalance = destAsset.getBalance() != null ? destAsset.getBalance() : BigDecimal.ZERO;
+                destAsset.setBalance(currentBalance.add(balanceChange));
+                assetRepository.save(destAsset);
+            } // ... FIXME else if quantity ...
         }
 
         // You would add similar logic here for updating Liability balances if a

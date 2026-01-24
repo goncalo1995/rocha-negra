@@ -118,6 +118,24 @@ export interface AssetCreateDto {
   customFields: Record<string, string>;
 }
 
+export interface LiabilityCreateDto {
+  name: string;
+  type: LiabilityType;
+  currency: string;
+  initialAmount: number;
+  currentBalance: number;
+  interestRate: number;
+  description: string;
+  customFields: Record<string, string>;
+}
+
+export interface LiabilityUpdateDto {
+  name: string;
+  interestRate: number;
+  description: string;
+  customFields: Record<string, string>;
+}
+
 export interface TransactionCreateDto {
   type: TransactionType;
   amountOriginal: number;
@@ -126,7 +144,10 @@ export interface TransactionCreateDto {
   date: string;
   categoryId: string;
   assetId: string;
-  isRecurring: boolean;
+  destinationAssetId: string;
+  attachmentUrl: string | null;
+  customFields: Record<string, string> | null;
+  links: string[] | null;
 }
 
 export interface FuelLogCreateDto {

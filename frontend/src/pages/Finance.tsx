@@ -10,7 +10,7 @@ import { FinanceCalendar } from '@/components/calendar/FinanceCalendar';
 import { RecurringRulesManager } from '@/components/recurring/RecurringRulesManager';
 import { useFinance } from '@/hooks/useFinance';
 import { CalendarEvent } from '@/types/finance';
-import { LayoutDashboard, Wallet, Receipt, Calendar, Repeat, ChevronLeft, LineChart } from 'lucide-react';
+import { LayoutDashboard, Wallet, Receipt, Calendar, Repeat, ChevronLeft, LineChart, CreditCard } from 'lucide-react';
 import {
   startOfMonth,
   endOfMonth,
@@ -22,12 +22,14 @@ import {
   addWeeks,
 } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LiabilitiesManager } from '@/components/liabilities/LiabilitiesManager';
 
 const Finance = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const {
     assets,
     categories,
+    liabilities,
     transactions,
     recurringRules,
     metrics,
@@ -39,6 +41,9 @@ const Finance = () => {
     updateTransaction,
     deleteTransaction,
     addRecurringRule,
+    addLiability,
+    updateLiability,
+    deleteLiability,
     updateRecurringRule,
     deleteRecurringRule,
     addTransactions,
@@ -117,7 +122,7 @@ const Finance = () => {
       {/* Main Content */}
       <main className="container py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-5">
+          <TabsList className="grid w-full max-w-2xl grid-cols-6">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -129,6 +134,10 @@ const Finance = () => {
             <TabsTrigger value="assets" className="gap-2">
               <Wallet className="h-4 w-4" />
               <span className="hidden sm:inline">Assets</span>
+            </TabsTrigger>
+            <TabsTrigger value="liabilities" className="gap-2">
+              <CreditCard className="h-4 w-4" />
+              <span className="hidden sm:inline">Liabilities</span>
             </TabsTrigger>
             <TabsTrigger value="transactions" className="gap-2">
               <Receipt className="h-4 w-4" />
@@ -171,9 +180,20 @@ const Finance = () => {
           <TabsContent value="assets" className="animate-fade-in">
             <AssetManager
               assets={assets}
+              baseCurrency='EUR'
               onAddAsset={addAsset}
               onUpdateAsset={updateAsset}
               onDeleteAsset={deleteAsset}
+            />
+          </TabsContent>
+
+          <TabsContent value="liabilities" className="animate-fade-in">
+            <LiabilitiesManager
+              liabilities={liabilities}
+              baseCurrency={"EUR"}
+              onAddLiability={addLiability}
+              onUpdateLiability={updateLiability}
+              onDeleteLiability={deleteLiability}
             />
           </TabsContent>
 
@@ -208,8 +228,8 @@ const Finance = () => {
       <QuickAddButton
         categories={categories}
         assets={assets}
+        baseCurrency="EUR"
         onAddTransaction={addTransaction}
-        onAddRecurringRule={addRecurringRule}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Asset, Category, Transaction, DashboardMetrics, RecurringRule } from '@/types/finance';
+import { Asset, Category, Transaction, DashboardMetrics, RecurringRule, Liability } from '@/types/finance';
 import { useCallback, useMemo } from 'react';
 
 export function useFinance() {
@@ -11,6 +11,14 @@ export function useFinance() {
     queryKey: ['assets'],
     queryFn: async () => {
       const response = await api.get<Asset[]>('/assets');
+      return response.data;
+    },
+  });
+
+  const { data: liabilities = [] } = useQuery({
+    queryKey: ['liabilities'],
+    queryFn: async () => {
+      const response = await api.get<Liability[]>('/liabilities');
       return response.data;
     },
   });
@@ -51,7 +59,7 @@ export function useFinance() {
   const metrics: DashboardMetrics = useMemo(() => ({
     netWorth: metricsData?.totalNetWorth || 0,
     totalAssets: metricsData?.totalNetWorth || 0, // Simplified
-    totalLiabilities: 0,
+    totalLiabilities: metricsData?.totalLiabilities || 0,
     monthlyBurn: Math.abs(metricsData?.monthlyExpenses || 0),
     monthlyIncome: metricsData?.monthlyIncome || 0,
     monthlyBudget: metricsData?.monthlyIncome || 0,
@@ -81,6 +89,31 @@ export function useFinance() {
     mutationFn: (id: string) => api.delete(`/assets/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
+
+  // Liability Mutations
+  const addLiabilityMutation = useMutation({
+    mutationFn: (liability: Omit<Liability, 'id' | 'createdAt' | 'updatedAt'>) => api.post('/liabilities', liability),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
+
+  const updateLiabilityMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Liability> }) => api.patch(`/liabilities/${id}`, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    },
+  });
+
+  const deleteLiabilityMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/liabilities/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['liabilities'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
     },
   });
@@ -153,6 +186,10 @@ export function useFinance() {
   const addAsset = useCallback(async (asset: any) => addAssetMutation.mutateAsync(asset), [addAssetMutation]);
   const updateAsset = useCallback(async (id: string, updates: any) => updateAssetMutation.mutateAsync({ id, updates }), [updateAssetMutation]);
   const deleteAsset = useCallback(async (id: string) => deleteAssetMutation.mutateAsync(id), [deleteAssetMutation]);
+
+  const addLiability = useCallback(async (liability: any) => addLiabilityMutation.mutateAsync(liability), [addLiabilityMutation]);
+  const updateLiability = useCallback(async (id: string, updates: any) => updateLiabilityMutation.mutateAsync({ id, updates }), [updateLiabilityMutation]);
+  const deleteLiability = useCallback(async (id: string) => deleteLiabilityMutation.mutateAsync(id), [deleteLiabilityMutation]);
 
   const addTransaction = useCallback(async (transaction: any) => addTransactionMutation.mutateAsync(transaction), [addTransactionMutation]);
   const addTransactions = useCallback(async (transactions: any[]) => {
@@ -256,6 +293,7 @@ export function useFinance() {
     queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
     queryClient.invalidateQueries({ queryKey: ['assets'] });
+    queryClient.invalidateQueries({ queryKey: ['liabilities'] });
     queryClient.invalidateQueries({ queryKey: ['categories'] });
     queryClient.invalidateQueries({ queryKey: ['recurring-rules'] });
   }, [categories, assets, recurringRules, transactions, addCategory, addAsset, addRecurringRule, addTransactions, queryClient]);
@@ -263,6 +301,7 @@ export function useFinance() {
   return {
     assets,
     categories,
+    liabilities,
     transactions,
     recurringRules,
     metrics,
@@ -279,6 +318,9 @@ export function useFinance() {
     addRecurringRule,
     updateRecurringRule,
     deleteRecurringRule,
+    addLiability,
+    updateLiability,
+    deleteLiability,
     getAssetById,
     getCategoryById,
     exportData,

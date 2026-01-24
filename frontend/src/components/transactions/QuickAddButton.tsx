@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,108 +17,112 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Transaction, Category, Asset, TransactionType, RecurringRule, RecurringFrequency, TransactionCreateDto } from '@/types/finance';
+import { Category, Asset, TransactionType, TransactionCreateDto, LIQUID_ASSET_TYPES } from '@/types/finance';
 import { Plus, ArrowDownLeft, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { addMonths, addWeeks, addQuarters, addYears, setDate, addDays } from 'date-fns';
+import { toast } from 'sonner';
 
 interface QuickAddButtonProps {
   categories: Category[];
   assets: Asset[];
+  baseCurrency: string;
   onAddTransaction: (transaction: TransactionCreateDto) => void;
-  onAddRecurringRule?: (rule: Omit<RecurringRule, 'id'>) => void;
+  // onAddRecurringRule?: (rule: Omit<RecurringRule, 'id'>) => void;
 }
 
-function getNextDueDate(frequency: RecurringFrequency, dayOfMonth: number): string {
-  const now = new Date();
-  let nextDate = setDate(now, dayOfMonth);
+const initialFormState = {
+  type: 'expense' as TransactionType,
+  amount: '',
+  description: '',
+  categoryId: '',
+  assetId: '', // Source asset
+  destinationAssetId: '', // Destination asset
+  attachmentUrl: ''
+};
 
-  // If the day has passed this period, move to next period
-  if (nextDate <= now) {
-    switch (frequency) {
-      case 'daily':
-        nextDate = addDays(nextDate, 1);
-        break;
-      case 'weekly':
-        nextDate = addWeeks(nextDate, 1);
-        break;
-      case 'monthly':
-        nextDate = addMonths(nextDate, 1);
-        break;
-      case 'quarterly':
-        nextDate = addQuarters(nextDate, 1);
-        break;
-      case 'yearly':
-        nextDate = addYears(nextDate, 1);
-        break;
-    }
-  }
-
-  return nextDate.toISOString();
-}
-
-export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecurringRule }: QuickAddButtonProps) {
+export function QuickAddButton({ categories, assets, baseCurrency, onAddTransaction }: QuickAddButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [type, setType] = useState<TransactionType>('expense');
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [currency, setCurrency] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [assetId, setAssetId] = useState('');
-  const [destinationAssetId, setDestinationAssetId] = useState('');
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
-  const [dayOfMonth, setDayOfMonth] = useState('1');
+  const [form, setForm] = useState(initialFormState);
 
-  const resetForm = () => {
-    setType('expense');
-    setAmount('');
-    setDescription('');
-    setCategoryId('');
-    setAssetId('');
-    setIsRecurring(false);
-    setFrequency('monthly');
-    setDayOfMonth('1');
-  };
+  // Filter assets to only show valid payment/deposit sources
+  const liquidAssets = useMemo(() => assets.filter(a => LIQUID_ASSET_TYPES.includes(a.type as any)), [assets]);
+  const filteredCategories = useMemo(() => categories.filter(c => form.type === 'transfer' ? true : c.type === form.type), [categories, form.type]);
+  // const filteredCategories = categories.filter(c =>
+  //   type === 'income' ? c.type === 'income' : c.type === 'expense'
+  // );
+
+  // const [type, setType] = useState<TransactionType>('expense');
+  // const [amount, setAmount] = useState('');
+  // const [description, setDescription] = useState('');
+  // const [currency, setCurrency] = useState('');
+  // const [categoryId, setCategoryId] = useState('');
+  // const [assetId, setAssetId] = useState('');
+  // const [destinationAssetId, setDestinationAssetId] = useState('');
+  // const [dayOfMonth, setDayOfMonth] = useState('1');
+  // const [attachmentUrl, setAttachmentUrl] = useState('');
+
+
+
+  // const resetForm = () => {
+  //   setType('expense');
+  //   setAmount('');
+  //   setDescription('');
+  //   setCategoryId('');
+  //   setAssetId('');
+  //   setDestinationAssetId('');
+  //   setDayOfMonth('1');
+  // };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const parsedAmount = parseFloat(amount);
-    const parsedDayOfMonth = parseInt(dayOfMonth) || 1;
-    if (isNaN(parsedAmount) || !categoryId || !assetId) return;
+    const parsedAmount = parseFloat(form.amount);
+    if (isNaN(parsedAmount) || !form.assetId || !form.type) return;
+
+    // Validation
+    const isTransfer = form.type === 'transfer';
+    if (isNaN(parsedAmount) || !form.assetId || (isTransfer && !form.destinationAssetId)) {
+      toast.error("Please fill all required fields.");
+      return;
+    }
+
+    // The amount for transfers should be entered as a positive number representing the moved value.
+    const amountOriginal = isTransfer
+      ? -Math.abs(parsedAmount) // The source asset loses value
+      : (form.type === 'expense' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount));
 
     // Always add the transaction
-    onAddTransaction({
-      type,
-      amountOriginal: parsedAmount,
-      currencyOriginal: currency || "EUR",
-      description: description || 'Quick transaction',
-      date: new Date().toISOString(),
-      categoryId,
-      assetId,
-      isRecurring,
-    });
+    const transactionData: TransactionCreateDto = {
+      amountOriginal: amountOriginal,
+      currencyOriginal: baseCurrency, // For V1, quick-add uses the base currency
+      description: form.description || `${form.type.charAt(0).toUpperCase() + form.type.slice(1)}`,
+      date: new Date().toISOString().split('T')[0],
+      assetId: form.assetId,
+      destinationAssetId: isTransfer ? form.destinationAssetId : null,
+      categoryId: !isTransfer ? form.categoryId : null,
+      type: form.type, // Send the explicit type
+      // The backend expects all fields, so send null for the rest
+      attachmentUrl: null,
+      customFields: null,
+      links: null,
+    };
 
-    resetForm();
+    onAddTransaction(transactionData);
     setIsOpen(false);
   };
 
-  const filteredCategories = categories.filter(c =>
-    type === 'income' ? c.type === 'income' : c.type === 'expense'
-  );
+  // When dialog closes, reset the form
+  useEffect(() => { if (!isOpen) setForm(initialFormState) }, [isOpen]);
 
   const typeButtons = [
     { value: 'expense' as const, label: 'Expense', icon: ArrowUpRight, color: 'text-destructive border-destructive' },
     { value: 'income' as const, label: 'Income', icon: ArrowDownLeft, color: 'text-success border-success' },
-    { value: 'transfer' as const, label: 'Transfer', icon: ArrowLeftRight, color: 'text-muted-foreground border-muted' },
+    { value: 'transfer' as const, label: 'Transfer', icon: ArrowLeftRight, color: 'text-foreground border-foreground' },
   ];
 
   const swapAssets = () => {
-    const temp = assetId;
-    setAssetId(destinationAssetId);
-    setDestinationAssetId(temp);
+    const temp = form.assetId;
+    setForm({ ...form, assetId: form.destinationAssetId, destinationAssetId: temp });
   };
 
   return (
@@ -133,7 +137,7 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
       </Button>
 
       {/* Quick Add Dialog */}
-      <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Quick Add Transaction</DialogTitle>
@@ -152,11 +156,10 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
                   variant="outline"
                   className={cn(
                     'flex-1 gap-2',
-                    type === value && color
+                    form.type === value && color
                   )}
                   onClick={() => {
-                    setType(value);
-                    setCategoryId('');
+                    setForm({ ...form, type: value, categoryId: '' });
                   }}
                 >
                   <Icon className="h-4 w-4" />
@@ -175,24 +178,24 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
                 min="0"
                 placeholder="0.00"
                 className="text-2xl font-bold h-14"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
                 autoFocus
                 required
               />
             </div>
 
             {/* --- NEW DYNAMIC ASSET SELECTORS --- */}
-            {type === 'transfer' ? (
+            {form.type === 'transfer' ? (
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <Label>From</Label>
-                  <Select value={assetId} onValueChange={setAssetId} required>
+                  <Select value={form.assetId} onValueChange={v => setForm(f => ({ ...f, assetId: v }))} required>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
+                      <SelectValue placeholder="From" />
                     </SelectTrigger>
                     <SelectContent>
-                      {assets.map((asset) => (
+                      {liquidAssets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           {asset.name}
                         </SelectItem>
@@ -207,12 +210,12 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
 
                 <div className="flex-1">
                   <Label>To</Label>
-                  <Select value={destinationAssetId} onValueChange={setDestinationAssetId} required>
+                  <Select value={form.destinationAssetId} onValueChange={v => setForm(f => ({ ...f, destinationAssetId: v }))} required>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
+                      <SelectValue placeholder="To" />
                     </SelectTrigger>
                     <SelectContent>
-                      {assets.map((asset) => (
+                      {liquidAssets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           {asset.name}
                         </SelectItem>
@@ -223,13 +226,13 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
               </div>
             ) : (
               <div className="space-y-2">
-                <Label>{type === 'income' ? 'To Account' : 'From Account'}</Label>
-                <Select value={assetId} onValueChange={setAssetId} required>
+                <Label>{form.type === 'income' ? 'To Account' : 'From Account'}</Label>
+                <Select value={form.assetId} onValueChange={v => setForm(f => ({ ...f, assetId: v }))} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
                   <SelectContent>
-                    {assets.map((asset) => (
+                    {liquidAssets.map((asset) => (
                       <SelectItem key={asset.id} value={asset.id}>
                         {asset.name}
                       </SelectItem>
@@ -240,21 +243,23 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
             )}
 
             {/* Category */}
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select value={categoryId} onValueChange={setCategoryId} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {form.type !== 'transfer' && (
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select value={form.categoryId} onValueChange={v => setForm(f => ({ ...f, categoryId: v }))} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Description */}
             <div className="space-y-2">
@@ -264,61 +269,17 @@ export function QuickAddButton({ categories, assets, onAddTransaction, onAddRecu
                 placeholder="What's this for?"
                 className="resize-none"
                 rows={2}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={form.description}
+                onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
               />
             </div>
-
-            {/* Recurring Toggle */}
-            {/* <div className="flex items-center justify-between rounded-lg border p-3">
-              <div>
-                <Label htmlFor="recurring" className="font-medium">Recurring</Label>
-                <p className="text-xs text-muted-foreground">This happens regularly</p>
-              </div>
-              <Switch
-                id="recurring"
-                checked={isRecurring}
-                onCheckedChange={setIsRecurring}
-              />
-            </div>
-
-            {isRecurring && (
-              <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
-                <div className="space-y-2">
-                  <Label htmlFor="frequency">Frequency</Label>
-                  <Select value={frequency} onValueChange={(v) => setFrequency(v as RecurringFrequency)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {frequencyOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dayOfMonth">Day of {frequency === 'weekly' ? 'week' : 'month'}</Label>
-                  <Input
-                    id="dayOfMonth"
-                    type="number"
-                    min="1"
-                    max={frequency === 'weekly' ? 7 : 31}
-                    value={dayOfMonth}
-                    onChange={(e) => setDayOfMonth(e.target.value)}
-                  />
-                </div>
-              </div>
-            )} */}
 
             {/* Submit */}
             <div className="flex gap-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setIsOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1" disabled={!amount || !categoryId || !assetId}>
+              <Button type="submit" className="flex-1" disabled={!form.amount || !form.assetId} onClick={handleSubmit}>
                 Add Transaction
               </Button>
             </div>
