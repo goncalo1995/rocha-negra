@@ -5,12 +5,12 @@ import com.rochanegra.api.finance.assets.Asset;
 import com.rochanegra.api.finance.assets.AssetRepository;
 import com.rochanegra.api.finance.liabilities.Liability;
 import com.rochanegra.api.finance.liabilities.LiabilityRepository;
-import com.rochanegra.api.finance.preferences.UserPreferencesService;
 import com.rochanegra.api.finance.services.CurrencyConversionService;
 import com.rochanegra.api.finance.transactions.TransactionDto;
 import com.rochanegra.api.finance.transactions.TransactionRepository;
 import com.rochanegra.api.finance.transactions.TransactionService;
 import com.rochanegra.api.finance.types.TransactionType;
+import com.rochanegra.api.preferences.UserPreferencesService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,7 +57,7 @@ public class DashboardService {
                 // BigDecimal marketPrice =
                 // assetPriceUpdateService.getLatestPrice(asset.getCurrency(), baseCurrency);
                 // totalAssets = totalAssets.add(asset.getQuantity().multiply(marketPrice));
-                System.out.println("FIX Not implemented: Asset quantity: " + asset.getQuantity());
+                // System.out.println("Ignoring asset quantity for netWorth calculation: ");
             }
         }
 

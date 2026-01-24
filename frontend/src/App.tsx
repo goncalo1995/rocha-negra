@@ -13,13 +13,15 @@ import NotFound from "./pages/NotFound";
 import { CVPage } from "./pages/CVPage";
 import { SkillsPage } from "./pages/SkillsPage";
 import { StrictMode } from "react";
+import { ProjectionsPage } from "./pages/finance/ProjectionsPage";
+import { MainLayout } from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, loading } = useAuth();
+  const { session, isLoading } = useAuth();
 
-  if (loading) {
+  if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
 
@@ -40,41 +42,24 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/finance"
-                element={
-                  <ProtectedRoute>
-                    <Finance />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/it"
-                element={
-                  <ProtectedRoute>
-                    <IT />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/vehicles"
-                element={
-                  <ProtectedRoute>
-                    <Vehicles />
-                  </ProtectedRoute>
-                }
-              />
-
               <Route path="/cv" element={<CVPage />} />
               <Route path="/cv/skills" element={<SkillsPage />} />
+
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <MainLayout />
+                  </ProtectedRoute>
+                }
+              >
+                {/* These routes are now children of MainLayout */}
+                <Route path="/" element={<Index />} />
+                <Route path="/finance" element={<Finance />} />
+                <Route path="/finance/projections" element={<ProjectionsPage />} />
+                <Route path="/vehicles" element={<Vehicles />} />
+                <Route path="/it" element={<IT />} />
+                {/* ... all other protected pages ... */}
+              </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

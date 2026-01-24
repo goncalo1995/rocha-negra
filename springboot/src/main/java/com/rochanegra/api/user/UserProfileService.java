@@ -1,8 +1,13 @@
 package com.rochanegra.api.user;
 
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
+import com.rochanegra.api.exception.ResourceNotFoundException;
+import com.rochanegra.api.preferences.UserPreferencesService;
+
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -10,11 +15,26 @@ import java.util.UUID;
 public class UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
+    private final UserPreferencesService userPreferencesService;
 
-    public UserProfileDto getProfile(UUID userId) {
+    public UserDataDto getUserData(UUID userId) {
+        // Fetch the user's profile
         UserProfile profile = userProfileRepository.findById(userId)
-                .orElseGet(() -> createDefaultProfile(userId));
-        return toDto(profile);
+                .orElseThrow(() -> new ResourceNotFoundException("Profile not found for user"));
+
+        // Fetch the user's preferences
+        Map<String, Object> preferences = userPreferencesService.getAllPreferences(userId);
+
+        // Map the profile entity to a DTO
+        UserProfileDto profileDto = new UserProfileDto(
+                profile.getId(),
+                profile.getEmail(),
+                profile.getFullName(),
+                profile.getAvatarUrl(),
+                profile.getCreatedAt());
+
+        // Return the combined DTO
+        return new UserDataDto(profileDto, preferences);
     }
 
     public UserProfileDto updateProfile(UUID userId, UserProfileUpdateDto updateDto) {
@@ -31,16 +51,16 @@ public class UserProfileService {
     private UserProfile createDefaultProfile(UUID userId) {
         UserProfile profile = new UserProfile();
         profile.setId(userId);
-        profile.setEmail(userId.toString() + "@placeholder.com"); // Unique placeholder
+        profile.setEmail(userId.toString() + "@placeholder.com");
         return userProfileRepository.save(profile);
     }
 
     private UserProfileDto toDto(UserProfile profile) {
         return new UserProfileDto(
                 profile.getId(),
-                profile.getId(), // userId is same as id
                 profile.getEmail(),
                 profile.getFullName(),
+                profile.getAvatarUrl(),
                 profile.getCreatedAt());
     }
 }

@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record UserProfileDto(
-                UUID id,
-                UUID userId,
-                String email,
-                String fullName,
-                Instant createdAt) {
+        UUID id,
+        String email,
+        String fullName,
+        String avatarUrl,
+        Instant createdAt) {
 }

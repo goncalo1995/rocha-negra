@@ -1,9 +1,8 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { DashboardCockpit } from '@/components/dashboard/DashboardCockpit';
-import { ProjectionsChart } from '@/components/dashboard/ProjectionsChart';
 import { AssetManager } from '@/components/assets/AssetManager';
 import { TransactionLog } from '@/components/transactions/TransactionLog';
 import { QuickAddButton } from '@/components/transactions/QuickAddButton';
@@ -11,7 +10,7 @@ import { FinanceCalendar } from '@/components/calendar/FinanceCalendar';
 import { RecurringRulesManager } from '@/components/recurring/RecurringRulesManager';
 import { useFinance } from '@/hooks/useFinance';
 import { CalendarEvent } from '@/types/finance';
-import { LayoutDashboard, Wallet, Receipt, Mountain, Calendar, Repeat, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, Wallet, Receipt, Calendar, Repeat, ChevronLeft, LineChart } from 'lucide-react';
 import {
   startOfMonth,
   endOfMonth,
@@ -22,6 +21,7 @@ import {
   addDays,
   addWeeks,
 } from 'date-fns';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Finance = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -31,6 +31,7 @@ const Finance = () => {
     transactions,
     recurringRules,
     metrics,
+    isLoadingMetrics,
     addAsset,
     updateAsset,
     deleteAsset,
@@ -44,6 +45,7 @@ const Finance = () => {
     exportData,
     importData,
   } = useFinance();
+
 
   // Calendar events function
   const getCalendarEvents = useCallback((month: Date): CalendarEvent[] => {
@@ -105,69 +107,13 @@ const Finance = () => {
     return events.sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [transactions, recurringRules, categories]);
 
-  // Projections
-  const projections = useMemo(() => {
-    const result = [];
-    const now = new Date();
-    let cumulativeBalance = metrics.netWorth;
 
-    for (let i = 0; i < 12; i++) {
-      const targetMonth = addMonths(now, i);
-      let projectedIncome = 0;
-      let projectedExpenses = 0;
-
-      recurringRules.forEach(rule => {
-        if (!rule.isActive) return;
-
-        // ASSUMPTION: rule.amount is in the user's base currency.
-        let monthlyAmount = rule.amount;
-        if (rule.frequency === 'daily') monthlyAmount *= 30;
-        else if (rule.frequency === 'weekly') monthlyAmount *= 4;
-        else if (rule.frequency === 'quarterly') monthlyAmount /= 3;
-        else if (rule.frequency === 'yearly') monthlyAmount /= 12;
-
-        if (rule.type === 'income') projectedIncome += monthlyAmount;
-        else projectedExpenses += monthlyAmount; // It's already negative
-      });
-
-      const projectedBalance = projectedIncome + projectedExpenses;
-      cumulativeBalance += projectedBalance;
-
-      result.push({
-        month: targetMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        date: targetMonth,
-        projectedIncome,
-        projectedExpenses,
-        projectedBalance,
-        cumulativeBalance,
-      });
-    }
-
-    return result;
-  }, [recurringRules, metrics.netWorth]);
+  if (isLoadingMetrics || metrics == null) {
+    return <div>Loading Dashboard...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/">
-              <Button variant="ghost" size="icon" className="mr-2">
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Wallet className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight">Finance</h1>
-              <p className="text-xs text-muted-foreground">Rocha Negra</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="container py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -200,7 +146,22 @@ const Finance = () => {
               transactions={transactions}
               categories={categories}
             />
-            <ProjectionsChart projections={projections} currentBalance={metrics.netWorth} />
+            <Card>
+              <CardHeader>
+                <CardTitle>Financial Forecast</CardTitle>
+                <CardDescription>
+                  View a detailed 24-month projection of your net worth based on your recurring rules.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link to="/finance/projections">
+                  <Button>
+                    <LineChart className="mr-2 h-4 w-4" />
+                    View Projections
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="calendar" className="animate-fade-in">

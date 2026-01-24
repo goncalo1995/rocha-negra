@@ -16,9 +16,9 @@ public class UserProfileController {
     private final UserProfileService userProfileService;
 
     @GetMapping("/me")
-    public ResponseEntity<UserProfileDto> getMyProfile(Authentication authentication) {
+    public ResponseEntity<UserDataDto> getMyProfile(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
-        return ResponseEntity.ok(userProfileService.getProfile(userId));
+        return ResponseEntity.ok(userProfileService.getUserData(userId));
     }
 
     @PatchMapping("/me")

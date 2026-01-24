@@ -39,7 +39,7 @@ export function useFinance() {
     },
   });
 
-  const { data: metricsData } = useQuery({
+  const { data: metricsData, isLoading: isLoadingMetrics } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
       const response = await api.get<any>('/dashboard');
@@ -266,6 +266,7 @@ export function useFinance() {
     transactions,
     recurringRules,
     metrics,
+    isLoadingMetrics,
     addAsset,
     updateAsset,
     deleteAsset,

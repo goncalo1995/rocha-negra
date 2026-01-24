@@ -19,25 +19,6 @@ const IT = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50">
-        <div className="container flex items-center gap-4 py-4">
-          <Link to="/">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chart-3/10">
-              <Globe className="h-5 w-5 text-chart-3" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">IT Assets</h1>
-              <p className="text-sm text-muted-foreground">Domain portfolio management</p>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <main className="container py-6">
         {/* Metrics Cards */}

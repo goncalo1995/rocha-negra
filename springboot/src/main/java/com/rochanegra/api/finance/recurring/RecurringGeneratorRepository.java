@@ -18,6 +18,8 @@ public interface RecurringGeneratorRepository extends JpaRepository<RecurringGen
 
         List<RecurringGenerator> findByUserId(UUID userId);
 
+        List<RecurringGenerator> findByUserIdAndIsActiveTrue(UUID userId);
+
         Optional<RecurringGenerator> findByIdAndUserId(UUID generatorId, UUID userId);
 
         @Query(value = """

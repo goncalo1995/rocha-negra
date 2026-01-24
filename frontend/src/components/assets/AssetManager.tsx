@@ -161,19 +161,8 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., Main Bank Account"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
-                <Select value={type} onValueChange={(v) => setType(v as AssetType)}>
+                <Select value={type} onValueChange={(v) => setType(v as AssetType)} disabled={editingAsset !== null}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -192,18 +181,16 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                 </Select>
               </div>
 
-              <Label htmlFor="value">
-                {editingAsset ? 'Current Value (€)' : 'Initial Value (€)'}
-              </Label>
-              <Input
-                id="value"
-                type="number"
-                step="0.01"
-                placeholder="1000.00"
-                value={currentValue} // Use the new state variable
-                onChange={(e) => setCurrentValue(e.target.value)}
-                required
-              />
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  placeholder="e.g., Main Bank Account"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description (optional)</Label>
@@ -214,6 +201,20 @@ export function AssetManager({ assets, onAddAsset, onUpdateAsset, onDeleteAsset 
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
+
+              <Label htmlFor="value">
+                {editingAsset ? 'Current Value (€)' : 'Initial Value (€)'}
+              </Label>
+              <Input
+                id="value"
+                type="number"
+                step="0.01"
+                placeholder="1000.00"
+                value={currentValue} // Use the new state variable
+                onChange={(e) => setCurrentValue(e.target.value)}
+                disabled={editingAsset !== null}
+                required
+              />
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => { setIsAddDialogOpen(false); resetForm(); }}>

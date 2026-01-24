@@ -118,21 +118,6 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Header */}
-      <header className="relative overflow-hidden border-b border-border/50">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
-        <div className="container relative py-12">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/50 shadow-lg shadow-primary/20">
-              <Mountain className="h-10 w-10 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight">Rocha Negra</h1>
-              <p className="mt-2 text-muted-foreground">Life Management Platform</p>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* Module Grid */}
       <main className="container py-8">

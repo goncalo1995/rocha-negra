@@ -16,12 +16,12 @@ import com.rochanegra.api.core.PageDto;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import com.rochanegra.api.finance.assets.Asset;
 import com.rochanegra.api.finance.assets.AssetRepository;
-import com.rochanegra.api.finance.preferences.UserPreferencesService;
 import com.rochanegra.api.finance.services.CurrencyConversionService;
 import com.rochanegra.api.finance.types.TransactionType;
 import com.rochanegra.api.links.EntityLinkDto;
 import com.rochanegra.api.links.LinkCreateDto;
 import com.rochanegra.api.links.LinkService;
+import com.rochanegra.api.preferences.UserPreferencesService;
 
 @Service
 @RequiredArgsConstructor
