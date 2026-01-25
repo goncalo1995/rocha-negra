@@ -77,13 +77,13 @@ export function LiabilitiesManager({ liabilities, baseCurrency, onAddLiability, 
     setEditingLiability(liability);
     setName(liability.name);
     setType(liability.type);
-    setInitialAmount(liability.initial_amount.toString());
-    setCurrentBalance(liability.current_balance.toString());
-    setInterestRate(liability.interest_rate?.toString() || '');
+    setInitialAmount(liability.initialAmount.toString());
+    setCurrentBalance(liability.currentBalance.toString());
+    setInterestRate(liability.interestRate?.toString() || '');
     setIsDialogOpen(true);
   };
 
-  const totalDebt = liabilities.reduce((sum, l) => sum + l.current_balance, 0);
+  const totalDebt = liabilities.reduce((sum, l) => sum + l.currentBalance, 0);
 
   return (
     <div className="space-y-6">
@@ -147,13 +147,13 @@ export function LiabilitiesManager({ liabilities, baseCurrency, onAddLiability, 
                     <div className="flex-1">
                       <p className="font-medium">{liability.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {liability.interest_rate ? `${liability.interest_rate}% • ` : ''}
-                        Updated {formatDate(liability.updated_at)}
+                        {liability.interestRate ? `${liability.interestRate}% • ` : ''}
+                        Updated {formatDate(liability.updatedAt)}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-destructive">{formatCurrency(liability.current_balance, liability.currency)}</p>
-                      <p className="text-xs text-muted-foreground">of {formatCurrency(liability.initial_amount, liability.currency)}</p>
+                      <p className="font-semibold text-destructive">{formatCurrency(liability.currentBalance, liability.currency)}</p>
+                      <p className="text-xs text-muted-foreground">of {formatCurrency(liability.initialAmount, liability.currency)}</p>
                     </div>
                     <div className="flex gap-1">
                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEdit(liability)}><Pencil className="h-3 w-3" /></Button>

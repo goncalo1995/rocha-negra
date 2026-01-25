@@ -10,7 +10,7 @@ import { FinanceCalendar } from '@/components/calendar/FinanceCalendar';
 import { RecurringRulesManager } from '@/components/recurring/RecurringRulesManager';
 import { useFinance } from '@/hooks/useFinance';
 import { CalendarEvent } from '@/types/finance';
-import { LayoutDashboard, Wallet, Receipt, Calendar, Repeat, ChevronLeft, LineChart, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Wallet, Receipt, Calendar, Repeat, ChevronLeft, LineChart, CreditCard, PieChart } from 'lucide-react';
 import {
   startOfMonth,
   endOfMonth,
@@ -23,6 +23,8 @@ import {
 } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LiabilitiesManager } from '@/components/liabilities/LiabilitiesManager';
+import { CategoryManager } from '@/components/categories/CategoryManager';
+import { Spinner } from '@/components/ui/spinner';
 
 const Finance = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -49,6 +51,9 @@ const Finance = () => {
     addTransactions,
     exportData,
     importData,
+    addCategory,
+    updateCategory,
+    deleteCategory,
   } = useFinance();
 
 
@@ -114,7 +119,9 @@ const Finance = () => {
 
 
   if (isLoadingMetrics || metrics == null) {
-    return <div>Loading Dashboard...</div>;
+    return <div className="flex min-h-screen items-center justify-center">
+      <Spinner />
+    </div>;
   }
 
   return (
@@ -122,7 +129,7 @@ const Finance = () => {
       {/* Main Content */}
       <main className="container py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-6">
+          <TabsList className="grid w-full max-w-4xl grid-cols-7">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -146,6 +153,10 @@ const Finance = () => {
             <TabsTrigger value="recurring" className="gap-2">
               <Repeat className="h-4 w-4" />
               <span className="hidden sm:inline">Recurring</span>
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="gap-2">
+              <PieChart className="h-4 w-4" />
+              <span className="hidden sm:inline">Categories</span>
             </TabsTrigger>
           </TabsList>
 
@@ -219,6 +230,15 @@ const Finance = () => {
               onAddRule={addRecurringRule}
               onUpdateRule={updateRecurringRule}
               onDeleteRule={deleteRecurringRule}
+            />
+          </TabsContent>
+
+          <TabsContent value="categories" className="animate-fade-in">
+            <CategoryManager
+              categories={categories}
+              onAddCategory={addCategory}
+              onUpdateCategory={updateCategory}
+              onDeleteCategory={deleteCategory}
             />
           </TabsContent>
         </Tabs>

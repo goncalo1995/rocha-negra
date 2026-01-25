@@ -60,7 +60,7 @@ const AssetList = ({ assets, onEdit, onDelete, baseCurrency }: AssetListProps) =
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium truncate">{asset.name}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            Updated {formatDate(asset.updated_at)}
+                                            Updated {formatDate(asset.updatedAt)}
                                         </p>
                                     </div>
                                     <div className="text-right">

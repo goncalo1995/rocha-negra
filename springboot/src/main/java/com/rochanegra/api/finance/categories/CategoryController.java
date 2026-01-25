@@ -39,8 +39,9 @@ public class CategoryController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<CategoryDto> updateCategory(@PathVariable UUID id,
-            @Valid @RequestBody CategoryCreateDto updateDto) {
-        return ResponseEntity.ok(categoryService.updateCategory(id, updateDto));
+            @Valid @RequestBody CategoryUpdateDto updateDto, Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(categoryService.updateCategory(id, updateDto, userId));
     }
 
     @DeleteMapping("/{id}")

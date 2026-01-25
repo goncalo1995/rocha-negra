@@ -1,12 +1,11 @@
 import { Database } from './database.types';
 import { FromDb } from './utils';
 
-export type Asset = Database['public']['Tables']['assets']['Row'];
-export type Liability = Database['public']['Tables']['liabilities']['Row'];
-export type Category = Database['public']['Tables']['categories']['Row'];
-
-type TransactionRow = Database['public']['Tables']['transactions']['Row'];
-type RecurringGeneratorRow = Database['public']['Tables']['recurring_generators']['Row'];
+export type Asset = FromDb<Database['public']['Tables']['assets']['Row']>;
+export type Liability = FromDb<Database['public']['Tables']['liabilities']['Row']>;
+export type Category = FromDb<Database['public']['Tables']['categories']['Row']>;
+export type Transaction = FromDb<Database['public']['Tables']['transactions']['Row']>;
+export type RecurringGenerator = FromDb<Database['public']['Tables']['recurring_generators']['Row']>;
 
 export type AssetType = Database['public']['Enums']['asset_type'];
 export type LiabilityType = Database['public']['Enums']['liability_type'];
@@ -20,14 +19,12 @@ export const LIQUID_ASSET_TYPES: AssetType[] = [
   'credit_card',
 ];
 
-export interface Transaction extends FromDb<TransactionRow> { }
-
-export interface RecurringGenerator extends FromDb<Omit<RecurringGeneratorRow, 'frequency'>> {
-  frequency: RecurringFrequency;
-  // UI-only or transient fields
-  name?: string;
-  type?: TransactionType;
-}
+// export interface RecurringGenerator extends FromDb<Omit<RecurringGeneratorRow, 'frequency'>> {
+//   frequency: RecurringFrequency;
+//   // UI-only or transient fields
+//   name?: string;
+//   type?: TransactionType;
+// }
 
 export interface FinanceState {
   assets: Asset[];
@@ -163,4 +160,20 @@ export interface FuelLogCreateDto {
   // --- Fields for cross-module logic ---
   syncToFinance: boolean;
   assetId: string; // Required if syncToFinance is true        
+}
+
+export interface CategoryCreateDto {
+  name: string;
+  type: TransactionType;
+  nature: CategoryNature;
+  iconSlug: string;
+  color: string;
+}
+
+export interface CategoryUpdateDto {
+  name: string;
+  type: TransactionType;
+  nature: CategoryNature;
+  iconSlug: string;
+  color: string;
 }

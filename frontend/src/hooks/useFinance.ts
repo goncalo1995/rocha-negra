@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Asset, Category, Transaction, DashboardMetrics, RecurringRule, Liability } from '@/types/finance';
+import { Asset, Category, Transaction, DashboardMetrics, RecurringRule, Liability, CategoryUpdateDto } from '@/types/finance';
 import { useCallback, useMemo } from 'react';
 
 export function useFinance() {
   const queryClient = useQueryClient();
 
   // Queries
-  const { data: assets = [] } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets } = useQuery({
     queryKey: ['assets'],
     queryFn: async () => {
       const response = await api.get<Asset[]>('/assets');
@@ -15,7 +15,7 @@ export function useFinance() {
     },
   });
 
-  const { data: liabilities = [] } = useQuery({
+  const { data: liabilities = [], isLoading: isLoadingLiabilities } = useQuery({
     queryKey: ['liabilities'],
     queryFn: async () => {
       const response = await api.get<Liability[]>('/liabilities');
@@ -23,7 +23,7 @@ export function useFinance() {
     },
   });
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       const response = await api.get<Category[]>('/categories');
@@ -31,7 +31,7 @@ export function useFinance() {
     },
   });
 
-  const { data: transactions = [] } = useQuery({
+  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const response = await api.get<{ content: Transaction[] }>('/transactions');
@@ -39,7 +39,7 @@ export function useFinance() {
     },
   });
 
-  const { data: recurringRules = [] } = useQuery({
+  const { data: recurringRules = [], isLoading: isLoadingRecurringRules } = useQuery({
     queryKey: ['recurring-rules'],
     queryFn: async () => {
       const response = await api.get<RecurringRule[]>('/recurring-rules');
@@ -161,6 +161,11 @@ export function useFinance() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
   });
 
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<CategoryUpdateDto> }) => api.patch(`/categories/${id}`, updates),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
+
   const deleteCategoryMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/categories/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
@@ -199,6 +204,7 @@ export function useFinance() {
   const deleteTransaction = useCallback(async (id: string) => deleteTransactionMutation.mutateAsync(id), [deleteTransactionMutation]);
 
   const addCategory = useCallback(async (category: any) => addCategoryMutation.mutateAsync(category), [addCategoryMutation]);
+  const updateCategory = useCallback(async (id: string, updates: CategoryUpdateDto) => updateCategoryMutation.mutateAsync({ id, updates }), [updateCategoryMutation]);
   const deleteCategory = useCallback(async (id: string) => deleteCategoryMutation.mutateAsync(id), [deleteCategoryMutation]);
 
   const addRecurringRule = useCallback(async (rule: any) => addRecurringRuleMutation.mutateAsync(rule), [addRecurringRuleMutation]);
@@ -298,7 +304,9 @@ export function useFinance() {
     queryClient.invalidateQueries({ queryKey: ['recurring-rules'] });
   }, [categories, assets, recurringRules, transactions, addCategory, addAsset, addRecurringRule, addTransactions, queryClient]);
 
+  const isLoading = isLoadingAssets || isLoadingCategories || isLoadingLiabilities || isLoadingTransactions || isLoadingRecurringRules;
   return {
+    isLoading,
     assets,
     categories,
     liabilities,
@@ -314,6 +322,7 @@ export function useFinance() {
     updateTransaction,
     deleteTransaction,
     addCategory,
+    updateCategory,
     deleteCategory,
     addRecurringRule,
     updateRecurringRule,

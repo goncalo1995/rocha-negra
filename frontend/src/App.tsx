@@ -15,6 +15,7 @@ import { SkillsPage } from "./pages/SkillsPage";
 import { StrictMode } from "react";
 import { ProjectionsPage } from "./pages/finance/ProjectionsPage";
 import { MainLayout } from "./components/layout/MainLayout";
+import { Spinner } from "./components/ui/spinner";
 
 const queryClient = new QueryClient();
 
@@ -22,7 +23,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+    return <div className="flex min-h-screen items-center justify-center">
+      <Spinner />
+    </div>;
   }
 
   if (!session) {

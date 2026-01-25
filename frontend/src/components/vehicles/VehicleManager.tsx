@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
-import { Plus, Car, Wrench, Fuel, Trash2, Edit2, Calendar, Gauge, Shield } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Car, Wrench, Fuel } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Vehicle, MaintenanceRecord, FuelRecord, FuelType } from '@/types/vehicles';
-import { formatCurrency } from '@/lib/formatters';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { useFinance } from '@/hooks/useFinance';
 import { VehicleCard } from './VehicleCard';
-import { AddFuelDialog } from './AddFuelDialog';
 
 interface VehicleManagerProps {
   vehicles: Vehicle[];

@@ -361,22 +361,22 @@ SET search_path = public
 AS $$
 BEGIN
   INSERT INTO public.categories (user_id, system_key, name, type, nature, icon_slug, color) VALUES
-    (NEW.id, 'CAT_SALARY', 'Salary', 'income', 'fixed', 'wallet', '#10b981'),
-    (NEW.id, 'CAT_FREELANCE', 'Freelance', 'income', 'variable', 'briefcase', '#06b6d4'),
-    (NEW.id, 'CAT_INVESTMENTS', 'Investments', 'income', 'variable', 'trending-up', '#8b5cf6'),
-    (NEW.id, 'CAT_HOUSING', 'Housing', 'expense', 'fixed', 'home', '#f59e0b'),
-    (NEW.id, 'CAT_INSURANCE', 'Insurance', 'expense', 'fixed', 'shield', '#6366f1'),
-    (NEW.id, 'CAT_UTILITIES', 'Utilities', 'expense', 'fixed', 'zap', '#ec4899'),
-    (NEW.id, 'CAT_CAR_MAINTENANCE', 'Car Maintenance', 'expense', 'variable', 'car', '#ef4444'),
-    (NEW.id, 'CAT_FUEL', 'Fuel', 'expense', 'variable', 'fuel', '#f97316'),
-    (NEW.id, 'CAT_GROCERIES', 'Groceries', 'expense', 'variable', 'shopping-cart', '#84cc16'),
-    (NEW.id, 'CAT_DINING_OUT', 'Dining Out', 'expense', 'variable', 'utensils', '#14b8a6'),
-    (NEW.id, 'CAT_FRIENDS_SOCIAL', 'Friends & Social', 'expense', 'variable', 'users', '#a855f7'),
-    (NEW.id, 'CAT_ENTERTAINMENT', 'Entertainment', 'expense', 'variable', 'tv', '#f43f5e'),
-    (NEW.id, 'CAT_HEALTHCARE', 'Healthcare', 'expense', 'variable', 'heart-pulse', '#22c55e'),
-    (NEW.id, 'CAT_SHOPPING', 'Shopping', 'expense', 'variable', 'shopping-bag', '#3b82f6'),
-    (NEW.id, 'CAT_EMERGENCY_FUND', 'Emergency Fund', 'expense', 'emergency', 'alert-triangle', '#eab308'),
-    (NEW.id, 'CAT_SAVINGS', 'Savings', 'expense', 'savings', 'piggy-bank', '#10b981');
+    (NEW.id, 'CAT_SALARY', 'Salary', 'income', 'fixed', 'Wallet', '#10b981'),
+    (NEW.id, 'CAT_FREELANCE', 'Freelance', 'income', 'variable', 'Briefcase', '#06b6d4'),
+    (NEW.id, 'CAT_INVESTMENTS', 'Investments', 'income', 'variable', 'TrendingUp', '#8b5cf6'),
+    (NEW.id, 'CAT_HOUSING', 'Housing', 'expense', 'fixed', 'Home', '#f59e0b'),
+    (NEW.id, 'CAT_INSURANCE', 'Insurance', 'expense', 'fixed', 'Shield', '#6366f1'),
+    (NEW.id, 'CAT_UTILITIES', 'Utilities', 'expense', 'fixed', 'Zap', '#ec4899'),
+    (NEW.id, 'CAT_CAR_MAINTENANCE', 'Car Maintenance', 'expense', 'variable', 'Car', '#ef4444'),
+    (NEW.id, 'CAT_FUEL', 'Fuel', 'expense', 'variable', 'Fuel', '#f97316'),
+    (NEW.id, 'CAT_GROCERIES', 'Groceries', 'expense', 'variable', 'ShoppingCart', '#84cc16'),
+    (NEW.id, 'CAT_DINING_OUT', 'Dining Out', 'expense', 'variable', 'Utensils', '#14b8a6'),
+    (NEW.id, 'CAT_FRIENDS_SOCIAL', 'Friends & Social', 'expense', 'variable', 'Users', '#a855f7'),
+    (NEW.id, 'CAT_ENTERTAINMENT', 'Entertainment', 'expense', 'variable', 'Tv', '#f43f5e'),
+    (NEW.id, 'CAT_HEALTHCARE', 'Healthcare', 'expense', 'variable', 'HeartPulse', '#22c55e'),
+    (NEW.id, 'CAT_SHOPPING', 'Shopping', 'expense', 'variable', 'ShoppingBag', '#3b82f6'),
+    (NEW.id, 'CAT_EMERGENCY_FUND', 'Emergency Fund', 'expense', 'emergency', 'AlertTriangle', '#eab308'),
+    (NEW.id, 'CAT_SAVINGS', 'Savings', 'expense', 'savings', 'PiggyBank', '#10b981');
   RETURN NEW;
 END;
 $$;

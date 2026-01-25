@@ -21,16 +21,13 @@ public class CategoryService {
         return toDto(category);
     }
 
-    public CategoryDto updateCategory(UUID categoryId, CategoryCreateDto updateDto) {
+    public CategoryDto updateCategory(UUID categoryId, CategoryUpdateDto updateDto, UUID userId) {
         Category category = categoryRepository.findById(categoryId)
+                .filter(c -> c.getUserId().equals(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         if (updateDto.name() != null)
             category.setName(updateDto.name());
-        if (updateDto.type() != null)
-            category.setType(updateDto.type());
-        if (updateDto.nature() != null)
-            category.setNature(updateDto.nature());
         if (updateDto.iconSlug() != null)
             category.setIconSlug(updateDto.iconSlug());
         if (updateDto.color() != null)
@@ -63,12 +60,11 @@ public class CategoryService {
     public void deleteCategory(UUID categoryId, UUID userId) {
         // Ensure the category belongs to the user before deleting
         // In a real app, you'd use a findByIdAndUserId method or check ownership
-        categoryRepository.findById(categoryId).ifPresent(category -> {
-            if (category.getUserId().equals(userId)) {
-                categoryRepository.delete(category);
-            } else {
-                throw new ResourceNotFoundException("Category not found or access denied");
+        categoryRepository.findByIdAndUserId(categoryId, userId).ifPresent(category -> {
+            if (category.getSystemKey() != null) {
+                throw new IllegalArgumentException("System categories cannot be deleted");
             }
+            categoryRepository.delete(category);
         });
     }
 
