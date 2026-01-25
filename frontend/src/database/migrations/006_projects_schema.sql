@@ -36,26 +36,30 @@ CREATE TABLE public.project_members (
 -- Tasks Table
 CREATE TABLE public.tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  -- Support for sub-tasks
+  -- Hierarchy & Scoping
   parent_id UUID REFERENCES public.tasks(id) ON DELETE CASCADE,
   project_id UUID REFERENCES public.projects(id) ON DELETE SET NULL,
 
-  -- FIX: Default to the safest, least-permissive role.
+  -- People
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL NOT NULL,
   assigned_to UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   
+  -- Core Content
   title TEXT NOT NULL,
   description TEXT,
+  
+  -- State & Prioritization
   status public.task_status NOT NULL DEFAULT 'todo',
-  priority INT DEFAULT 2,
-
+  priority INT DEFAULT 2 CHECK (priority BETWEEN 1 AND 4),
+  "order" FLOAT, -- For manual sorting
+  
+  -- Time Awareness
   start_date DATE,
   due_date DATE,
   completed_at TIMESTAMPTZ,
 
-  -- Future-proofing additions
-  "order" FLOAT, -- For manual drag-and-drop sorting
-  
+  custom_fields JSONB,
+
   -- Timestamps
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -95,9 +99,23 @@ CREATE POLICY "Owners can delete projects" ON public.projects FOR DELETE
 CREATE POLICY "Members can see who is in their project" ON public.project_members FOR SELECT
   USING (EXISTS (SELECT 1 FROM public.project_members pm_check WHERE pm_check.project_id = project_members.project_id AND pm_check.user_id = auth.uid()));
 
-CREATE POLICY "Owners can add/manage members" ON public.project_members FOR INSERT, UPDATE, DELETE
-  USING (EXISTS (SELECT 1 FROM public.project_members WHERE project_id = project_members.project_id AND user_id = auth.uid() AND role = 'owner'));
+CREATE POLICY "Owners can add members" ON public.project_members FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.project_members pm
+      WHERE pm.project_id = project_members.project_id -- Check the project of the NEW row
+        AND pm.user_id = auth.uid()
+        AND pm.role = 'owner'
+    )
+  );
 
+-- UPDATE policy needs both USING and WITH CHECK for maximum security
+CREATE POLICY "Owners can update member roles in their projects" ON public.project_members FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM public.project_members pm_check WHERE pm_check.project_id = project_members.project_id AND pm_check.user_id = auth.uid() AND pm_check.role = 'owner'))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.project_members pm_check WHERE pm_check.project_id = project_members.project_id AND pm_check.user_id = auth.uid() AND pm_check.role = 'owner'));
+
+CREATE POLICY "Owners can remove members from their projects" ON public.project_members FOR DELETE
+  USING (EXISTS (SELECT 1 FROM public.project_members WHERE project_id = project_members.project_id AND user_id = auth.uid() AND role = 'owner'));
 
 -- Tasks Policies
 CREATE POLICY "Users can view personal tasks or tasks in their projects" ON public.tasks FOR SELECT
