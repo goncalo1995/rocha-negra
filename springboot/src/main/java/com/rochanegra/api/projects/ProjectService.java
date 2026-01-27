@@ -26,7 +26,6 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository memberRepository;
-    private final TaskRepository taskRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Transactional

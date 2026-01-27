@@ -33,7 +33,7 @@ public class UserPreferencesController {
             return ResponseEntity.badRequest().build();
         }
 
-        // preferencesService.setPreference(userId, key, value);
+        preferencesService.setPreference(userId, key, value);
         return ResponseEntity.ok().build();
     }
 }

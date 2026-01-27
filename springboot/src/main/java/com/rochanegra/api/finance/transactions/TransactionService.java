@@ -352,7 +352,7 @@ public class TransactionService {
                 primaryAsset.setBalance(currentBalance.add(balanceChange));
                 assetRepository.save(primaryAsset);
             } else if (primaryAsset.getQuantity() != null) {
-                // TODO FIXME
+                // FIXME
                 // BigDecimal quantityChange =
                 // changeAmount.divide(primaryAsset.getConversionRate(),
                 // BigDecimal.ROUND_HALF_UP);

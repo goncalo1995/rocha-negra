@@ -124,7 +124,7 @@ const Home = () => {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold">Your Modules</h2>
-            <p className="text-sm text-muted-foreground">Click to open or drag to rearrange</p>
+            <p className="text-sm text-muted-foreground">Click to open</p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Sparkles className="h-4 w-4" />

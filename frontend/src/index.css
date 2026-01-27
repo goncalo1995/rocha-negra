@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 /* Rocha Negra Design System - High contrast dark mode with emerald accents */
+/* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'); */
 
 @layer base {
   :root {
@@ -123,6 +124,10 @@
 
 /* Custom scrollbar for the dark theme */
 @layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400;
+  }
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -156,5 +161,45 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+}
+
+@layer components {
+  .bento-card {
+    @apply bg-card border border-border rounded-xl p-6 transition-all duration-200;
+  }
+
+  .bento-card:hover {
+    @apply border-zinc-700;
+    box-shadow: var(--glow-white);
+  }
+
+  .glow-active {
+    box-shadow: var(--glow-white);
+  }
+
+  .glow-success {
+    box-shadow: var(--glow-success);
+  }
+
+  .glow-destructive {
+    box-shadow: var(--glow-destructive);
+  }
+
+  .asset-card {
+    @apply bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-2xl p-6 transition-all duration-300;
+  }
+
+  .asset-card:hover {
+    @apply border-zinc-600 scale-[1.02];
+    box-shadow: var(--glow-white);
+  }
+
+  .urgent-badge {
+    @apply bg-destructive/20 text-destructive border border-destructive/30 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .depreciation-badge {
+    @apply bg-warning/20 text-warning border border-warning/30 px-2 py-0.5 rounded-full text-xs font-medium;
   }
 }

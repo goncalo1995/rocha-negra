@@ -16,6 +16,8 @@ import { StrictMode } from "react";
 import { ProjectionsPage } from "./pages/finance/ProjectionsPage";
 import { MainLayout } from "./components/layout/MainLayout";
 import { Spinner } from "./components/ui/spinner";
+import Dashboard from "./pages/Dashboard";
+import Tasks from "./pages/Tasks";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +64,10 @@ const App = () => (
                 <Route path="/vehicles" element={<Vehicles />} />
                 <Route path="/it" element={<IT />} />
                 {/* ... all other protected pages ... */}
+                <Route path="/dashboard" element={<Dashboard />} />
+                {/* <Route path="/projects" element={<Projects />} /> */}
+                <Route path="/tasks" element={<Tasks />} />
+
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

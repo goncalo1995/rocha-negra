@@ -3,7 +3,6 @@ package com.rochanegra.api.it_assets.domains;
 // ... (all necessary imports from other modules)
 import com.rochanegra.api.finance.recurring.RecurringRuleService;
 import com.rochanegra.api.finance.recurring.RecurringRuleCreateDto;
-import com.rochanegra.api.finance.recurring.RecurringRuleDto;
 import com.rochanegra.api.core.SanitizationService;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import com.rochanegra.api.finance.recurring.RecurringFrequency;

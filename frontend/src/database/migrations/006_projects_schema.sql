@@ -51,7 +51,7 @@ CREATE TABLE public.tasks (
   -- State & Prioritization
   status public.task_status NOT NULL DEFAULT 'todo',
   priority INT DEFAULT 2 CHECK (priority BETWEEN 1 AND 4),
-  "order" FLOAT, -- For manual sorting
+  position INT, -- For manual sorting
   
   -- Time Awareness
   start_date DATE,

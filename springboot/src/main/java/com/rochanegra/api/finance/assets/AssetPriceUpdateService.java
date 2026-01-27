@@ -1,25 +1,19 @@
 package com.rochanegra.api.finance.assets;
 
 import com.rochanegra.api.finance.services.dto.CoinGeckoPriceDto;
-import com.rochanegra.api.finance.types.AssetType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AssetPriceUpdateService {
 
-    private final AssetRepository assetRepository;
+    // private final AssetRepository assetRepository;
     private final RestClient restClient = RestClient.create(); // Create a modern RestClient instance
 
     // This is the base URL for the CoinGecko API's simple price endpoint

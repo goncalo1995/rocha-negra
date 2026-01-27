@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class CurrencyConversionService {
-    private final ExchangeRateRepository exchangeRateRepository;
+    // private final ExchangeRateRepository exchangeRateRepository;
     // In the future, you'll inject a RestClient to call an external API
 
     /**

@@ -95,6 +95,119 @@ export type Database = {
         }
         Relationships: []
       }
+      domain_price_history: {
+        Row: {
+          created_at: string | null
+          currency: string
+          domain_id: string
+          effective_date: string
+          id: string
+          price: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          currency: string
+          domain_id: string
+          effective_date: string
+          id?: string
+          price: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string
+          domain_id?: string
+          effective_date?: string
+          id?: string
+          price?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domain_price_history_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      domains: {
+        Row: {
+          auto_renew: boolean | null
+          created_at: string | null
+          expiration_date: string
+          id: string
+          name: string
+          notes: string | null
+          registrar: string | null
+          registration_date: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          created_at?: string | null
+          expiration_date: string
+          id?: string
+          name: string
+          notes?: string | null
+          registrar?: string | null
+          registration_date: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          created_at?: string | null
+          expiration_date?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          registrar?: string | null
+          registration_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      entity_links: {
+        Row: {
+          created_at: string | null
+          id: string
+          relation_type: string
+          source_entity_id: string
+          source_entity_type: string
+          target_entity_id: string
+          target_entity_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          relation_type?: string
+          source_entity_id: string
+          source_entity_type: string
+          target_entity_id: string
+          target_entity_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          relation_type?: string
+          source_entity_id?: string
+          source_entity_type?: string
+          target_entity_id?: string
+          target_entity_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           base_currency: string
@@ -300,9 +413,81 @@ export type Database = {
         }
         Relationships: []
       }
+      project_members: {
+        Row: {
+          created_at: string | null
+          id: string
+          project_id: string
+          role: Database["public"]["Enums"]["project_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          project_id: string
+          role?: Database["public"]["Enums"]["project_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          role?: Database["public"]["Enums"]["project_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          custom_fields: Json | null
+          description: string | null
+          due_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["project_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          custom_fields?: Json | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          custom_fields?: Json | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       recurring_generators: {
         Row: {
           created_at: string | null
+          custom_fields: Json | null
           description: string
           end_date: string | null
           frequency: Database["public"]["Enums"]["recurring_frequency"]
@@ -315,6 +500,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          custom_fields?: Json | null
           description: string
           end_date?: string | null
           frequency: Database["public"]["Enums"]["recurring_frequency"]
@@ -327,6 +513,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          custom_fields?: Json | null
           description?: string
           end_date?: string | null
           frequency?: Database["public"]["Enums"]["recurring_frequency"]
@@ -339,37 +526,74 @@ export type Database = {
         }
         Relationships: []
       }
-      transaction_links: {
+      tasks: {
         Row: {
+          assigned_to: string | null
+          completed_at: string | null
           created_at: string | null
-          entity_id: string
-          entity_type: Database["public"]["Enums"]["linkable_entity_type"]
+          created_by: string
+          custom_fields: Json | null
+          description: string | null
+          due_date: string | null
           id: string
-          transaction_id: string
-          user_id: string
+          parent_id: string | null
+          position: number | null
+          priority: number | null
+          project_id: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string | null
         }
         Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
           created_at?: string | null
-          entity_id: string
-          entity_type: Database["public"]["Enums"]["linkable_entity_type"]
+          created_by: string
+          custom_fields?: Json | null
+          description?: string | null
+          due_date?: string | null
           id?: string
-          transaction_id: string
-          user_id: string
+          parent_id?: string | null
+          position?: number | null
+          priority?: number | null
+          project_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at?: string | null
         }
         Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
           created_at?: string | null
-          entity_id?: string
-          entity_type?: Database["public"]["Enums"]["linkable_entity_type"]
+          created_by?: string
+          custom_fields?: Json | null
+          description?: string | null
+          due_date?: string | null
           id?: string
-          transaction_id?: string
-          user_id?: string
+          parent_id?: string | null
+          position?: number | null
+          priority?: number | null
+          project_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          title?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "transaction_links_transaction_id_fkey"
-            columns: ["transaction_id"]
+            foreignKeyName: "tasks_parent_id_fkey"
+            columns: ["parent_id"]
             isOneToOne: false
-            referencedRelation: "transactions"
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -640,7 +864,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_project_and_add_owner:
+        | { Args: { description: string; name: string }; Returns: string }
+        | {
+            Args: { description: string; name: string; owner_id: string }
+            Returns: string
+          }
     }
     Enums: {
       asset_type:
@@ -672,6 +901,8 @@ export type Database = {
       categorynature: "emergency" | "fixed" | "savings" | "variable"
       liability_type: "loan" | "credit_card" | "mortgage" | "other"
       linkable_entity_type: "vehicle" | "liability" | "property" | "project"
+      project_role: "owner" | "editor" | "viewer"
+      project_status: "active" | "on_hold" | "completed" | "archived"
       recurring_frequency:
         | "daily"
         | "weekly"
@@ -679,6 +910,7 @@ export type Database = {
         | "quarterly"
         | "yearly"
       recurringfrequency: "monthly" | "weekly" | "yearly"
+      task_status: "todo" | "in_progress" | "done" | "archived"
       transaction_type: "income" | "expense" | "transfer"
       transactiontype: "expense" | "income" | "transfer"
     }
@@ -840,6 +1072,8 @@ export const Constants = {
       categorynature: ["emergency", "fixed", "savings", "variable"],
       liability_type: ["loan", "credit_card", "mortgage", "other"],
       linkable_entity_type: ["vehicle", "liability", "property", "project"],
+      project_role: ["owner", "editor", "viewer"],
+      project_status: ["active", "on_hold", "completed", "archived"],
       recurring_frequency: [
         "daily",
         "weekly",
@@ -848,6 +1082,7 @@ export const Constants = {
         "yearly",
       ],
       recurringfrequency: ["monthly", "weekly", "yearly"],
+      task_status: ["todo", "in_progress", "done", "archived"],
       transaction_type: ["income", "expense", "transfer"],
       transactiontype: ["expense", "income", "transfer"],
     },
