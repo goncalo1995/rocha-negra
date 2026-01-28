@@ -1,6 +1,7 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -43,6 +44,11 @@ interface TransactionLogProps {
   onImportData?: (data: Partial<FinanceState>) => void;
   onExportData?: () => FinanceState;
   onAddTransactions?: (transactions: any[]) => Promise<void>;
+  // For pagination
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
+  onFiltersChange?: (filters: TransactionFilters) => void;
 }
 
 import { BankImportDialog } from './BankImportDialog';
@@ -50,6 +56,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Pencil, Trash2 } from 'lucide-react';
+
+import { TransactionFilters } from '@/hooks/useFinance';
 
 type FilterType = 'all' | 'income' | 'expense' | 'transfer';
 type NatureFilter = 'all' | 'fixed' | 'variable' | 'savings';
@@ -64,11 +72,16 @@ export function TransactionLog({
   onImportData,
   onExportData,
   onAddTransactions,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+  onFiltersChange,
 }: TransactionLogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<FilterType>('all');
   const [natureFilter, setNatureFilter] = useState<NatureFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [assetFilter, setAssetFilter] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
@@ -81,6 +94,21 @@ export function TransactionLog({
     assetId: '',
     date: '',
   });
+
+  // Sync filters to parent for server-side pagination
+  useEffect(() => {
+    if (!onFiltersChange) return;
+
+    const timeFilter = getTimeRangeFilter(timeRange);
+    const filters: TransactionFilters = {
+      startDate: timeFilter?.start ? format(timeFilter.start, 'yyyy-MM-dd') : undefined,
+      endDate: timeFilter?.end ? format(timeFilter.end, 'yyyy-MM-dd') : undefined,
+      categoryId: categoryFilter === 'all' ? undefined : categoryFilter,
+      assetId: assetFilter === 'all' ? undefined : assetFilter,
+    };
+
+    onFiltersChange(filters);
+  }, [timeRange, categoryFilter, assetFilter, customStartDate, customEndDate, onFiltersChange]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -336,6 +364,20 @@ export function TransactionLog({
               </SelectContent>
             </Select>
 
+            <Select value={assetFilter} onValueChange={setAssetFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Account" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Accounts</SelectItem>
+                {assets.map((asset) => (
+                  <SelectItem key={asset.id} value={asset.id}>
+                    {asset.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {/* Export/Import buttons */}
             <div className="flex gap-2 ml-auto">
               <input
@@ -463,6 +505,27 @@ export function TransactionLog({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {hasNextPage && (
+            <div className="mt-6 flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onLoadMore}
+                disabled={isFetchingNextPage}
+                className="w-full sm:w-auto"
+              >
+                {isFetchingNextPage ? (
+                  <>
+                    <Spinner className="mr-2 h-4 w-4" />
+                    Loading more...
+                  </>
+                ) : (
+                  'Load More Transactions'
+                )}
+              </Button>
             </div>
           )}
         </CardContent>

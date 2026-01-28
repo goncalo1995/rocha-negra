@@ -17,4 +17,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
 
     // For getting ALL tasks created by user (across projects and inbox)
     List<Task> findAllByCreatedByOrderByCreatedAtDesc(UUID createdBy);
+
+    boolean existsByParentIdAndStatusNot(UUID parentId, com.rochanegra.api.projects.types.TaskStatus status);
 }

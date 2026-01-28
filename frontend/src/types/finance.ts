@@ -98,11 +98,13 @@ export interface CalendarEvent {
   id: string;
   date: Date;
   title: string;
-  amount: number;
-  type: 'transaction' | 'recurring' | 'maintenance';
+  amount?: number;
+  type: 'transaction' | 'recurring' | 'maintenance' | 'task';
   transactionType?: TransactionType;
   categoryId?: string;
   isPast: boolean;
+  status?: string; // For tasks (todo, in_progress, done)
+  projectId?: string; // For tasks
 }
 
 export interface AssetCreateDto {

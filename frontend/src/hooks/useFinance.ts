@@ -1,7 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Asset, Category, Transaction, DashboardMetrics, RecurringRule, Liability, CategoryUpdateDto } from '@/types/finance';
 import { useCallback, useMemo } from 'react';
+
+export interface TransactionFilters {
+  startDate?: string;
+  endDate?: string;
+  categoryId?: string;
+  assetId?: string;
+}
 
 export function useFinance() {
   const queryClient = useQueryClient();
@@ -31,6 +38,7 @@ export function useFinance() {
     },
   });
 
+  // Base transactions query (legacy support, fetches first page/all)
   const { data: transactions = [], isLoading: isLoadingTransactions, error: errorTransactions } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
@@ -38,6 +46,29 @@ export function useFinance() {
       return response.data.content;
     },
   });
+
+  // Infinite query for paginated transactions
+  const useInfiniteTransactions = (filters: TransactionFilters = {}, pageSize = 20, enabled = true) => {
+    return useInfiniteQuery({
+      queryKey: ['transactions', 'infinite', filters, pageSize],
+      enabled,
+      queryFn: async ({ pageParam = 0 }) => {
+        const params = new URLSearchParams({
+          page: pageParam.toString(),
+          size: pageSize.toString(),
+          ...Object.fromEntries(
+            Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+          ),
+        });
+        const response = await api.get<any>(`/transactions?${params.toString()}`);
+        return response.data;
+      },
+      initialPageParam: 0,
+      getNextPageParam: (lastPage) => {
+        return lastPage.isLast ? undefined : lastPage.pageNumber + 1;
+      },
+    });
+  };
 
   const { data: recurringRules = [], isLoading: isLoadingRecurringRules, error: errorRecurringRules } = useQuery({
     queryKey: ['recurring-rules'],
@@ -339,5 +370,6 @@ export function useFinance() {
     getCategoryById,
     exportData,
     importData,
+    useInfiniteTransactions,
   };
 }

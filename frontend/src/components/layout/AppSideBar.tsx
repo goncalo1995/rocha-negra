@@ -9,7 +9,10 @@ import {
     ChevronLeft,
     ChevronsUpDown,
     LogOut,
-    Settings
+    Settings,
+    PieChart,
+    CreditCard,
+    Calendar as CalendarIcon
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
@@ -36,12 +39,15 @@ const executionItems = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "Projects", url: "/projects", icon: FolderKanban },
     { title: "Tasks", url: "/tasks", icon: CheckSquare },
+    { title: "Agenda", url: "/agenda", icon: CalendarIcon },
 ];
 
 const treasuryItems = [
-    { title: "Wallet", url: "/wallet", icon: Wallet },
+    { title: "Assets", url: "/assets", icon: Wallet },
+    { title: "Liabilities", url: "/liabilities", icon: CreditCard },
     { title: "Ledger", url: "/ledger", icon: Receipt },
     { title: "Fixed Costs", url: "/fixed-costs", icon: CalendarClock },
+    { title: "Categories", url: "/categories", icon: PieChart },
 ];
 
 const otherItems = [

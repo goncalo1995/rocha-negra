@@ -27,6 +27,17 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
         }
 
+        @ExceptionHandler(IllegalArgumentException.class)
+        public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex,
+                        HttpServletRequest request) {
+                ErrorResponse error = new ErrorResponse(
+                                HttpStatus.BAD_REQUEST.value(),
+                                ex.getMessage(),
+                                request.getRequestURI(),
+                                Instant.now());
+                return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        }
+
         @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
         public ResponseEntity<ErrorResponse> handleValidationException(
                         org.springframework.web.bind.MethodArgumentNotValidException ex, HttpServletRequest request) {

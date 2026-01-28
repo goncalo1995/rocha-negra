@@ -24,7 +24,7 @@ interface CreateTaskDialogProps {
 }
 
 export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }: CreateTaskDialogProps) {
-    const { createTask } = useTasks();
+    const { createTask, createTaskInProject } = useTasks();
     const { projects } = useProjects();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
@@ -43,15 +43,27 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
         setIsLoading(true);
 
         try {
-            await createTask({
-                title: formData.title,
-                description: formData.description || undefined,
-                priority: parseInt(formData.priority),
-                projectId: formData.projectId === "inbox" ? undefined : formData.projectId,
-                parentId: defaultParentId,
-                dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-                status: 'todo',
-            });
+            if (formData.projectId && formData.projectId !== "inbox") {
+                await createTaskInProject({
+                    title: formData.title,
+                    description: formData.description || undefined,
+                    priority: parseInt(formData.priority),
+                    projectId: formData.projectId,
+                    parentId: defaultParentId,
+                    dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
+                    status: 'todo',
+                });
+            } else {
+                await createTask({
+                    title: formData.title,
+                    description: formData.description || undefined,
+                    priority: parseInt(formData.priority),
+                    projectId: undefined,
+                    parentId: defaultParentId,
+                    dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
+                    status: 'todo',
+                });
+            }
             toast({
                 title: "Task created successfully",
                 description: "Your task has been created.",
@@ -91,8 +103,8 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
                     <DialogTitle>Create New Task</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
-                    <ScrollArea className="flex-1 p-6 pt-2">
-                        <div className="space-y-4 py-2">
+                    <ScrollArea className="flex-1 p-4 pt-2">
+                        <div className="space-y-4 py-2 px-1">
                             <div className="space-y-2">
                                 <Label htmlFor="title">Title</Label>
                                 <Input

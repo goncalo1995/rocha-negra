@@ -45,6 +45,14 @@ export function useTasks(projectId?: string) {
         },
     });
 
+    const createTaskInProjectMutation = useMutation({
+        mutationFn: (payload: Partial<Task> & { projectId: string }) =>
+            api.post(`/projects/${payload.projectId}/tasks`, payload),
+        onSuccess: (_, { projectId }) => {
+            queryClient.invalidateQueries({ queryKey: ['tasks', { projectId }] });
+        },
+    });
+
     const updateTaskMutation = useMutation({
         mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> }) =>
             api.patch(`/tasks/${id}`, updates),
@@ -67,6 +75,7 @@ export function useTasks(projectId?: string) {
 
     // Callbacks to maintain original API
     const createTask = useCallback(async (t: Partial<Task> & { projectId: string }) => createTaskMutation.mutateAsync(t), [createTaskMutation]);
+    const createTaskInProject = useCallback(async (t: Partial<Task> & { projectId: string }) => createTaskInProjectMutation.mutateAsync(t), [createTaskInProjectMutation]);
     const updateTask = useCallback(async (id: string, updates: Partial<Task>) => updateTaskMutation.mutateAsync({ id, updates }), [updateTaskMutation]);
     const deleteTask = useCallback(async (id: string) => deleteTaskMutation.mutateAsync(id), [deleteTaskMutation]);
 
@@ -76,6 +85,7 @@ export function useTasks(projectId?: string) {
         isLoading,
         error,
         createTask,
+        createTaskInProject,
         updateTask,
         deleteTask,
     };

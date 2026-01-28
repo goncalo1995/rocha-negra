@@ -30,11 +30,23 @@ import {
 interface FinanceCalendarProps {
   getCalendarEvents: (month: Date) => CalendarEvent[];
   categories: Category[];
+  month?: Date;
+  onMonthChange?: (month: Date) => void;
 }
 
-export function FinanceCalendar({ getCalendarEvents, categories }: FinanceCalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+export function FinanceCalendar({ getCalendarEvents, categories, month, onMonthChange }: FinanceCalendarProps) {
+  const [internalMonth, setInternalMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const currentMonth = month || internalMonth;
+
+  const handleMonthChange = (newMonth: Date) => {
+    if (onMonthChange) {
+      onMonthChange(newMonth);
+    } else {
+      setInternalMonth(newMonth);
+    }
+  };
 
   const events = useMemo(() => {
     return getCalendarEvents(currentMonth);
@@ -119,21 +131,21 @@ export function FinanceCalendar({ getCalendarEvents, categories }: FinanceCalend
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                  onClick={() => handleMonthChange(subMonths(currentMonth, 1))}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setCurrentMonth(new Date())}
+                  onClick={() => handleMonthChange(new Date())}
                 >
                   Today
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                  onClick={() => handleMonthChange(addMonths(currentMonth, 1))}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>

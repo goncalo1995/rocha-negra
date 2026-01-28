@@ -6,6 +6,7 @@ import { ArrowLeft, Calendar, CheckCircle2, Circle, Clock, MoreVertical, Plus } 
 import { format } from "date-fns";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -16,9 +17,29 @@ import {
 export default function ProjectDetail() {
     const { projectId } = useParams<{ projectId: string }>();
     const { project, isLoading: isLoadingProject } = useProject(projectId);
-    const { tasks, isLoading: isLoadingTasks } = useTasks(projectId);
+    const { tasks, isLoading: isLoadingTasks, updateTask } = useTasks(projectId);
     const { deleteProject } = useProjects();
     const navigate = useNavigate();
+
+    const handleToggleTaskStatus = async (taskToToggle: any) => {
+        const newStatus = taskToToggle.status === 'done' ? 'todo' : 'done';
+
+        if (newStatus === 'done') {
+            const hasSubtasks = tasks.some(t => t.parentId === taskToToggle.id && t.status !== 'done');
+            if (hasSubtasks) {
+                toast.error("Cannot mark task as done because it has incomplete subtasks.");
+                return;
+            }
+        }
+
+        try {
+            await updateTask(taskToToggle.id, { status: newStatus });
+            toast.success("Task updated");
+        } catch (error: any) {
+            const message = error.response?.data?.message || "Failed to update task";
+            toast.error(message);
+        }
+    };
 
     if (isLoadingProject || isLoadingTasks) {
         return <div className="p-8">Loading project details...</div>;
@@ -147,17 +168,22 @@ export default function ProjectDetail() {
                     <div className="grid gap-3">
                         {tasks.map(task => (
                             <div key={task.id} className="group flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card/50 hover:bg-accent/50 transition-all">
-                                <div className="flex items-center gap-4">
-                                    {task.status === 'done' ? (
-                                        <CheckCircle2 className="h-5 w-5 text-success" />
-                                    ) : task.status === 'in_progress' ? (
-                                        <Clock className="h-5 w-5 text-warning" />
-                                    ) : (
-                                        <Circle className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                                    )}
-                                    <div>
+                                <div className="flex items-center gap-4 flex-1">
+                                    <button
+                                        onClick={() => handleToggleTaskStatus(task)}
+                                        className="focus:outline-none"
+                                    >
+                                        {task.status === 'done' ? (
+                                            <CheckCircle2 className="h-5 w-5 text-success hover:opacity-80 transition-opacity" />
+                                        ) : task.status === 'in_progress' ? (
+                                            <Clock className="h-5 w-5 text-warning hover:opacity-80 transition-opacity" />
+                                        ) : (
+                                            <Circle className="h-5 w-5 text-muted-foreground group-hover:text-primary hover:text-primary transition-colors" />
+                                        )}
+                                    </button>
+                                    <Link to={`/tasks/${task.id}`} className="flex-1 min-w-0">
                                         <p className={cn(
-                                            "font-medium",
+                                            "font-medium hover:text-primary transition-colors truncate",
                                             task.status === 'done' && "text-muted-foreground line-through"
                                         )}>
                                             {task.title}
@@ -175,7 +201,7 @@ export default function ProjectDetail() {
                                                 </span>
                                             )}
                                         </div>
-                                    </div>
+                                    </Link>
                                 </div>
                                 {/* Actions could go here */}
                             </div>

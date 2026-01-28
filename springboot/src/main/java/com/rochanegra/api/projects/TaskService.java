@@ -88,12 +88,16 @@ public class TaskService {
         if (updateDto.description() != null)
             task.setDescription(updateDto.description());
         if (updateDto.status() != null) {
-            task.setStatus(updateDto.status());
             if (updateDto.status() == TaskStatus.done) {
+                boolean hasIncompleteSubtasks = taskRepository.existsByParentIdAndStatusNot(taskId, TaskStatus.done);
+                if (hasIncompleteSubtasks) {
+                    throw new IllegalArgumentException("Cannot mark task as done because it has incomplete subtasks.");
+                }
                 task.setCompletedAt(Instant.now());
             } else {
                 task.setCompletedAt(null);
             }
+            task.setStatus(updateDto.status());
         }
         if (updateDto.assignedTo() != null)
             task.setAssignedTo(updateDto.assignedTo());

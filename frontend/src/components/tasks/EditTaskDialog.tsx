@@ -71,9 +71,10 @@ export function EditTaskDialog({ task, trigger, open: controlledOpen, onOpenChan
             });
             toast.success("Task updated successfully");
             setOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Failed to update task");
+            const message = error.response?.data?.message || "Failed to update task";
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }

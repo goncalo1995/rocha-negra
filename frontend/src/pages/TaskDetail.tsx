@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { EditTaskDialog } from "@/components/tasks/EditTaskDialog";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function TaskDetail() {
     const { taskId } = useParams<{ taskId: string }>();
@@ -26,6 +27,7 @@ export default function TaskDetail() {
 
     // Filter logic might change if backend returned tree, but currently returns flat list.
     const subtasks = allTasks.filter(t => t.parentId === taskId).sort((a, b) => (a.position || 0) - (b.position || 0));
+    const hasIncompleteSubtasks = subtasks.some(s => s.status !== 'done');
 
     if (isLoading) {
         return <div className="p-8">Loading task details...</div>;
@@ -37,6 +39,12 @@ export default function TaskDetail() {
 
     const handleStatusToggle = async () => {
         const newStatus = task.status === 'done' ? 'todo' : 'done';
+
+        if (newStatus === 'done' && hasIncompleteSubtasks) {
+            toast.error("Cannot mark task as done because it has incomplete subtasks.");
+            return;
+        }
+
         await updateTask(task.id, { status: newStatus });
     };
 

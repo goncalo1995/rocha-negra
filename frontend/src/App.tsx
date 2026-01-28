@@ -24,6 +24,12 @@ import TaskDetail from "./pages/TaskDetail";
 import Contacts from "./pages/Contacts";
 import ContactDetail from "./pages/ContactDetail";
 import Home from "./pages/Home";
+import Assets from "./pages/Assets";
+import Liabilities from "./pages/Liabilities";
+import Ledger from "./pages/Ledger";
+import FixedCosts from "./pages/FixedCosts";
+import Categories from "./pages/Categories";
+import Agenda from "./pages/Agenda";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,9 +82,14 @@ const App = () => (
                 <Route path="/old" element={<Home />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/finance/projections" element={<ProjectionsPage />} />
+                <Route path="/assets" element={<Assets />} />
+                <Route path="/liabilities" element={<Liabilities />} />
+                <Route path="/ledger" element={<Ledger />} />
+                <Route path="/fixed-costs" element={<FixedCosts />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/agenda" element={<Agenda />} />
                 <Route path="/vehicles" element={<Vehicles />} />
                 <Route path="/it" element={<IT />} />
-                {/* ... all other protected pages ... */}
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:projectId" element={<ProjectDetail />} />
@@ -86,7 +97,6 @@ const App = () => (
                 <Route path="/tasks/:taskId" element={<TaskDetail />} />
                 <Route path="/contacts" element={<Contacts />} />
                 <Route path="/contacts/:contactId" element={<ContactDetail />} />
-
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
