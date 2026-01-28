@@ -103,6 +103,21 @@
 			<version>5.1.0</version>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+			<groupId>org.telegram</groupId>
+			<artifactId>telegrambots-springboot-longpolling-starter</artifactId>
+			<version>9.2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.telegram</groupId>
+			<artifactId>telegrambots-abilities</artifactId>
+			<version>9.2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.telegram</groupId>
+			<artifactId>telegrambots-client</artifactId>
+			<version>9.2.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>

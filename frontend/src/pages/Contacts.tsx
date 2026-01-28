@@ -148,7 +148,10 @@ export default function Contacts() {
                     </Link>
                 ))}
 
-                <button onClick={() => setIsCreateOpen(true)} className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-muted-foreground/30 bg-accent/10 p-6 transition-all hover:bg-accent/20 hover:border-primary/30 min-h-[200px]">
+                <button onClick={() => {
+                    setEditingContact(null);
+                    setIsCreateOpen(true);
+                }} className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-muted-foreground/30 bg-accent/10 p-6 transition-all hover:bg-accent/20 hover:border-primary/30 min-h-[200px]">
                     <div className="rounded-full bg-background p-3 shadow-sm">
                         <User className="h-6 w-6 text-muted-foreground" />
                     </div>
