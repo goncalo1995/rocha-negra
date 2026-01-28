@@ -21,6 +21,8 @@ import Tasks from "./pages/Tasks";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import TaskDetail from "./pages/TaskDetail";
+import Contacts from "./pages/Contacts";
+import ContactDetail from "./pages/ContactDetail";
 import Home from "./pages/Home";
 
 const queryClient = new QueryClient();
@@ -74,6 +76,8 @@ const App = () => (
                 <Route path="/projects/:projectId" element={<ProjectDetail />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/tasks/:taskId" element={<TaskDetail />} />
+                <Route path="/contacts" element={<Contacts />} />
+                <Route path="/contacts/:contactId" element={<ContactDetail />} />
 
               </Route>
 

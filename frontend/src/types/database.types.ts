@@ -95,6 +95,57 @@ export type Database = {
         }
         Relationships: []
       }
+      contacts: {
+        Row: {
+          avatar_url: string | null
+          category: Database["public"]["Enums"]["contact_category"]
+          company: string | null
+          created_at: string | null
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string | null
+          linkedin_url: string | null
+          notes: string | null
+          phone: string | null
+          role: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          category?: Database["public"]["Enums"]["contact_category"]
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          category?: Database["public"]["Enums"]["contact_category"]
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       domain_price_history: {
         Row: {
           created_at: string | null
@@ -899,6 +950,7 @@ export type Database = {
         | "investment"
         | "emergency"
       categorynature: "emergency" | "fixed" | "savings" | "variable"
+      contact_category: "personal" | "professional" | "service_provider"
       liability_type: "loan" | "credit_card" | "mortgage" | "other"
       linkable_entity_type: "vehicle" | "liability" | "property" | "project"
       project_role: "owner" | "editor" | "viewer"
@@ -1070,6 +1122,7 @@ export const Constants = {
         "emergency",
       ],
       categorynature: ["emergency", "fixed", "savings", "variable"],
+      contact_category: ["personal", "professional", "service_provider"],
       liability_type: ["loan", "credit_card", "mortgage", "other"],
       linkable_entity_type: ["vehicle", "liability", "property", "project"],
       project_role: ["owner", "editor", "viewer"],

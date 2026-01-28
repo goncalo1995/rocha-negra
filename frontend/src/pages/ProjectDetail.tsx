@@ -88,6 +88,15 @@ export default function ProjectDetail() {
                         </div>
                     </div>
                     <div className="flex gap-2">
+                        <CreateTaskDialog
+                            defaultProjectId={projectId}
+                            trigger={
+                                <Button className="gap-2">
+                                    <Plus className="h-4 w-4" />
+                                    Add Task
+                                </Button>
+                            }
+                        />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="icon">
@@ -100,15 +109,6 @@ export default function ProjectDetail() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <CreateTaskDialog
-                            defaultProjectId={projectId}
-                            trigger={
-                                <Button className="gap-2">
-                                    <Plus className="h-4 w-4" />
-                                    Add Task
-                                </Button>
-                            }
-                        />
                     </div>
                 </div>
             </div>

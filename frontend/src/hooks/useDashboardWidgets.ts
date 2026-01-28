@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { DashboardWidget, WidgetType } from '@/types/dashboard';
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
-    { id: 'financial', type: 'financial', enabled: true, order: 0 },
-    { id: 'tasks', type: 'tasks', enabled: true, order: 1 },
+    { id: 'tasks', type: 'tasks', enabled: true, order: 0 },
+    { id: 'financial', type: 'financial', enabled: true, order: 1 },
     { id: 'projects', type: 'projects', enabled: true, order: 2 },
     { id: 'transactions', type: 'transactions', enabled: true, order: 3 },
     { id: 'it', type: 'it', enabled: true, order: 4 },

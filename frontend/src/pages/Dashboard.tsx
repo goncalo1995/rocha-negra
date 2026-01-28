@@ -5,7 +5,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
 import { useIT } from "@/hooks/useIT";
 import { useVehicles } from "@/hooks/useVehicles";
-// import { useNetwork } from "@/hooks/useNetwork"; // Delayed
+import { useNetwork } from "@/hooks/useNetwork";
 import { DashboardWidget } from "@/types/dashboard";
 import { formatCurrency } from "@/lib/formatters";
 import {
@@ -44,7 +44,7 @@ export default function Dashboard() {
     const { projects } = useProjects();
     const { metrics: itMetrics } = useIT();
     const { metrics: vehicleMetrics } = useVehicles();
-    // const { contacts } = useNetwork(); // Delayed
+    const { contacts } = useNetwork();
 
     // Derived Data
     const recentTransactions = transactions.slice(0, 3);
@@ -323,8 +323,38 @@ export default function Dashboard() {
                     </BentoCard>
                 );
 
-            // case 'network': // Delayed
-            //     return (...);
+            case 'network':
+                return (
+                    <BentoCard
+                        key={widget.id}
+                        title="Network"
+                        subtitle={`${contacts.length} contacts`}
+                        headerAction={
+                            <Link to="/contacts">
+                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                                    <Users className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                        }
+                    >
+                        <div className="space-y-3">
+                            {contacts.slice(0, 3).map((contact) => (
+                                <div key={contact.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
+                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                        {(contact.firstName[0] + (contact.lastName?.[0] || "")).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-foreground truncate">{contact.firstName} {contact.lastName}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{contact.company || contact.role || contact.category}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {contacts.length === 0 && (
+                                <p className="text-sm text-muted-foreground italic">No contacts yet.</p>
+                            )}
+                        </div>
+                    </BentoCard>
+                );
 
             case 'debts':
                 return (
