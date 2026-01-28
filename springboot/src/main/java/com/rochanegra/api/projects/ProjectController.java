@@ -46,6 +46,13 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.updateProject(projectId, updateDto, userId));
     }
 
+    @DeleteMapping("/{projectId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteProject(@PathVariable UUID projectId, Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        projectService.deleteProject(projectId, userId);
+    }
+
     // --- Member Endpoints ---
     @PostMapping("/{projectId}/members")
     public ResponseEntity<ProjectMemberDto> addMember(@PathVariable UUID projectId,

@@ -4,14 +4,18 @@ import java.util.List;
 import java.util.UUID;
 
 import com.rochanegra.api.projects.types.ProjectStatus;
+
+import java.time.Instant;
 import java.time.LocalDate;
 
 public record ProjectDetailDto(
-        UUID id,
-        String name,
-        String description,
-        ProjectStatus status,
-        LocalDate dueDate,
-        List<ProjectMemberDto> members,
-        List<TaskSummaryDto> tasks) {
+                UUID id,
+                String name,
+                String description,
+                ProjectStatus status,
+                LocalDate dueDate,
+                Instant createdAt,
+                Instant updatedAt,
+                List<ProjectMemberDto> members,
+                List<TaskSummaryDto> tasks) {
 }

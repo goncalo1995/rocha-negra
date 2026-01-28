@@ -1,6 +1,6 @@
-import Home from './Home';
+import Dashboard from './Dashboard';
 
 // Index now redirects to the modular Home page
-const Index = () => <Home />;
+const Index = () => <Dashboard />;
 
 export default Index;

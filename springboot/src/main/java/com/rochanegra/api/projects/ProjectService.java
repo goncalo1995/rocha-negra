@@ -104,6 +104,18 @@ public class ProjectService {
         memberRepository.delete(member);
     }
 
+    @Transactional
+    public void deleteProject(UUID projectId, UUID userId) {
+        // RLS ensures only owners can delete.
+        // We might want to check roles here explicitly for clarity, but database rules
+        // should handle it.
+        // For safety, let's verify existence.
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
+        projectRepository.delete(project);
+    }
+
     // --- Mapper Methods ---
 
     private ProjectSummaryDto toSummaryDto(Project project) {
@@ -112,6 +124,8 @@ public class ProjectService {
                 project.getName(),
                 project.getStatus(),
                 project.getDueDate(),
+                project.getCreatedAt(),
+                project.getUpdatedAt(),
                 project.getMembers().size(),
                 project.getTasks().size());
     }
@@ -131,6 +145,8 @@ public class ProjectService {
                 project.getDescription(),
                 project.getStatus(),
                 project.getDueDate(),
+                project.getCreatedAt(),
+                project.getUpdatedAt(),
                 members,
                 tasks);
     }

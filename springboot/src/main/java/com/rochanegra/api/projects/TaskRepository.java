@@ -14,4 +14,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
 
     // For getting personal "Inbox" tasks
     List<Task> findByProjectIdIsNullAndCreatedByOrderByCreatedAtDesc(UUID createdBy);
+
+    // For getting ALL tasks created by user (across projects and inbox)
+    List<Task> findAllByCreatedByOrderByCreatedAtDesc(UUID createdBy);
 }

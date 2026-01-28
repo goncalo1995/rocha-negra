@@ -18,6 +18,9 @@ import { MainLayout } from "./components/layout/MainLayout";
 import { Spinner } from "./components/ui/spinner";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
+import Home from "./pages/Home";
 
 const queryClient = new QueryClient();
 
@@ -59,13 +62,15 @@ const App = () => (
               >
                 {/* These routes are now children of MainLayout */}
                 <Route path="/" element={<Index />} />
+                <Route path="/old" element={<Home />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/finance/projections" element={<ProjectionsPage />} />
                 <Route path="/vehicles" element={<Vehicles />} />
                 <Route path="/it" element={<IT />} />
                 {/* ... all other protected pages ... */}
                 <Route path="/dashboard" element={<Dashboard />} />
-                {/* <Route path="/projects" element={<Projects />} /> */}
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/projects/:projectId" element={<ProjectDetail />} />
                 <Route path="/tasks" element={<Tasks />} />
 
               </Route>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
+import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 
 export default function Tasks() {
     const { tasks } = useTasks();
@@ -75,10 +76,7 @@ export default function Tasks() {
                     <h1 className="text-3xl font-bold text-foreground">Tasks</h1>
                     <p className="text-muted-foreground mt-1">Track your work across all projects</p>
                 </div>
-                <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    New Task
-                </Button>
+                <CreateTaskDialog />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -8,10 +8,12 @@ export function useTasks(projectId?: string) {
 
     const { data: tasks = [], isLoading } = useQuery({
         queryKey: ['tasks', { projectId }],
-        enabled: !!projectId,
+        // If projectId is strictly undefined, we fetch all. If it's null, we might fetch inbox (if we changed logic, but here strict check).
+        // Actually, we want to fetch if projectId is defined OR if we want global.
+        // Let's just always enable it, but pass the param if it exists.
         queryFn: async () => {
             const res = await api.get<Task[]>('/tasks', {
-                params: { projectId },
+                params: projectId ? { projectId } : undefined,
             });
             return res.data;
         },

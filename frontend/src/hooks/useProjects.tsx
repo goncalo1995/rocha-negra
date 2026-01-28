@@ -1,7 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useCallback } from 'react';
-import { Project } from '@/types/projects';
+import { Project, FullProject } from '@/types/projects';
+
+export function useProject(id?: string) {
+    const { data: project, isLoading } = useQuery({
+        queryKey: ['project', id],
+        enabled: !!id,
+        queryFn: async () => {
+            const res = await api.get<FullProject>(`/projects/${id}`);
+            return res.data;
+        },
+    });
+
+    return { project, isLoading };
+}
 
 export function useProjects() {
     const queryClient = useQueryClient();

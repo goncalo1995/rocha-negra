@@ -60,6 +60,12 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    public List<TaskDto> getAllTasksForUser(UUID userId) {
+        return taskRepository.findAllByCreatedByOrderByCreatedAtDesc(userId).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public TaskDto updateTask(UUID taskId, TaskUpdateDto updateDto, UUID userId) {
         // RLS ensures user has permission to update this task.
