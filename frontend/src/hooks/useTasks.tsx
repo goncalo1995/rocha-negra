@@ -3,6 +3,19 @@ import api from '@/lib/api';
 import { Task } from '@/types/tasks';
 import { useMemo, useCallback } from 'react';
 
+export function useTask(id?: string) {
+    const { data: task, isLoading } = useQuery({
+        queryKey: ['task', id],
+        enabled: !!id,
+        queryFn: async () => {
+            const res = await api.get<Task>(`/tasks/${id}`);
+            return res.data;
+        },
+    });
+
+    return { task, isLoading };
+}
+
 export function useTasks(projectId?: string) {
     const queryClient = useQueryClient();
 

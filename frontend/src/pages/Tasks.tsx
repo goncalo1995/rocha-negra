@@ -31,12 +31,12 @@ export default function Tasks() {
         }
     };
 
-    const todoTasks = tasks.filter(t => t.status === 'todo');
-    const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
-    const doneTasks = tasks.filter(t => t.status === 'done');
+    const todoTasks = tasks.filter(t => t.status === 'todo' && !t.parentId);
+    const inProgressTasks = tasks.filter(t => t.status === 'in_progress' && !t.parentId);
+    const doneTasks = tasks.filter(t => t.status === 'done' && !t.parentId);
 
     const TaskCard = ({ task }: { task: typeof tasks[0] }) => (
-        <div className="p-4 rounded-xl bg-accent/30 hover:bg-accent transition-colors border border-transparent hover:border-zinc-700">
+        <a href={`/tasks/${task.id}`} className="block p-4 rounded-xl bg-accent/30 hover:bg-accent transition-colors border border-transparent hover:border-zinc-700 cursor-pointer">
             <div className="flex items-start gap-3">
                 {getStatusIcon(task.status)}
                 <div className="flex-1 min-w-0">
@@ -51,7 +51,7 @@ export default function Tasks() {
                             "px-2 py-0.5 rounded-full text-xs font-medium border capitalize",
                             getPriorityColor(task.priority)
                         )}>
-                            {task.priority}
+                            {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}
                         </span>
                         {getProjectName(task.projectId) && (
                             <span className="text-xs text-muted-foreground">
@@ -66,7 +66,7 @@ export default function Tasks() {
                     )}
                 </div>
             </div>
-        </div>
+        </a>
     );
 
     return (

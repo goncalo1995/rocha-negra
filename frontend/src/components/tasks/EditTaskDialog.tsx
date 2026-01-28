@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
@@ -13,55 +13,67 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { Task } from "@/types/tasks";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
-interface CreateTaskDialogProps {
+interface EditTaskDialogProps {
+    task: Task;
     trigger?: React.ReactNode;
-    defaultProjectId?: string;
-    defaultParentId?: string;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
-export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }: CreateTaskDialogProps) {
-    const { createTask } = useTasks();
+export function EditTaskDialog({ task, trigger, open: controlledOpen, onOpenChange }: EditTaskDialogProps) {
+    const { updateTask } = useTasks();
     const { projects } = useProjects();
-    const [open, setOpen] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    const isControlled = controlledOpen !== undefined;
+    const open = isControlled ? controlledOpen : internalOpen;
+    const setOpen = isControlled ? onOpenChange! : setInternalOpen;
+
     const [formData, setFormData] = useState({
-        title: "",
-        description: "",
-        priority: "2", // Medium
-        projectId: defaultProjectId || "inbox",
-        dueDate: "",
+        title: task.title,
+        description: task.description || "",
+        priority: task.priority.toString(),
+        projectId: task.projectId || "inbox",
+        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
+        position: task.position?.toString() || "0",
     });
+
+    // Update form data when task changes
+    useEffect(() => {
+        setFormData({
+            title: task.title,
+            description: task.description || "",
+            priority: task.priority.toString(),
+            projectId: task.projectId || "inbox",
+            dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
+            position: task.position?.toString() || "0",
+        });
+    }, [task]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
-            await createTask({
+            await updateTask(task.id, {
                 title: formData.title,
                 description: formData.description || undefined,
                 priority: parseInt(formData.priority),
-                projectId: formData.projectId === "inbox" ? undefined : formData.projectId,
-                parentId: defaultParentId,
+                projectId: formData.projectId === "inbox" ? null : formData.projectId, // Handle clearing project
                 dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-                status: 'todo',
+                position: parseInt(formData.position),
             });
-            toast.success("Task created successfully");
+            toast.success("Task updated successfully");
             setOpen(false);
-            setFormData({
-                title: "",
-                description: "",
-                priority: "2",
-                projectId: defaultProjectId || "inbox",
-                dueDate: ""
-            });
         } catch (error) {
             console.error(error);
-            toast.error("Failed to create task");
+            toast.error("Failed to update task");
         } finally {
             setIsLoading(false);
         }
@@ -69,24 +81,20 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {trigger || (
-                    <Button className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        New Task
-                    </Button>
-                )}
-            </DialogTrigger>
+            {trigger && (
+                <DialogTrigger asChild>
+                    {trigger}
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Create New Task</DialogTitle>
+                    <DialogTitle>Edit Task</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
                         <Label htmlFor="title">Title</Label>
                         <Input
                             id="title"
-                            placeholder="Task title"
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             required
@@ -129,14 +137,25 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="dueDate">Due Date</Label>
-                        <Input
-                            id="dueDate"
-                            type="date"
-                            value={formData.dueDate}
-                            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="dueDate">Due Date</Label>
+                            <Input
+                                id="dueDate"
+                                type="date"
+                                value={formData.dueDate}
+                                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="position">Position (Order)</Label>
+                            <Input
+                                id="position"
+                                type="number"
+                                value={formData.position}
+                                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-2">
@@ -154,7 +173,7 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
                             Cancel
                         </Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Creating..." : "Create Task"}
+                            {isLoading ? "Saving..." : "Save Changes"}
                         </Button>
                     </div>
                 </form>

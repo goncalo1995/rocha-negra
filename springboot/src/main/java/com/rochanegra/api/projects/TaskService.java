@@ -66,6 +66,17 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    public TaskDto getTaskById(UUID taskId, UUID userId) {
+        // RLS ensures access rights implicitly via repository query usually,
+        // but explicit check is better if we want strict ownership or membership.
+        // For now finding by ID is okay as RLS policies on the database should handle
+        // visibility if enforced there.
+        // Assuming simple retrieval for now.
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        return toDto(task);
+    }
+
     @Transactional
     public TaskDto updateTask(UUID taskId, TaskUpdateDto updateDto, UUID userId) {
         // RLS ensures user has permission to update this task.

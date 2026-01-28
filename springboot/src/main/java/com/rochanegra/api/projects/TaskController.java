@@ -57,6 +57,12 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getAllTasksForUser(userId));
     }
 
+    @GetMapping("/{taskId}")
+    public ResponseEntity<TaskDto> getTaskById(@PathVariable UUID taskId, Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.ok(taskService.getTaskById(taskId, userId));
+    }
+
     @PatchMapping("/{taskId}")
     public ResponseEntity<TaskDto> updateTask(@PathVariable UUID taskId, @RequestBody @Valid TaskUpdateDto updateDto,
             Authentication auth) {

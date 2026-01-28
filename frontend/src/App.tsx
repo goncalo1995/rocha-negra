@@ -20,6 +20,7 @@ import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
+import TaskDetail from "./pages/TaskDetail";
 import Home from "./pages/Home";
 
 const queryClient = new QueryClient();
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:projectId" element={<ProjectDetail />} />
                 <Route path="/tasks" element={<Tasks />} />
+                <Route path="/tasks/:taskId" element={<TaskDetail />} />
 
               </Route>
 
