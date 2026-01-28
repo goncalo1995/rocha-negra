@@ -147,9 +147,6 @@ CREATE TABLE public.exchange_rates (
 );
 
 -- 7. Create indexes for better query performance
-CREATE INDEX idx_assets_user_id ON public.assets(user_id);
-CREATE INDEX idx_categories_user_id ON public.categories(user_id);
-
 CREATE INDEX ON public.assets (user_id);
 CREATE INDEX ON public.liabilities (user_id);
 CREATE INDEX ON public.categories (user_id);
@@ -159,6 +156,12 @@ CREATE INDEX ON public.transactions (user_id, date DESC);
 CREATE INDEX ON public.transactions (asset_id);
 CREATE INDEX ON public.transactions (category_id);
 CREATE INDEX idx_exchange_rates_latest ON public.exchange_rates (base_currency, target_currency, timestamp DESC);
+
+-- Optimize Recurring/Projection logic
+CREATE INDEX IF NOT EXISTS idx_generators_projection_lookup ON public.recurring_generators (user_id, is_active);
+-- Optimize Projects/Tasks UI
+CREATE INDEX IF NOT EXISTS idx_tasks_project_order ON public.tasks (project_id, position ASC);
+CREATE INDEX IF NOT EXISTS idx_tasks_inbox_lookup ON public.tasks (created_by, created_at DESC) WHERE (project_id IS NULL);
 
 -- Unique constraint to prevent duplicate links
 ALTER TABLE public.exchange_rates ADD CONSTRAINT unique_rate_per_day UNIQUE (timestamp, base_currency, target_currency);

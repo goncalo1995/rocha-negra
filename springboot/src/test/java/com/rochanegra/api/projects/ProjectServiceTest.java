@@ -1,5 +1,6 @@
 package com.rochanegra.api.projects;
 
+import com.rochanegra.api.projects.dto.ProjectUpdateDto;
 import com.rochanegra.api.projects.dto.ProjectCreateDto;
 import com.rochanegra.api.projects.dto.ProjectDetailDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,9 +10,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
+import com.rochanegra.api.exception.ResourceNotFoundException;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -24,6 +27,8 @@ class ProjectServiceTest {
     // These are the fake dependencies that ProjectService needs.
     @Mock
     private ProjectRepository projectRepository;
+    @Mock
+    private ProjectMemberRepository memberRepository;
     @Mock
     private JdbcTemplate jdbcTemplate;
 
@@ -44,51 +49,113 @@ class ProjectServiceTest {
     }
 
     @Test
-    void createProject_shouldCallFunctionAndReturnDto() {
-        // --- ARRANGE ---
-        // 1. Define what our mocks should do when they are called.
+    void createProject_validRequest_shouldReturnProjectDetailDto() {
         UUID newProjectId = UUID.randomUUID();
 
-        // "When the jdbcTemplate.queryForObject method is called with these exact
-        // arguments,
-        // then return our predefined newProjectId."
         when(jdbcTemplate.queryForObject(
-                "SELECT create_project_and_add_owner(?, ?)",
-                UUID.class,
-                "Test Project",
-                "A description")).thenReturn(newProjectId);
+                eq("SELECT create_project_and_add_owner(?, ?, ?)"),
+                eq(UUID.class),
+                eq("Test Project"),
+                eq("A description"),
+                eq(mockUserId))).thenReturn(newProjectId);
 
-        // 2. We also need to mock what the projectRepository will do when findById is
-        // called.
-        Project mockProject = new Project(); // Create a fake Project entity
+        Project mockProject = new Project();
         mockProject.setId(newProjectId);
         mockProject.setName("Test Project");
         mockProject.setDescription("A description");
-        mockProject.setDueDate(null);
-        // ... set other fields as needed for the toDto() mapper ...
+        mockProject.setMembers(new ArrayList<>());
+        mockProject.setTasks(new ArrayList<>());
 
-        // "When the projectRepository.findById method is called with our newProjectId,
-        // then return an Optional containing our mockProject."
         when(projectRepository.findById(newProjectId)).thenReturn(Optional.of(mockProject));
 
-        // --- ACT ---
-        // Call the actual method we are testing.
         ProjectDetailDto resultDto = projectService.createProject(createDto, mockUserId);
 
-        // --- ASSERT ---
-        // 3. Verify that the results are what we expect.
         assertNotNull(resultDto);
         assertEquals("Test Project", resultDto.name());
         assertEquals(newProjectId, resultDto.id());
 
-        // 4. (Optional but good practice) Verify that our mocks were called correctly.
-        // "Verify that the jdbcTemplate.queryForObject method was called exactly 1 time
-        // with the specific arguments we defined."
         verify(jdbcTemplate, times(1)).queryForObject(
-                "SELECT create_project_and_add_owner(?, ?)",
-                UUID.class,
-                "Test Project",
-                "A description");
+                eq("SELECT create_project_and_add_owner(?, ?, ?)"),
+                eq(UUID.class),
+                eq("Test Project"),
+                eq("A description"),
+                eq(mockUserId));
         verify(projectRepository, times(1)).findById(newProjectId);
+    }
+
+    @Test
+    void getProjectById_found_shouldReturnProjectDetailDto() {
+        UUID projectId = UUID.randomUUID();
+        Project project = new Project();
+        project.setId(projectId);
+        project.setName("Existing Project");
+        project.setMembers(new ArrayList<>());
+        project.setTasks(new ArrayList<>());
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+
+        ProjectDetailDto result = projectService.getProjectById(projectId, mockUserId);
+
+        assertNotNull(result);
+        assertEquals("Existing Project", result.name());
+    }
+
+    @Test
+    void getProjectById_notFound_shouldThrowResourceNotFoundException() {
+        UUID projectId = UUID.randomUUID();
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> projectService.getProjectById(projectId, mockUserId));
+    }
+
+    @Test
+    void updateProject_validRequest_shouldSaveAndReturnUpdatedDto() {
+        UUID projectId = UUID.randomUUID();
+        Project existingProject = new Project();
+        existingProject.setId(projectId);
+        existingProject.setName("Old Name");
+        existingProject.setMembers(new ArrayList<>());
+        existingProject.setTasks(new ArrayList<>());
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProjectUpdateDto updateDto = new ProjectUpdateDto("New Name", "New Desc", null, null);
+        ProjectDetailDto resultDto = projectService.updateProject(projectId, updateDto, mockUserId);
+
+        assertEquals("New Name", resultDto.name());
+        assertEquals("New Desc", resultDto.description());
+        verify(projectRepository).save(existingProject);
+    }
+
+    @Test
+    void updateProject_notFound_shouldThrowResourceNotFoundException() {
+        UUID projectId = UUID.randomUUID();
+        ProjectUpdateDto updateDto = new ProjectUpdateDto("New Name", null, null, null);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> projectService.updateProject(projectId, updateDto, mockUserId));
+    }
+
+    @Test
+    void deleteProject_found_shouldCallRepositoryDelete() {
+        UUID projectId = UUID.randomUUID();
+        Project existingProject = new Project();
+        existingProject.setId(projectId);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+
+        projectService.deleteProject(projectId, mockUserId);
+
+        verify(projectRepository).delete(existingProject);
+    }
+
+    @Test
+    void deleteProject_notFound_shouldThrowResourceNotFoundException() {
+        UUID projectId = UUID.randomUUID();
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> projectService.deleteProject(projectId, mockUserId));
     }
 }

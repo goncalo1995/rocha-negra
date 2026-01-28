@@ -146,15 +146,25 @@ CREATE POLICY "Owners can delete tasks in their projects, users can delete their
   USING ((project_id IS NULL AND created_by = auth.uid()) OR (EXISTS (SELECT 1 FROM project_members WHERE project_id = tasks.project_id AND user_id = auth.uid() AND role = 'owner')));
 
 -- === STEP 6: HELPER FUNCTIONS ===
-CREATE OR REPLACE FUNCTION public.create_project_and_add_owner(name TEXT, description TEXT)
+CREATE OR REPLACE FUNCTION public.create_project_and_add_owner(
+  name TEXT,
+  description TEXT,
+  owner_id UUID
+)
 RETURNS UUID
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 DECLARE
   new_project_id UUID;
 BEGIN
-  INSERT INTO public.projects (name, description) VALUES (create_project_and_add_owner.name, create_project_and_add_owner.description) RETURNING id INTO new_project_id;
-  INSERT INTO public.project_members (project_id, user_id, role) VALUES (new_project_id, auth.uid(), 'owner');
+  INSERT INTO public.projects (name, description)
+  VALUES (name, description)
+  RETURNING id INTO new_project_id;
+
+  INSERT INTO public.project_members (project_id, user_id, role)
+  VALUES (new_project_id, owner_id, 'owner');
+
   RETURN new_project_id;
 END;
 $$;

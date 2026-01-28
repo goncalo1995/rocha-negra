@@ -15,8 +15,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,14 +29,20 @@ public class ProjectionService {
 
     private final RecurringGeneratorRepository generatorRepository;
     private final TransactionTemplateRepository templateRepository;
-    private final DashboardService dashboardService; // To get the starting net worth
+    private final DashboardService dashboardService;
 
     public List<ProjectionMonthDto> generateProjections(UUID userId, int monthsIntoFuture) {
-        // 1. Get starting point
         BigDecimal cumulativeBalance = dashboardService.calculateNetWorth(userId);
         List<RecurringGenerator> activeRules = generatorRepository.findByUserIdAndIsActiveTrue(userId);
-        LocalDate startDate = LocalDate.now().withDayOfMonth(1);
 
+        // --- OPTIMIZATION: BATCH FETCH TEMPLATES ---
+        List<UUID> ruleIds = activeRules.stream().map(RecurringGenerator::getId).collect(Collectors.toList());
+        List<TransactionTemplate> allTemplates = templateRepository.findAllByGeneratorIdIn(ruleIds);
+        Map<UUID, List<TransactionTemplate>> templatesByRule = allTemplates.stream()
+                .collect(Collectors.groupingBy(TransactionTemplate::getGeneratorId));
+        // -------------------------------------------
+
+        LocalDate startDate = LocalDate.now().withDayOfMonth(1);
         List<ProjectionMonthDto> projections = new ArrayList<>();
 
         for (int i = 0; i < monthsIntoFuture; i++) {
@@ -41,26 +52,23 @@ public class ProjectionService {
             BigDecimal monthlyIncome = BigDecimal.ZERO;
             BigDecimal monthlyExpenses = BigDecimal.ZERO;
 
-            // 2. For each rule, calculate its actual occurrences in THIS month
             for (RecurringGenerator rule : activeRules) {
                 LocalDate nextOccurrence = rule.getNextDueDate();
+                List<TransactionTemplate> templates = templatesByRule.getOrDefault(rule.getId(),
+                        Collections.emptyList());
 
-                // Fast-forward to the current projection month
                 while (nextOccurrence.isBefore(currentMonthStart)) {
                     nextOccurrence = calculateNextDueDate(nextOccurrence, rule.getFrequency());
                 }
 
-                // Now, count occurrences within the month
                 while (!nextOccurrence.isAfter(currentMonthEnd)) {
-                    // Check against the rule's end date
                     if (rule.getEndDate() != null && nextOccurrence.isAfter(rule.getEndDate())) {
-                        break; // This rule has expired
+                        break;
                     }
 
-                    // Find the correct template for this specific occurrence date
-                    TransactionTemplate template = templateRepository
-                            .findRelevantTemplateForGenerator(rule.getId(), nextOccurrence)
-                            .orElse(null);
+                    // --- OPTIMIZATION: IN-MEMORY SELECTION ---
+                    TransactionTemplate template = findRelevantTemplateInMemory(templates, nextOccurrence);
+                    // -----------------------------------------
 
                     if (template != null) {
                         if (template.getType() == TransactionType.income) {
@@ -70,12 +78,11 @@ public class ProjectionService {
                         }
                     }
 
-                    // Move to the next occurrence for this rule
                     nextOccurrence = calculateNextDueDate(nextOccurrence, rule.getFrequency());
                 }
             }
 
-            BigDecimal projectedBalance = monthlyIncome.add(monthlyExpenses); // Expenses are negative
+            BigDecimal projectedBalance = monthlyIncome.add(monthlyExpenses);
             cumulativeBalance = cumulativeBalance.add(projectedBalance);
 
             projections.add(new ProjectionMonthDto(
@@ -87,6 +94,31 @@ public class ProjectionService {
         }
 
         return projections;
+    }
+
+    /**
+     * Replicates the complex SQL logic in-memory for performance.
+     * Picks the latest effective template that is <= targetDate,
+     * or the earliest future one if none exist in the past.
+     */
+    private TransactionTemplate findRelevantTemplateInMemory(List<TransactionTemplate> templates,
+            LocalDate targetDate) {
+        // 1. Find best template from the past (latest effective_from_date <=
+        // targetDate)
+        Optional<TransactionTemplate> pastMatch = templates.stream()
+                .filter(t -> !t.getEffectiveFromDate().isAfter(targetDate))
+                .max(Comparator.comparing(TransactionTemplate::getEffectiveFromDate));
+
+        if (pastMatch.isPresent()) {
+            return pastMatch.get();
+        }
+
+        // 2. If no past match, find the first upcoming template (earliest
+        // effective_from_date > targetDate)
+        return templates.stream()
+                .filter(t -> t.getEffectiveFromDate().isAfter(targetDate))
+                .min(Comparator.comparing(TransactionTemplate::getEffectiveFromDate))
+                .orElse(null);
     }
 
     private LocalDate calculateNextDueDate(LocalDate currentDueDate, RecurringFrequency frequency) {
