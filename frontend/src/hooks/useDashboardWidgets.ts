@@ -13,6 +13,19 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     // Calendar omitted from default or added if needed
 ];
 
+
+export const widgetLabels: Record<DashboardWidget['type'], string> = {
+    tasks: 'Active Tasks',
+    financial: 'Financial Health',
+    projects: 'Projects',
+    transactions: 'Recent Transactions',
+    network: 'Network',
+    calendar: 'Calendar',
+    debts: 'Debts Overview',
+    it: 'IT Assets',
+    vehicles: 'Vehicles',
+};
+
 const STORAGE_KEY = 'rocha-negra-dashboard-widgets';
 
 export function useDashboardWidgets() {
@@ -42,6 +55,28 @@ export function useDashboardWidgets() {
         setWidgets(DEFAULT_WIDGETS);
     };
 
+    const moveWidget = (id: string, direction: 'up' | 'down') => {
+        setWidgets(prev => {
+            const sorted = [...prev].sort((a, b) => a.order - b.order);
+            const index = sorted.findIndex(w => w.id === id);
+
+            if (direction === 'up' && index > 0) {
+                const a = sorted[index];
+                const b = sorted[index - 1];
+                const temp = a.order;
+                a.order = b.order;
+                b.order = temp;
+            } else if (direction === 'down' && index < sorted.length - 1) {
+                const a = sorted[index];
+                const b = sorted[index + 1];
+                const temp = a.order;
+                a.order = b.order;
+                b.order = temp;
+            }
+            return [...sorted];
+        });
+    };
+
     const enabledWidgets = widgets
         .filter(w => w.enabled)
         .sort((a, b) => a.order - b.order);
@@ -50,7 +85,7 @@ export function useDashboardWidgets() {
         widgets,
         enabledWidgets,
         toggleWidget,
+        moveWidget,
         resetToDefault,
-        // Potentially add reorder function later
     };
 }

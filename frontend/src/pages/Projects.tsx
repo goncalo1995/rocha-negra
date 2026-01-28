@@ -14,7 +14,7 @@ import {
 import { format } from "date-fns";
 
 export default function Projects() {
-    const { projects, isLoading, deleteProject } = useProjects();
+    const { projects, isLoading, error, deleteProject } = useProjects();
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -26,7 +26,30 @@ export default function Projects() {
     };
 
     if (isLoading) {
-        return <div className="p-8">Loading projects...</div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+                <p className="text-muted-foreground animate-pulse">Loading projects...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-center">
+                <div className="rounded-full bg-destructive/10 p-3">
+                    <Briefcase className="h-6 w-6 text-destructive" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-semibold">Failed to load projects</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        There was an error connecting to the server.
+                    </p>
+                </div>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                    Retry
+                </Button>
+            </div>
+        );
     }
 
     return (

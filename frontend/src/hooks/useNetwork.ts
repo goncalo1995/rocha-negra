@@ -4,7 +4,7 @@ import { Contact, CreateContactDto, UpdateContactDto } from '@/types/network';
 import { useCallback } from 'react';
 
 export function useContact(id?: string) {
-    const { data: contact, isLoading } = useQuery({
+    const { data: contact, isLoading, error } = useQuery({
         queryKey: ['contact', id],
         enabled: !!id,
         queryFn: async () => {
@@ -13,13 +13,13 @@ export function useContact(id?: string) {
         },
     });
 
-    return { contact, isLoading };
+    return { contact, isLoading, error };
 }
 
 export function useNetwork() {
     const queryClient = useQueryClient();
 
-    const { data: contacts = [], isLoading } = useQuery({
+    const { data: contacts = [], isLoading, error } = useQuery({
         queryKey: ['contacts'],
         queryFn: async () => {
             const res = await api.get<Contact[]>('/contacts');
@@ -56,6 +56,7 @@ export function useNetwork() {
     return {
         contacts,
         isLoading,
+        error,
         createContact,
         updateContact,
         deleteContact,

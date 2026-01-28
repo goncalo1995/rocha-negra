@@ -4,7 +4,7 @@ import { Task } from '@/types/tasks';
 import { useMemo, useCallback } from 'react';
 
 export function useTask(id?: string) {
-    const { data: task, isLoading } = useQuery({
+    const { data: task, isLoading, error } = useQuery({
         queryKey: ['task', id],
         enabled: !!id,
         queryFn: async () => {
@@ -13,13 +13,13 @@ export function useTask(id?: string) {
         },
     });
 
-    return { task, isLoading };
+    return { task, isLoading, error };
 }
 
 export function useTasks(projectId?: string) {
     const queryClient = useQueryClient();
 
-    const { data: tasks = [], isLoading } = useQuery({
+    const { data: tasks = [], isLoading, error } = useQuery({
         queryKey: ['tasks', { projectId }],
         // If projectId is strictly undefined, we fetch all. If it's null, we might fetch inbox (if we changed logic, but here strict check).
         // Actually, we want to fetch if projectId is defined OR if we want global.
@@ -74,6 +74,7 @@ export function useTasks(projectId?: string) {
         tasks,
         activeTasks,
         isLoading,
+        error,
         createTask,
         updateTask,
         deleteTask,

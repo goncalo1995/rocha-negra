@@ -3,8 +3,7 @@ import { useNetwork } from "@/hooks/useNetwork";
 import { CreateContactDialog } from "@/components/network/CreateContactDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, Phone, Briefcase, User, MoreVertical, Linkedin, ExternalLink } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Search, Mail, Phone, User, MoreVertical, Linkedin } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,7 +13,7 @@ import {
 import { Link } from "react-router-dom";
 
 export default function Contacts() {
-    const { contacts, isLoading, deleteContact } = useNetwork();
+    const { contacts, isLoading, error, deleteContact } = useNetwork();
     const [search, setSearch] = useState("");
     const [editingContact, setEditingContact] = useState<any>(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -22,6 +21,8 @@ export default function Contacts() {
     const filteredContacts = contacts.filter(c =>
         c.firstName.toLowerCase().includes(search.toLowerCase()) ||
         c.lastName?.toLowerCase().includes(search.toLowerCase()) ||
+        c.email?.toLowerCase().includes(search.toLowerCase()) ||
+        c.phone?.toLowerCase().includes(search.toLowerCase()) ||
         c.company?.toLowerCase().includes(search.toLowerCase()) ||
         c.role?.toLowerCase().includes(search.toLowerCase())
     );
@@ -32,6 +33,25 @@ export default function Contacts() {
 
     if (isLoading) {
         return <div className="p-8">Loading network...</div>;
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-center">
+                <div className="rounded-full bg-destructive/10 p-3">
+                    <User className="h-6 w-6 text-destructive" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-semibold">Failed to load contacts</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        There was an error connecting to the server.
+                    </p>
+                </div>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                    Retry
+                </Button>
+            </div>
+        );
     }
 
     return (

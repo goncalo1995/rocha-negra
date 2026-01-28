@@ -1,5 +1,5 @@
 import { BentoCard } from "@/components/BentoCard";
-import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
+import { useDashboardWidgets, widgetLabels } from "@/hooks/useDashboardWidgets";
 import { useFinance } from "@/hooks/useFinance";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
@@ -14,6 +14,8 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Wallet,
+    ChevronUp,
+    ChevronDown,
     Settings2,
     Users,
     TrendingDown,
@@ -34,9 +36,10 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Dashboard() {
-    const { widgets, enabledWidgets, toggleWidget, resetToDefault } = useDashboardWidgets();
+    const { widgets, enabledWidgets, toggleWidget, moveWidget, resetToDefault } = useDashboardWidgets();
 
     // Data Hooks
     const { metrics, transactions, liabilities } = useFinance();
@@ -68,18 +71,6 @@ export default function Dashboard() {
             default: return 'Normal';
         }
     }
-
-    const widgetLabels: Record<DashboardWidget['type'], string> = {
-        tasks: 'Active Tasks',
-        financial: 'Financial Health',
-        projects: 'Projects',
-        transactions: 'Recent Transactions',
-        network: 'Network',
-        calendar: 'Calendar',
-        debts: 'Debts Overview',
-        it: 'IT Assets',
-        vehicles: 'Vehicles',
-    };
 
     const renderWidget = (widget: DashboardWidget) => {
         switch (widget.type) {
@@ -412,28 +403,52 @@ export default function Dashboard() {
                             Customize
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md bg-card border-border">
-                        <DialogHeader>
+                    <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col bg-card border-border p-0 overflow-hidden">
+                        <DialogHeader className="p-6 pb-0">
                             <DialogTitle>Customize Dashboard</DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-4 mt-4">
-                            <p className="text-sm text-muted-foreground">
-                                Choose which widgets to show on your dashboard.
-                            </p>
-                            <div className="space-y-3">
-                                {widgets.map((widget) => (
-                                    <div key={widget.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
-                                        <Label htmlFor={widget.id} className="cursor-pointer">
-                                            {widgetLabels[widget.type]}
-                                        </Label>
-                                        <Switch
-                                            id={widget.id}
-                                            checked={widget.enabled}
-                                            onCheckedChange={() => toggleWidget(widget.id)}
-                                        />
-                                    </div>
-                                ))}
+                        <ScrollArea className="h-[60vh]">
+                            <div className="px-6 pt-2 space-y-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Choose which widgets to show and use arrows to reorder.
+                                </p>
+                                <div className="space-y-3 pb-4">
+                                    {[...widgets].sort((a, b) => a.order - b.order).map((widget) => (
+                                        <div key={widget.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/50 group">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex flex-col gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6"
+                                                        onClick={() => moveWidget(widget.id, 'up')}
+                                                    >
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6"
+                                                        onClick={() => moveWidget(widget.id, 'down')}
+                                                    >
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                <Label htmlFor={widget.id} className="cursor-pointer font-medium">
+                                                    {widgetLabels[widget.type]}
+                                                </Label>
+                                            </div>
+                                            <Switch
+                                                id={widget.id}
+                                                checked={widget.enabled}
+                                                onCheckedChange={() => toggleWidget(widget.id)}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
+                        </ScrollArea>
+                        <div className="p-6 pt-0 mt-auto">
                             <Button variant="outline" size="sm" onClick={resetToDefault} className="w-full">
                                 Reset to Default
                             </Button>

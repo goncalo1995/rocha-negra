@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { Project, FullProject } from '@/types/projects';
 
 export function useProject(id?: string) {
-    const { data: project, isLoading } = useQuery({
+    const { data: project, isLoading, error } = useQuery({
         queryKey: ['project', id],
         enabled: !!id,
         queryFn: async () => {
@@ -13,13 +13,13 @@ export function useProject(id?: string) {
         },
     });
 
-    return { project, isLoading };
+    return { project, isLoading, error };
 }
 
 export function useProjects() {
     const queryClient = useQueryClient();
 
-    const { data: projects = [], isLoading } = useQuery({
+    const { data: projects = [], isLoading, error } = useQuery({
         queryKey: ['projects'],
         queryFn: async () => {
             const res = await api.get<Project[]>('/projects');
@@ -62,6 +62,7 @@ export function useProjects() {
     return {
         projects,
         isLoading,
+        error,
         createProject,
         updateProject,
         deleteProject,

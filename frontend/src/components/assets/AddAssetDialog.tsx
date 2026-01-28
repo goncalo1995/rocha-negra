@@ -8,8 +8,8 @@ import { Button } from '../ui/button';
 import { Plus } from 'lucide-react';
 import { assetTypeConfig } from './AssetManager';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface AddAssetDialogProps {
     isOpen: boolean;
@@ -99,74 +99,77 @@ const AddAssetDialog = ({ isOpen, onOpenChange, editingAsset, onAddAsset, onUpda
                     Add Asset
                 </Button>
             </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
+            <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{editingAsset ? 'Edit Asset' : 'Add New Asset'}</DialogTitle>
                     <DialogDescription>
                         {editingAsset ? 'Update the details of your asset.' : 'Add a new asset to track your wealth.'}
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                            id="name"
-                            placeholder="e.g., Main Bank Account"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="type">Type</Label>
-                        <Select value={type} onValueChange={(v) => setType(v as AssetType)} disabled={editingAsset !== null}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {(Object.entries(assetTypeConfig) as [AssetType, typeof assetTypeConfig.cash][]).map(
-                                    ([key, config]) => (
-                                        <SelectItem key={key} value={key}>
-                                            <div className="flex items-center gap-2">
-                                                <config.icon className={cn('h-4 w-4', config.color)} />
-                                                {config.label}
-                                            </div>
-                                        </SelectItem>
-                                    )
-                                )}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="value">
-                            {editingAsset ? 'Current Value (€)' : 'Initial Value (€)'}
-                        </Label>
-                        <Input
-                            id="value"
-                            type="number"
-                            step="0.01"
-                            placeholder="1000.00"
-                            value={currentValue} // Use the new state variable
-                            onChange={(e) => setCurrentValue(e.target.value)}
-                            disabled={editingAsset !== null}
-                            required
-                        />
-
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="description">Description (optional)</Label>
-                        <Input
-                            id="description"
-                            placeholder="Any notes about this asset"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        />
+                <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                    <ScrollArea className="flex-1 p-6 pt-2">
+                        <div className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
+                                    placeholder="e.g., Main Bank Account"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="type">Type</Label>
+                                <Select value={type} onValueChange={(v) => setType(v as AssetType)} disabled={editingAsset !== null}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(Object.entries(assetTypeConfig) as [AssetType, typeof assetTypeConfig.cash][]).map(
+                                            ([key, config]) => (
+                                                <SelectItem key={key} value={key}>
+                                                    <div className="flex items-center gap-2">
+                                                        <config.icon className={cn('h-4 w-4', config.color)} />
+                                                        {config.label}
+                                                    </div>
+                                                </SelectItem>
+                                            )
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="value">
+                                    {editingAsset ? 'Current Value (€)' : 'Initial Value (€)'}
+                                </Label>
+                                <Input
+                                    id="value"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="1000.00"
+                                    value={currentValue}
+                                    onChange={(e) => setCurrentValue(e.target.value)}
+                                    disabled={editingAsset !== null}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="description">Description (optional)</Label>
+                                <Input
+                                    id="description"
+                                    placeholder="Any notes about this asset"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </ScrollArea>
+                    <div className="flex justify-end gap-2 p-6 pt-2 border-t mt-auto">
+                        <Button type="button" onClick={onClose} variant="outline">Cancel</Button>
+                        <Button type="submit">{editingAsset ? 'Save Changes' : 'Add Asset'}</Button>
                     </div>
                 </form>
-                <DialogFooter>
-                    <Button type="button" onClick={onClose} variant="outline">Cancel</Button>
-                    <Button type="submit" onClick={handleSubmit}>{editingAsset ? 'Save Changes' : 'Add Asset'}</Button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

@@ -7,7 +7,7 @@ export function useFinance() {
   const queryClient = useQueryClient();
 
   // Queries
-  const { data: assets = [], isLoading: isLoadingAssets } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets, error: errorAssets } = useQuery({
     queryKey: ['assets'],
     queryFn: async () => {
       const response = await api.get<Asset[]>('/assets');
@@ -15,7 +15,7 @@ export function useFinance() {
     },
   });
 
-  const { data: liabilities = [], isLoading: isLoadingLiabilities } = useQuery({
+  const { data: liabilities = [], isLoading: isLoadingLiabilities, error: errorLiabilities } = useQuery({
     queryKey: ['liabilities'],
     queryFn: async () => {
       const response = await api.get<Liability[]>('/liabilities');
@@ -23,7 +23,7 @@ export function useFinance() {
     },
   });
 
-  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+  const { data: categories = [], isLoading: isLoadingCategories, error: errorCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       const response = await api.get<Category[]>('/categories');
@@ -31,7 +31,7 @@ export function useFinance() {
     },
   });
 
-  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
+  const { data: transactions = [], isLoading: isLoadingTransactions, error: errorTransactions } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const response = await api.get<{ content: Transaction[] }>('/transactions');
@@ -39,7 +39,7 @@ export function useFinance() {
     },
   });
 
-  const { data: recurringRules = [], isLoading: isLoadingRecurringRules } = useQuery({
+  const { data: recurringRules = [], isLoading: isLoadingRecurringRules, error: errorRecurringRules } = useQuery({
     queryKey: ['recurring-rules'],
     queryFn: async () => {
       const response = await api.get<RecurringRule[]>('/recurring-rules');
@@ -47,7 +47,7 @@ export function useFinance() {
     },
   });
 
-  const { data: metricsData, isLoading: isLoadingMetrics } = useQuery({
+  const { data: metricsData, isLoading: isLoadingMetrics, error: errorMetrics } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
       const response = await api.get<any>('/dashboard');
@@ -305,8 +305,13 @@ export function useFinance() {
   }, [categories, assets, recurringRules, transactions, addCategory, addAsset, addRecurringRule, addTransactions, queryClient]);
 
   const isLoading = isLoadingAssets || isLoadingCategories || isLoadingLiabilities || isLoadingTransactions || isLoadingRecurringRules;
+  const isError = !!(errorAssets || errorLiabilities || errorCategories || errorTransactions || errorRecurringRules || errorMetrics);
+  const error = errorAssets || errorLiabilities || errorCategories || errorTransactions || errorRecurringRules || errorMetrics;
+
   return {
     isLoading,
+    isError,
+    error,
     assets,
     categories,
     liabilities,

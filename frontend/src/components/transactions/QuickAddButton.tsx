@@ -21,6 +21,7 @@ import { Category, Asset, TransactionType, TransactionCreateDto, LIQUID_ASSET_TY
 import { Plus, ArrowDownLeft, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface QuickAddButtonProps {
   categories: Category[];
@@ -138,148 +139,152 @@ export function QuickAddButton({ categories, assets, baseCurrency, onAddTransact
 
       {/* Quick Add Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-0">
             <DialogTitle>Quick Add Transaction</DialogTitle>
             <DialogDescription>
               Log an expense, income, or transfer quickly.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Transaction Type Selector */}
-            <div className="flex gap-2">
-              {typeButtons.map(({ value, label, icon: Icon, color }) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    'flex-1 gap-2',
-                    form.type === value && color
-                  )}
-                  onClick={() => {
-                    setForm({ ...form, type: value, categoryId: '' });
-                  }}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Button>
-              ))}
-            </div>
-
-            {/* Amount */}
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount (€)</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                className="text-2xl font-bold h-14"
-                value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                autoFocus
-                required
-              />
-            </div>
-
-            {/* --- NEW DYNAMIC ASSET SELECTORS --- */}
-            {form.type === 'transfer' ? (
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
-                  <Label>From</Label>
-                  <Select value={form.assetId} onValueChange={v => setForm(f => ({ ...f, assetId: v }))} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="From" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {liquidAssets.map((asset) => (
-                        <SelectItem key={asset.id} value={asset.id}>
-                          {asset.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+            <ScrollArea className="flex-1 min-h-0 h-[60vh]">
+              <div className="space-y-4 p-6 pt-2 pb-6">
+                {/* Transaction Type Selector */}
+                <div className="flex gap-2">
+                  {typeButtons.map(({ value, label, icon: Icon, color }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        'flex-1 gap-2',
+                        form.type === value && color
+                      )}
+                      onClick={() => {
+                        setForm({ ...form, type: value, categoryId: '' });
+                      }}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </Button>
+                  ))}
                 </div>
 
-                <Button type="button" variant="ghost" size="icon" onClick={() => { swapAssets() }}>
-                  <ArrowLeftRight className="h-4 w-4" />
-                </Button>
+                {/* Amount */}
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount (€)</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    className="text-2xl font-bold h-14"
+                    value={form.amount}
+                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                    autoFocus
+                    required
+                  />
+                </div>
 
-                <div className="flex-1">
-                  <Label>To</Label>
-                  <Select value={form.destinationAssetId} onValueChange={v => setForm(f => ({ ...f, destinationAssetId: v }))} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="To" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {liquidAssets.map((asset) => (
-                        <SelectItem key={asset.id} value={asset.id}>
-                          {asset.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* --- NEW DYNAMIC ASSET SELECTORS --- */}
+                {form.type === 'transfer' ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <Label>From</Label>
+                      <Select value={form.assetId} onValueChange={v => setForm(f => ({ ...f, assetId: v }))} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="From" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {liquidAssets.map((asset) => (
+                            <SelectItem key={asset.id} value={asset.id}>
+                              {asset.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button type="button" variant="ghost" size="icon" onClick={() => { swapAssets() }}>
+                      <ArrowLeftRight className="h-4 w-4" />
+                    </Button>
+
+                    <div className="flex-1">
+                      <Label>To</Label>
+                      <Select value={form.destinationAssetId} onValueChange={v => setForm(f => ({ ...f, destinationAssetId: v }))} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="To" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {liquidAssets.map((asset) => (
+                            <SelectItem key={asset.id} value={asset.id}>
+                              {asset.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>{form.type === 'income' ? 'To Account' : 'From Account'}</Label>
+                    <Select value={form.assetId} onValueChange={v => setForm(f => ({ ...f, assetId: v }))} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {liquidAssets.map((asset) => (
+                          <SelectItem key={asset.id} value={asset.id}>
+                            {asset.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Category */}
+                {form.type !== 'transfer' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select value={form.categoryId} onValueChange={v => setForm(f => ({ ...f, categoryId: v }))} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredCategories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description (optional)</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="What's this for?"
+                    className="resize-none"
+                    rows={2}
+                    value={form.description}
+                    onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
+                  />
                 </div>
               </div>
-            ) : (
-              <div className="space-y-2">
-                <Label>{form.type === 'income' ? 'To Account' : 'From Account'}</Label>
-                <Select value={form.assetId} onValueChange={v => setForm(f => ({ ...f, assetId: v }))} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {liquidAssets.map((asset) => (
-                      <SelectItem key={asset.id} value={asset.id}>
-                        {asset.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Category */}
-            {form.type !== 'transfer' && (
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select value={form.categoryId} onValueChange={v => setForm(f => ({ ...f, categoryId: v }))} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredCategories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (optional)</Label>
-              <Textarea
-                id="description"
-                placeholder="What's this for?"
-                className="resize-none"
-                rows={2}
-                value={form.description}
-                onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
-              />
-            </div>
+            </ScrollArea>
 
             {/* Submit */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 p-6 pt-2 border-t mt-auto">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setIsOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1" disabled={!form.amount || !form.assetId} onClick={handleSubmit}>
+              <Button type="submit" className="flex-1" disabled={!form.amount || !form.assetId}>
                 Add Transaction
               </Button>
             </div>
