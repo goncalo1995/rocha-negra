@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Task } from '@/types/tasks';
+import { Task, TaskWithSubtasks } from '@/types/tasks';
 import { useMemo, useCallback } from 'react';
 
 export function useTask(id?: string) {
@@ -8,7 +8,7 @@ export function useTask(id?: string) {
         queryKey: ['task', id],
         enabled: !!id,
         queryFn: async () => {
-            const res = await api.get<Task>(`/tasks/${id}`);
+            const res = await api.get<TaskWithSubtasks>(`/tasks/${id}`);
             return res.data;
         },
     });

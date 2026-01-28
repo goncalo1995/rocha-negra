@@ -1,6 +1,7 @@
 package com.rochanegra.api.projects;
 
 import com.rochanegra.api.projects.dto.ProjectUpdateDto;
+import com.rochanegra.api.projects.types.ProjectRole;
 import com.rochanegra.api.projects.dto.ProjectCreateDto;
 import com.rochanegra.api.projects.dto.ProjectDetailDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,8 +16,12 @@ import com.rochanegra.api.exception.ResourceNotFoundException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 // This tells JUnit 5 to enable Mockito's annotation support
@@ -81,6 +86,47 @@ class ProjectServiceTest {
                 eq("A description"),
                 eq(mockUserId));
         verify(projectRepository, times(1)).findById(newProjectId);
+    }
+
+    @Test
+    void createProject_shouldCallFunctionAndReturnDto() {
+        // --- ARRANGE ---
+        UUID newProjectId = UUID.randomUUID();
+        when(jdbcTemplate.queryForObject(
+                eq("SELECT create_project_and_add_owner(?, ?, ?)"),
+                eq(UUID.class),
+                eq("Test Project"),
+                eq("A description"),
+                eq(mockUserId)))
+                .thenReturn(newProjectId);
+
+        // --- FIX: SET UP THE MOCK ENTITY COMPLETELY ---
+        Project mockProject = new Project();
+        mockProject.setId(newProjectId);
+        mockProject.setName("Test Project");
+        mockProject.setDescription("A description");
+
+        // Create a mock member
+        ProjectMember mockMember = new ProjectMember();
+        mockMember.setUserId(mockUserId);
+        mockMember.setRole(ProjectRole.owner);
+
+        // Add the member to the project's list
+        mockProject.setMembers(List.of(mockMember));
+        // We can leave the tasks list empty for this test
+        mockProject.setTasks(List.of());
+
+        when(projectRepository.findById(newProjectId)).thenReturn(Optional.of(mockProject));
+
+        // --- ACT ---
+        ProjectDetailDto resultDto = projectService.createProject(createDto, mockUserId);
+
+        // --- ASSERT ---
+        assertNotNull(resultDto);
+        assertEquals("Test Project", resultDto.name());
+        assertFalse(resultDto.members().isEmpty()); // Verify the member is in the DTO
+        assertEquals(mockUserId, resultDto.members().get(0).userId());
+        assertEquals("owner", resultDto.members().get(0).role());
     }
 
     @Test

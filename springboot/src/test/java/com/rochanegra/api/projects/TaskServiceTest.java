@@ -8,6 +8,7 @@ import com.rochanegra.api.projects.types.TaskStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -46,6 +47,26 @@ class TaskServiceTest {
     }
 
     @Test
+    void should_createTaskInProject_when_projectExists() {
+        // Arrange
+        TaskCreateDto createDto = new TaskCreateDto("New Task", "Description", projectId, null, null, 1, null);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        mockSavedTask(UUID.randomUUID());
+
+        // Act
+        TaskDto resultDto = taskService.createTask(createDto, creatorId);
+
+        // Assert
+        ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
+        verify(taskRepository).save(taskCaptor.capture());
+
+        Task savedTask = taskCaptor.getValue();
+        assertEquals("New Task", savedTask.getTitle());
+        assertEquals(creatorId, savedTask.getCreatedBy());
+        assertNotNull(savedTask.getProject());
+    }
+
+    @Test
     void createTask_validRequest_shouldReturnTaskDto() {
         TaskCreateDto createDto = new TaskCreateDto("New Task", "Description", projectId, null, null, 1, null);
 
@@ -65,6 +86,10 @@ class TaskServiceTest {
     @Test
     void createTask_withParentId_shouldCreateSubtaskAndReturnDto() {
         UUID parentId = UUID.randomUUID();
+        Task parentTask = new Task();
+        parentTask.setId(parentId);
+
+        when(taskRepository.findById(parentId)).thenReturn(Optional.of(parentTask));
         TaskCreateDto createDto = new TaskCreateDto("Subtask", "Description", projectId, parentId, null, 1, null);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
@@ -124,6 +149,28 @@ class TaskServiceTest {
         when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> taskService.getTaskById(taskId, creatorId));
+    }
+
+    @Test
+    void should_clearCompletedAt_when_taskIsMarkedAsNotDone() {
+        // Arrange
+        UUID taskId = UUID.randomUUID();
+        Task existingTask = new Task();
+        existingTask.setId(taskId);
+        existingTask.setStatus(TaskStatus.done);
+        existingTask.setCompletedAt(Instant.now()); // It has a completion date
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
+
+        TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, TaskStatus.in_progress, null, null, null);
+
+        // Act
+        TaskDto resultDto = taskService.updateTask(taskId, updateDto, creatorId);
+
+        // Assert
+        assertEquals(TaskStatus.in_progress, resultDto.status());
+        assertNull(resultDto.completedAt()); // Verify the completion date was cleared
     }
 
     private void mockSavedTask(UUID taskId) {

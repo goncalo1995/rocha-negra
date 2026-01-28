@@ -20,14 +20,10 @@ import { toast } from "sonner";
 export default function TaskDetail() {
     const { taskId } = useParams<{ taskId: string }>();
     const { task, isLoading } = useTask(taskId);
-    // Fetch all tasks to filter subtasks. Ideally backend should return subtasks or we filter from global.
-    // Since we now have getAllTasks, we can use useTasks() and filter.
-    const { tasks: allTasks, updateTask, deleteTask } = useTasks();
+    const { updateTask, deleteTask } = useTasks();
     const [isEditOpen, setIsEditOpen] = useState(false);
 
-    // Filter logic might change if backend returned tree, but currently returns flat list.
-    const subtasks = allTasks.filter(t => t.parentId === taskId).sort((a, b) => (a.position || 0) - (b.position || 0));
-    const hasIncompleteSubtasks = subtasks.some(s => s.status !== 'done');
+    const hasIncompleteSubtasks = task?.subtasks?.some(s => s.status !== 'done');
 
     if (isLoading) {
         return <div className="p-8">Loading task details...</div>;
@@ -128,7 +124,7 @@ export default function TaskDetail() {
                     {/* Subtasks */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <Label className="text-lg font-semibold">Subtasks ({subtasks.length})</Label>
+                            <Label className="text-lg font-semibold">Subtasks ({task?.subtasks?.length})</Label>
                             {/* We need a way to create a subtask knowing the parentId */}
                             {/* Reusing CreateTaskDialog might be tricky if it doesn't support parentId injestion explicitly or if it assumes top level. */}
                             {/* For MVP, let's just use a simple inline add or a modified dialog. 
@@ -147,7 +143,7 @@ export default function TaskDetail() {
                         </div>
 
                         <div className="space-y-2">
-                            {subtasks.map(sub => (
+                            {task?.subtasks?.map(sub => (
                                 <Link to={`/tasks/${sub.id}`} key={sub.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-accent/50 transition-colors">
                                     <div className={cn(
                                         "w-2 h-2 rounded-full",
@@ -162,7 +158,7 @@ export default function TaskDetail() {
                                     </span>
                                 </Link>
                             ))}
-                            {subtasks.length === 0 && (
+                            {task?.subtasks?.length === 0 && (
                                 <p className="text-sm text-muted-foreground italic">No subtasks.</p>
                             )}
                         </div>

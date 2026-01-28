@@ -35,9 +35,14 @@ public class TaskService {
             task.setProject(project);
         }
 
+        if (createDto.parentId() != null) {
+            Task parentTask = taskRepository.findById(createDto.parentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent task not found"));
+            task.setParent(parentTask);
+        }
+
         task.setTitle(createDto.title());
         task.setDescription(createDto.description());
-        task.setParentId(createDto.parentId());
         task.setAssignedTo(createDto.assignedTo());
         task.setDueDate(createDto.dueDate());
         task.setPriority(createDto.priority() != null ? createDto.priority() : 2); // Default priority
@@ -67,11 +72,9 @@ public class TaskService {
     }
 
     public TaskDto getTaskById(UUID taskId, UUID userId) {
-        // RLS ensures access rights implicitly via repository query usually,
-        // but explicit check is better if we want strict ownership or membership.
-        // For now finding by ID is okay as RLS policies on the database should handle
-        // visibility if enforced there.
-        // Assuming simple retrieval for now.
+        // RLS protects this query.
+        // We can use a more advanced query to fetch the entire tree, but for now,
+        // JPA's lazy loading will handle fetching immediate children when needed.
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
         return toDto(task);
@@ -122,10 +125,19 @@ public class TaskService {
 
     // You will need to create a TaskDto record and this mapper
     private TaskDto toDto(Task task) {
+        if (task == null)
+            return null;
+
+        // Recursively map all sub-tasks
+        List<TaskDto> subtaskDtos = task.getSubtasks()
+                .stream()
+                .map(this::toDto) // The recursive call
+                .collect(Collectors.toList());
+
         return new TaskDto(
                 task.getId(),
                 task.getProject() != null ? task.getProject().getId() : null,
-                task.getParentId(),
+                task.getParent() != null ? task.getParent().getId() : null,
                 task.getCreatedBy(),
                 task.getAssignedTo(),
                 task.getTitle(),
@@ -137,6 +149,7 @@ public class TaskService {
                 task.getPosition(),
                 task.getCustomFields(),
                 task.getCreatedAt(),
-                task.getUpdatedAt());
+                task.getUpdatedAt(),
+                subtaskDtos);
     }
 }

@@ -1,14 +1,19 @@
 package com.rochanegra.api.projects;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.rochanegra.api.projects.types.TaskStatus;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
 import lombok.Data;
 import org.hibernate.annotations.*;
 import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,8 +29,17 @@ public class Task {
     @JoinColumn(name = "project_id")
     private Project project;
 
-    @Column(name = "parent_id")
-    private UUID parentId;
+    // --- PARENT RELATIONSHIP (Child-to-Parent) ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    @JsonBackReference // Prevents infinite loops during JSON serialization
+    private Task parent;
+
+    // --- CHILD RELATIONSHIP (Parent-to-Children) ---
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // Prevents infinite loops during JSON serialization
+    @OrderBy("position ASC, createdAt ASC") // Always fetch sub-tasks in a consistent order
+    private List<Task> subtasks = new ArrayList<>();
 
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
