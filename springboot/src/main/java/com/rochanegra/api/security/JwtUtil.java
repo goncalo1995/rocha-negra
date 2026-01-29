@@ -10,7 +10,7 @@ import com.auth0.jwk.UrlJwkProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.net.URL;
+import java.net.URI;
 import java.security.interfaces.ECPublicKey;
 
 @Component
@@ -19,7 +19,12 @@ public class JwtUtil {
     private final JwkProvider jwkProvider;
 
     public JwtUtil(@Value("${supabase.url}") String supabaseUrl) throws Exception {
-        this.jwkProvider = new UrlJwkProvider(new URL(supabaseUrl + "/auth/v1/.well-known/jwks.json"));
+        String base = supabaseUrl.endsWith("/")
+                ? supabaseUrl.substring(0, supabaseUrl.length() - 1)
+                : supabaseUrl;
+
+        URI jwksUri = URI.create(base + "/auth/v1/.well-known/jwks.json");
+        this.jwkProvider = new UrlJwkProvider(jwksUri.toURL());
     }
 
     public DecodedJWT validateToken(String token) throws Exception {

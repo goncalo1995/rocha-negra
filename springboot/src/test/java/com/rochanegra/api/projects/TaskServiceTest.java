@@ -54,7 +54,7 @@ class TaskServiceTest {
         mockSavedTask(UUID.randomUUID());
 
         // Act
-        TaskDto resultDto = taskService.createTask(createDto, creatorId);
+        taskService.createTask(createDto, creatorId);
 
         // Assert
         ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);

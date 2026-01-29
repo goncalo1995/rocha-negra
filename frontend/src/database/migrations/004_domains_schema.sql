@@ -1,4 +1,4 @@
--- === PROJECTS MODULE SCHEMA ===
+-- === DOMAINS MODULE SCHEMA ===
 
 -- 1. Domains Table
 CREATE TABLE public.domains (
