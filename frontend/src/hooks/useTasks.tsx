@@ -33,23 +33,23 @@ export function useTasks(projectId?: string) {
     });
 
     const activeTasks = useMemo(
-        () => tasks.filter(t => t.status !== 'done'),
+        () => tasks.filter(t => t.status !== 'DONE'),
         [tasks]
     );
 
     const createTaskMutation = useMutation({
-        mutationFn: (payload: Partial<Task> & { projectId: string }) =>
+        mutationFn: (payload: Partial<Task> & { nodeId: string }) =>
             api.post('/tasks', payload),
-        onSuccess: (_, { projectId }) => {
-            queryClient.invalidateQueries({ queryKey: ['tasks', { projectId }] });
+        onSuccess: (_, { nodeId }) => {
+            queryClient.invalidateQueries({ queryKey: ['tasks', { nodeId }] });
         },
     });
 
-    const createTaskInProjectMutation = useMutation({
-        mutationFn: (payload: Partial<Task> & { projectId: string }) =>
-            api.post(`/projects/${payload.projectId}/tasks`, payload),
-        onSuccess: (_, { projectId }) => {
-            queryClient.invalidateQueries({ queryKey: ['tasks', { projectId }] });
+    const createTaskInNodeMutation = useMutation({
+        mutationFn: (payload: Partial<Task> & { nodeId: string }) =>
+            api.post(`/nodes/${payload.nodeId}/tasks`, payload),
+        onSuccess: (_, { nodeId }) => {
+            queryClient.invalidateQueries({ queryKey: ['tasks', { nodeId }] });
         },
     });
 
@@ -58,9 +58,9 @@ export function useTasks(projectId?: string) {
             api.patch(`/tasks/${id}`, updates),
         onSuccess: (_, { updates }) => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
-            if (updates.projectId) {
+            if (updates.nodeId) {
                 queryClient.invalidateQueries({
-                    queryKey: ['tasks', { projectId: updates.projectId }],
+                    queryKey: ['tasks', { nodeId: updates.nodeId }],
                 });
             }
         },
@@ -74,8 +74,8 @@ export function useTasks(projectId?: string) {
     });
 
     // Callbacks to maintain original API
-    const createTask = useCallback(async (t: Partial<Task> & { projectId: string }) => createTaskMutation.mutateAsync(t), [createTaskMutation]);
-    const createTaskInProject = useCallback(async (t: Partial<Task> & { projectId: string }) => createTaskInProjectMutation.mutateAsync(t), [createTaskInProjectMutation]);
+    const createTask = useCallback(async (t: Partial<Task> & { nodeId: string }) => createTaskMutation.mutateAsync(t), [createTaskMutation]);
+    const createTaskInNode = useCallback(async (t: Partial<Task> & { nodeId: string }) => createTaskInNodeMutation.mutateAsync(t), [createTaskInNodeMutation]);
     const updateTask = useCallback(async (id: string, updates: Partial<Task>) => updateTaskMutation.mutateAsync({ id, updates }), [updateTaskMutation]);
     const deleteTask = useCallback(async (id: string) => deleteTaskMutation.mutateAsync(id), [deleteTaskMutation]);
 
@@ -85,7 +85,7 @@ export function useTasks(projectId?: string) {
         isLoading,
         error,
         createTask,
-        createTaskInProject,
+        createTaskInNode,
         updateTask,
         deleteTask,
     };

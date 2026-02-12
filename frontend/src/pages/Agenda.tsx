@@ -1,11 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useFinance } from '@/hooks/useFinance';
 import { useTasks } from '@/hooks/useTasks';
-import { useProjects } from '@/hooks/useProjects';
+import { useNodes } from '@/hooks/useNodes';
 import { FinanceCalendar } from '@/components/calendar/FinanceCalendar';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { CalendarEvent, Transaction } from '@/types/finance';
+import { Node } from '@/types/nodes';
 import {
     startOfMonth,
     endOfMonth,
@@ -57,7 +58,7 @@ export default function AgendaPage() {
         useInfiniteTransactions
     } = useFinance();
     const { tasks, isLoading: isLoadingTasks, updateTask } = useTasks();
-    const { projects } = useProjects();
+    const { nodes } = useNodes();
 
     const {
         data: infiniteData,
@@ -184,7 +185,7 @@ export default function AgendaPage() {
                         type: 'task',
                         isPast: isBefore(date, now),
                         status: task.status,
-                        projectId: task.projectId || undefined,
+                        projectId: task.nodeId || undefined,
                     });
                 }
             });
@@ -226,7 +227,7 @@ export default function AgendaPage() {
                     type: 'task',
                     isPast: isBefore(parseISO(task.dueDate), now),
                     status: task.status,
-                    projectId: task.projectId || undefined,
+                    projectId: task.nodeId || undefined,
                 });
             });
         }
@@ -235,10 +236,10 @@ export default function AgendaPage() {
     }, [infiniteData, tasks, filter]);
 
     const handleToggleTaskStatus = async (taskToToggle: any) => {
-        const newStatus = taskToToggle.status === 'done' ? 'todo' : 'done';
+        const newStatus = taskToToggle.status === 'DONE' ? 'TODO' : 'DONE';
 
-        if (newStatus === 'done') {
-            const hasSubtasks = tasks.some(t => t.parentId === taskToToggle.id && t.status !== 'done');
+        if (newStatus === 'DONE') {
+            const hasSubtasks = tasks.some(t => t.parentId === taskToToggle.id && t.status !== 'DONE');
             if (hasSubtasks) {
                 toast.error("Cannot mark task as done because it has incomplete subtasks.");
                 return;
@@ -311,7 +312,7 @@ export default function AgendaPage() {
                 <TabsContent value="agenda" className="animate-fade-in outline-none">
                     <AgendaListView
                         events={combinedInfiniteEvents}
-                        projects={projects}
+                        nodes={nodes}
                         tasks={tasks}
                         hasNextPage={hasNextPage}
                         isFetchingNextPage={isFetchingNextPage}
@@ -399,7 +400,7 @@ export default function AgendaPage() {
 
 interface AgendaListViewProps {
     events: CalendarEvent[];
-    projects: any[];
+    nodes: Node[];
     tasks: any[];
     hasNextPage?: boolean;
     isFetchingNextPage?: boolean;
@@ -410,7 +411,7 @@ interface AgendaListViewProps {
 
 function AgendaListView({
     events,
-    projects,
+    nodes,
     tasks,
     hasNextPage,
     isFetchingNextPage,
@@ -432,7 +433,7 @@ function AgendaListView({
         <div className="space-y-8 max-w-4xl">
             <div className="space-y-6">
                 {events.map((event) => {
-                    const project = projects.find(p => p.id === event.projectId);
+                    const node = nodes.find(p => p.id === event.projectId);
                     return (
                         <div key={event.id} className="flex items-start gap-4 p-4 rounded-xl border bg-card hover:bg-accent/30 transition-all group relative overflow-hidden">
                             {event.type === 'task' && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
@@ -462,9 +463,9 @@ function AgendaListView({
                                     <span className="font-medium bg-secondary px-2 py-0.5 rounded text-secondary-foreground whitespace-nowrap">
                                         {format(event.date, 'EEEE, MMM d, yyyy')}
                                     </span>
-                                    {event.type === 'task' && project && (
+                                    {event.type === 'task' && node && (
                                         <Badge variant="outline" className="bg-blue-500/5 text-blue-500 border-blue-500/20 px-2 py-0">
-                                            {project.name}
+                                            {node.name}
                                         </Badge>
                                     )}
                                     {event.status && (

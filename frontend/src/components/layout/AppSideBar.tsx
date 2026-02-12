@@ -37,7 +37,7 @@ import { cn } from "@/lib/utils";
 
 const executionItems = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Projects", url: "/projects", icon: FolderKanban },
+    { title: "Nodes", url: "/nodes", icon: FolderKanban },
     { title: "Tasks", url: "/tasks", icon: CheckSquare },
     { title: "Agenda", url: "/agenda", icon: CalendarIcon },
 ];

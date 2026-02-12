@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTasks } from "@/hooks/useTasks";
-import { useProjects } from "@/hooks/useProjects";
+import { useNodes } from "@/hooks/useNodes";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -24,8 +24,8 @@ interface CreateTaskDialogProps {
 }
 
 export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }: CreateTaskDialogProps) {
-    const { createTask, createTaskInProject } = useTasks();
-    const { projects } = useProjects();
+    const { createTask, createTaskInNode } = useTasks();
+    const { nodes } = useNodes();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -44,24 +44,24 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
 
         try {
             if (formData.projectId && formData.projectId !== "inbox") {
-                await createTaskInProject({
+                await createTaskInNode({
                     title: formData.title,
                     description: formData.description || undefined,
                     priority: parseInt(formData.priority),
-                    projectId: formData.projectId,
+                    nodeId: formData.projectId,
                     parentId: defaultParentId,
                     dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-                    status: 'todo',
+                    status: 'TODO',
                 });
             } else {
                 await createTask({
                     title: formData.title,
                     description: formData.description || undefined,
                     priority: parseInt(formData.priority),
-                    projectId: undefined,
+                    nodeId: undefined,
                     parentId: defaultParentId,
                     dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-                    status: 'todo',
+                    status: 'TODO',
                 });
             }
             toast({
@@ -128,7 +128,7 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="inbox">Inbox (Personal)</SelectItem>
-                                            {projects.map(p => (
+                                            {nodes.map(p => (
                                                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                                             ))}
                                         </SelectContent>

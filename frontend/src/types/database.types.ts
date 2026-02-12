@@ -437,6 +437,106 @@ export type Database = {
           },
         ]
       }
+      node_members: {
+        Row: {
+          created_at: string | null
+          id: string
+          node_id: string
+          role: Database["public"]["Enums"]["node_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          node_id: string
+          role?: Database["public"]["Enums"]["node_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          node_id?: string
+          role?: Database["public"]["Enums"]["node_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "node_members_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nodes: {
+        Row: {
+          completed_at: string | null
+          content: string | null
+          created_at: string | null
+          custom_fields: Json | null
+          description: string | null
+          due_date: string | null
+          icon: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["node_status"] | null
+          storage_path: string | null
+          type: Database["public"]["Enums"]["node_type"]
+          updated_at: string | null
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          content?: string | null
+          created_at?: string | null
+          custom_fields?: Json | null
+          description?: string | null
+          due_date?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["node_status"] | null
+          storage_path?: string | null
+          type: Database["public"]["Enums"]["node_type"]
+          updated_at?: string | null
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          content?: string | null
+          created_at?: string | null
+          custom_fields?: Json | null
+          description?: string | null
+          due_date?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["node_status"] | null
+          storage_path?: string | null
+          type?: Database["public"]["Enums"]["node_type"]
+          updated_at?: string | null
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nodes_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -460,77 +560,6 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      project_members: {
-        Row: {
-          created_at: string | null
-          id: string
-          project_id: string
-          role: Database["public"]["Enums"]["project_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          project_id: string
-          role?: Database["public"]["Enums"]["project_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          project_id?: string
-          role?: Database["public"]["Enums"]["project_role"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_members_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      projects: {
-        Row: {
-          completed_at: string | null
-          created_at: string | null
-          custom_fields: Json | null
-          description: string | null
-          due_date: string | null
-          id: string
-          name: string
-          start_date: string | null
-          status: Database["public"]["Enums"]["project_status"]
-          updated_at: string | null
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string | null
-          custom_fields?: Json | null
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          name: string
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["project_status"]
-          updated_at?: string | null
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string | null
-          custom_fields?: Json | null
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          name?: string
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["project_status"]
           updated_at?: string | null
         }
         Relationships: []
@@ -587,10 +616,10 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          node_id: string | null
           parent_id: string | null
           position: number | null
           priority: number | null
-          project_id: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"]
           title: string
@@ -605,10 +634,10 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          node_id?: string | null
           parent_id?: string | null
           position?: number | null
           priority?: number | null
-          project_id?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title: string
@@ -623,10 +652,10 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          node_id?: string | null
           parent_id?: string | null
           position?: number | null
           priority?: number | null
-          project_id?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
@@ -634,17 +663,17 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "tasks_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tasks_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tasks_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -915,12 +944,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_node: { Args: { p_node_id: string }; Returns: boolean }
+      create_node_and_add_owner: {
+        Args: {
+          p_description: string
+          p_name: string
+          p_type: Database["public"]["Enums"]["node_type"]
+          p_user_id: string
+        }
+        Returns: string
+      }
       create_project_and_add_owner:
         | { Args: { description: string; name: string }; Returns: string }
         | {
             Args: { description: string; name: string; owner_id: string }
             Returns: string
           }
+      is_node_owner: { Args: { p_node_id: string }; Returns: boolean }
     }
     Enums: {
       asset_type:
@@ -953,8 +993,9 @@ export type Database = {
       contact_category: "personal" | "professional" | "service_provider"
       liability_type: "loan" | "credit_card" | "mortgage" | "other"
       linkable_entity_type: "vehicle" | "liability" | "property" | "project"
-      project_role: "owner" | "editor" | "viewer"
-      project_status: "active" | "on_hold" | "completed" | "archived"
+      node_role: "OWNER" | "EDITOR" | "VIEWER"
+      node_status: "ACTIVE" | "ON_HOLD" | "COMPLETED" | "ARCHIVED"
+      node_type: "PROJECT" | "AREA" | "RESOURCE" | "GOAL"
       recurring_frequency:
         | "daily"
         | "weekly"
@@ -962,7 +1003,7 @@ export type Database = {
         | "quarterly"
         | "yearly"
       recurringfrequency: "monthly" | "weekly" | "yearly"
-      task_status: "todo" | "in_progress" | "done" | "archived"
+      task_status: "TODO" | "IN_PROGRESS" | "DONE" | "ARCHIVED"
       transaction_type: "income" | "expense" | "transfer"
       transactiontype: "expense" | "income" | "transfer"
     }
@@ -1125,8 +1166,9 @@ export const Constants = {
       contact_category: ["personal", "professional", "service_provider"],
       liability_type: ["loan", "credit_card", "mortgage", "other"],
       linkable_entity_type: ["vehicle", "liability", "property", "project"],
-      project_role: ["owner", "editor", "viewer"],
-      project_status: ["active", "on_hold", "completed", "archived"],
+      node_role: ["OWNER", "EDITOR", "VIEWER"],
+      node_status: ["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"],
+      node_type: ["PROJECT", "AREA", "RESOURCE", "GOAL"],
       recurring_frequency: [
         "daily",
         "weekly",
@@ -1135,7 +1177,7 @@ export const Constants = {
         "yearly",
       ],
       recurringfrequency: ["monthly", "weekly", "yearly"],
-      task_status: ["todo", "in_progress", "done", "archived"],
+      task_status: ["TODO", "IN_PROGRESS", "DONE", "ARCHIVED"],
       transaction_type: ["income", "expense", "transfer"],
       transactiontype: ["expense", "income", "transfer"],
     },

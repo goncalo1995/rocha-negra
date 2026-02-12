@@ -2,16 +2,16 @@ import { Plus, Circle, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTasks } from "@/hooks/useTasks";
-import { useProjects } from "@/hooks/useProjects";
+import { useNodes } from "@/hooks/useNodes";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 
 export default function Tasks() {
     const { tasks } = useTasks();
-    const { projects } = useProjects();
+    const { nodes } = useNodes();
 
     const getProjectName = (id: string | null) => {
         if (!id) return null;
-        return projects.find(p => p.id === id)?.name;
+        return nodes.find(p => p.id === id && p.type === "PROJECT")?.name;
     };
 
     const getPriorityColor = (priority: number) => {
@@ -31,9 +31,9 @@ export default function Tasks() {
         }
     };
 
-    const todoTasks = tasks.filter(t => t.status === 'todo' && !t.parentId);
-    const inProgressTasks = tasks.filter(t => t.status === 'in_progress' && !t.parentId);
-    const doneTasks = tasks.filter(t => t.status === 'done' && !t.parentId);
+    const todoTasks = tasks.filter(t => t.status === 'TODO' && !t.parentId);
+    const inProgressTasks = tasks.filter(t => t.status === 'IN_PROGRESS' && !t.parentId);
+    const doneTasks = tasks.filter(t => t.status === 'DONE' && !t.parentId);
 
     const TaskCard = ({ task }: { task: typeof tasks[0] }) => (
         <a href={`/tasks/${task.id}`} className="block p-4 rounded-xl bg-accent/30 hover:bg-accent transition-colors border border-transparent hover:border-zinc-700 cursor-pointer">
@@ -42,7 +42,7 @@ export default function Tasks() {
                 <div className="flex-1 min-w-0">
                     <p className={cn(
                         "font-medium",
-                        task.status === 'done' ? "text-muted-foreground line-through" : "text-foreground"
+                        task.status === 'DONE' ? "text-muted-foreground line-through" : "text-foreground"
                     )}>
                         {task.title}
                     </p>
@@ -53,9 +53,9 @@ export default function Tasks() {
                         )}>
                             {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}
                         </span>
-                        {getProjectName(task.projectId) && (
+                        {getProjectName(task.nodeId) && (
                             <span className="text-xs text-muted-foreground">
-                                {getProjectName(task.projectId)}
+                                {getProjectName(task.nodeId)}
                             </span>
                         )}
                     </div>

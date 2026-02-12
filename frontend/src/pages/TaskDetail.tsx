@@ -23,7 +23,7 @@ export default function TaskDetail() {
     const { updateTask, deleteTask } = useTasks();
     const [isEditOpen, setIsEditOpen] = useState(false);
 
-    const hasIncompleteSubtasks = task?.subtasks?.some(s => s.status !== 'done');
+    const hasIncompleteSubtasks = task?.subtasks?.some(s => s.status !== 'DONE');
 
     if (isLoading) {
         return <div className="p-8">Loading task details...</div>;
@@ -34,9 +34,9 @@ export default function TaskDetail() {
     }
 
     const handleStatusToggle = async () => {
-        const newStatus = task.status === 'done' ? 'todo' : 'done';
+        const newStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
 
-        if (newStatus === 'done' && hasIncompleteSubtasks) {
+        if (newStatus === 'DONE' && hasIncompleteSubtasks) {
             toast.error("Cannot mark task as done because it has incomplete subtasks.");
             return;
         }
@@ -54,16 +54,16 @@ export default function TaskDetail() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
-            <Link to={task.projectId ? `/projects/${task.projectId}` : "/tasks"} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4">
+            <Link to={task.nodeId ? `/nodes/${task.nodeId}` : "/tasks"} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4">
                 <ArrowLeft className="h-4 w-4" />
-                Back to {task.projectId ? 'Project' : 'Tasks'}
+                Back to {task.nodeId ? 'Node' : 'Tasks'}
             </Link>
 
             <div className="flex items-start gap-4">
                 <button onClick={handleStatusToggle} className="mt-1">
-                    {task.status === 'done' ? (
+                    {task.status === 'DONE' ? (
                         <CheckCircle2 className="h-6 w-6 text-success" />
-                    ) : task.status === 'in_progress' ? (
+                    ) : task.status === 'IN_PROGRESS' ? (
                         <Clock className="h-6 w-6 text-warning" />
                     ) : (
                         <Circle className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
@@ -72,7 +72,7 @@ export default function TaskDetail() {
                 <div className="flex-1 space-y-1">
                     <h1 className={cn(
                         "text-3xl font-bold text-foreground",
-                        task.status === 'done' && "text-muted-foreground line-through"
+                        task.status === 'DONE' && "text-muted-foreground line-through"
                     )}>
                         {task.title}
                     </h1>
@@ -137,7 +137,7 @@ export default function TaskDetail() {
                                         Add Subtask
                                     </Button>
                                 }
-                                defaultProjectId={task.projectId || undefined}
+                                defaultProjectId={task.nodeId || undefined}
                                 defaultParentId={task.id}
                             />
                         </div>
@@ -147,11 +147,11 @@ export default function TaskDetail() {
                                 <Link to={`/tasks/${sub.id}`} key={sub.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-accent/50 transition-colors">
                                     <div className={cn(
                                         "w-2 h-2 rounded-full",
-                                        sub.status === 'done' ? "bg-success" : "bg-muted-foreground"
+                                        sub.status === 'DONE' ? "bg-success" : "bg-muted-foreground"
                                     )} />
                                     <span className={cn(
                                         "flex-1 text-sm font-medium",
-                                        sub.status === 'done' && "text-muted-foreground line-through"
+                                        sub.status === 'DONE' && "text-muted-foreground line-through"
                                     )}>{sub.title}</span>
                                     <span className="text-xs text-muted-foreground">
                                         {sub.assignedTo ? 'Assigned' : 'Unassigned'}

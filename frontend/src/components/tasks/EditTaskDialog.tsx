@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTasks } from "@/hooks/useTasks";
-import { useProjects } from "@/hooks/useProjects";
+import { useNodes } from "@/hooks/useNodes";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -27,7 +27,7 @@ interface EditTaskDialogProps {
 
 export function EditTaskDialog({ task, trigger, open: controlledOpen, onOpenChange }: EditTaskDialogProps) {
     const { updateTask } = useTasks();
-    const { projects } = useProjects();
+    const { nodes } = useNodes();
     const [internalOpen, setInternalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -39,7 +39,7 @@ export function EditTaskDialog({ task, trigger, open: controlledOpen, onOpenChan
         title: task.title,
         description: task.description || "",
         priority: task.priority.toString(),
-        projectId: task.projectId || "inbox",
+        projectId: task.nodeId || "inbox",
         dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
         position: task.position?.toString() || "0",
     });
@@ -50,7 +50,7 @@ export function EditTaskDialog({ task, trigger, open: controlledOpen, onOpenChan
             title: task.title,
             description: task.description || "",
             priority: task.priority.toString(),
-            projectId: task.projectId || "inbox",
+            projectId: task.nodeId || "inbox",
             dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
             position: task.position?.toString() || "0",
         });
@@ -65,7 +65,7 @@ export function EditTaskDialog({ task, trigger, open: controlledOpen, onOpenChan
                 title: formData.title,
                 description: formData.description || undefined,
                 priority: parseInt(formData.priority),
-                projectId: formData.projectId === "inbox" ? null : formData.projectId, // Handle clearing project
+                nodeId: formData.projectId === "inbox" ? null : formData.projectId, // Handle clearing project
                 dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
                 position: parseInt(formData.position),
             });
@@ -114,7 +114,7 @@ export function EditTaskDialog({ task, trigger, open: controlledOpen, onOpenChan
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="inbox">Inbox (Personal)</SelectItem>
-                                    {projects.map(p => (
+                                    {nodes.map(p => (
                                         <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                                     ))}
                                 </SelectContent>

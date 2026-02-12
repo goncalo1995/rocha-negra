@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useProject, useProjects } from "@/hooks/useProjects";
+import { useNode, useNodes } from "@/hooks/useNodes";
 import { useTasks } from "@/hooks/useTasks";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, CheckCircle2, Circle, Clock, MoreVertical, Plus } from "lucide-react";
@@ -15,17 +15,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function ProjectDetail() {
-    const { projectId } = useParams<{ projectId: string }>();
-    const { project, isLoading: isLoadingProject } = useProject(projectId);
-    const { tasks, isLoading: isLoadingTasks, updateTask } = useTasks(projectId);
-    const { deleteProject } = useProjects();
+    const { nodeId } = useParams<{ nodeId: string }>();
+    const { node, isLoading: isLoadingNode } = useNode(nodeId);
+    const { tasks, isLoading: isLoadingTasks, updateTask } = useTasks(nodeId);
+    const { deleteNode } = useNodes();
     const navigate = useNavigate();
 
     const handleToggleTaskStatus = async (taskToToggle: any) => {
-        const newStatus = taskToToggle.status === 'done' ? 'todo' : 'done';
+        const newStatus = taskToToggle.status === 'DONE' ? 'TODO' : 'DONE';
 
-        if (newStatus === 'done') {
-            const hasSubtasks = tasks.some(t => t.parentId === taskToToggle.id && t.status !== 'done');
+        if (newStatus === 'DONE') {
+            const hasSubtasks = tasks.some(t => t.parentId === taskToToggle.id && t.status !== 'DONE');
             if (hasSubtasks) {
                 toast.error("Cannot mark task as done because it has incomplete subtasks.");
                 return;
@@ -41,12 +41,12 @@ export default function ProjectDetail() {
         }
     };
 
-    if (isLoadingProject || isLoadingTasks) {
-        return <div className="p-8">Loading project details...</div>;
+    if (isLoadingNode || isLoadingTasks) {
+        return <div className="p-8">Loading node details...</div>;
     }
 
-    if (!project) {
-        return <div className="p-8">Project not found</div>;
+    if (!node) {
+        return <div className="p-8">Node not found</div>;
     }
 
     const getStatusColor = (status: string) => {
@@ -59,9 +59,9 @@ export default function ProjectDetail() {
     };
 
     const handleDelete = async () => {
-        if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
-            await deleteProject(project.id);
-            navigate("/projects");
+        if (confirm("Are you sure you want to delete this node? This action cannot be undone.")) {
+            await deleteNode(node.id);
+            navigate("/nodes");
         }
     };
 
@@ -77,40 +77,40 @@ export default function ProjectDetail() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <Link to="/projects" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4">
+                <Link to="/nodes" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Projects
+                    Back to Nodes
                 </Link>
                 <div className="flex items-start justify-between">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
+                            <h1 className="text-3xl font-bold text-foreground">{node.name}</h1>
                             <div className={cn(
                                 "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border capitalize",
-                                getStatusColor(project.status)
+                                getStatusColor(node.status)
                             )}>
-                                {project.status.replace('_', ' ')}
+                                {node.status.replace('_', ' ')}
                             </div>
                         </div>
-                        {project.description && (
-                            <p className="text-muted-foreground max-w-2xl">{project.description}</p>
+                        {node.description && (
+                            <p className="text-muted-foreground max-w-2xl">{node.description}</p>
                         )}
                         <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
-                            {project.dueDate && (
+                            {node.dueDate && (
                                 <div className="flex items-center gap-1.5">
                                     <Calendar className="h-4 w-4" />
-                                    <span>Due {format(new Date(project.dueDate), 'MMM d, yyyy')}</span>
+                                    <span>Due {format(new Date(node.dueDate), 'MMM d, yyyy')}</span>
                                 </div>
                             )}
                             <div className="flex items-center gap-1.5">
                                 <Clock className="h-4 w-4" />
-                                <span>Created {format(new Date(project.createdAt || new Date()), 'MMM d, yyyy')}</span>
+                                <span>Created {format(new Date(node.createdAt || new Date()), 'MMM d, yyyy')}</span>
                             </div>
                         </div>
                     </div>
                     <div className="flex gap-2">
                         <CreateTaskDialog
-                            defaultProjectId={projectId}
+                            defaultProjectId={node.id}
                             trigger={
                                 <Button className="gap-2">
                                     <Plus className="h-4 w-4" />
@@ -138,9 +138,9 @@ export default function ProjectDetail() {
 
             {/* Members Section */}
             <div>
-                <h2 className="text-xl font-semibold mb-4">Members ({project.members?.length || 0})</h2>
+                <h2 className="text-xl font-semibold mb-4">Members ({node.members?.length || 0})</h2>
                 <div className="flex gap-4">
-                    {project.members?.map((member: any) => (
+                    {node.members?.map((member: any) => (
                         <div key={member.userId} className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-card">
                             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium text-xs">
                                 {member.userId.substring(0, 2).toUpperCase()}
@@ -151,7 +151,7 @@ export default function ProjectDetail() {
                             </div>
                         </div>
                     ))}
-                    {(!project.members || project.members.length === 0) && (
+                    {(!node.members || node.members.length === 0) && (
                         <p className="text-sm text-muted-foreground">No members yet.</p>
                     )}
                 </div>
@@ -173,9 +173,9 @@ export default function ProjectDetail() {
                                         onClick={() => handleToggleTaskStatus(task)}
                                         className="focus:outline-none"
                                     >
-                                        {task.status === 'done' ? (
+                                        {task.status === 'DONE' ? (
                                             <CheckCircle2 className="h-5 w-5 text-success hover:opacity-80 transition-opacity" />
-                                        ) : task.status === 'in_progress' ? (
+                                        ) : task.status === 'IN_PROGRESS' ? (
                                             <Clock className="h-5 w-5 text-warning hover:opacity-80 transition-opacity" />
                                         ) : (
                                             <Circle className="h-5 w-5 text-muted-foreground group-hover:text-primary hover:text-primary transition-colors" />
@@ -184,7 +184,7 @@ export default function ProjectDetail() {
                                     <Link to={`/tasks/${task.id}`} className="flex-1 min-w-0">
                                         <p className={cn(
                                             "font-medium hover:text-primary transition-colors truncate",
-                                            task.status === 'done' && "text-muted-foreground line-through"
+                                            task.status === 'DONE' && "text-muted-foreground line-through"
                                         )}>
                                             {task.title}
                                         </p>

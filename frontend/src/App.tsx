@@ -18,7 +18,7 @@ import { MainLayout } from "./components/layout/MainLayout";
 import { Spinner } from "./components/ui/spinner";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
-import Projects from "./pages/Projects";
+import Projects from "./pages/Nodes";
 import ProjectDetail from "./pages/ProjectDetail";
 import TaskDetail from "./pages/TaskDetail";
 import Contacts from "./pages/Contacts";
@@ -91,8 +91,8 @@ const App = () => (
                 <Route path="/vehicles" element={<Vehicles />} />
                 <Route path="/it" element={<IT />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/projects" element={<Projects />} />
-                <Route path="/projects/:projectId" element={<ProjectDetail />} />
+                <Route path="/nodes" element={<Projects />} />
+                <Route path="/nodes/:nodeId" element={<ProjectDetail />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/tasks/:taskId" element={<TaskDetail />} />
                 <Route path="/contacts" element={<Contacts />} />

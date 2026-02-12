@@ -2,7 +2,7 @@ import { BentoCard } from "@/components/BentoCard";
 import { useDashboardWidgets, widgetLabels } from "@/hooks/useDashboardWidgets";
 import { useFinance } from "@/hooks/useFinance";
 import { useTasks } from "@/hooks/useTasks";
-import { useProjects } from "@/hooks/useProjects";
+import { useNodes } from "@/hooks/useNodes";
 import { useIT } from "@/hooks/useIT";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useNetwork } from "@/hooks/useNetwork";
@@ -44,7 +44,7 @@ export default function Dashboard() {
     // Data Hooks
     const { metrics, transactions, liabilities } = useFinance();
     const { activeTasks } = useTasks();
-    const { projects } = useProjects();
+    const { nodes } = useNodes();
     const { metrics: itMetrics } = useIT();
     const { metrics: vehicleMetrics } = useVehicles();
     const { contacts } = useNetwork();
@@ -158,15 +158,15 @@ export default function Dashboard() {
                     </BentoCard>
                 );
 
-            case 'projects':
-                const activeProjects = projects.filter(p => p.status === 'active');
+            case 'nodes':
+                const activeNodes = nodes.filter(p => p.status === 'active');
                 return (
                     <BentoCard
                         key={widget.id}
-                        title="Projects"
-                        subtitle={`${activeProjects.length} active`}
+                        title="Nodes"
+                        subtitle={`${activeNodes.length} active`}
                         headerAction={
-                            <Link to="/projects">
+                            <Link to="/nodes">
                                 <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                                     <Briefcase className="h-4 w-4" />
                                 </Button>
@@ -174,28 +174,28 @@ export default function Dashboard() {
                         }
                     >
                         <div className="space-y-3">
-                            {projects.slice(0, 3).map((project) => (
-                                <div key={project.id} className="p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors">
+                            {nodes.slice(0, 3).map((node) => (
+                                <div key={node.id} className="p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium text-foreground">{project.name}</p>
+                                        <p className="text-sm font-medium text-foreground">{node.name}</p>
                                         <span className={cn(
                                             "px-2 py-0.5 rounded-full text-xs font-medium capitalize",
-                                            project.status === 'active' ? "bg-success/20 text-success" :
-                                                project.status === 'on_hold' ? "bg-warning/20 text-warning" :
+                                            node.status === 'active' ? "bg-success/20 text-success" :
+                                                node.status === 'on_hold' ? "bg-warning/20 text-warning" :
                                                     "bg-muted text-muted-foreground"
                                         )}>
-                                            {project.status.replace('_', ' ')}
+                                            {node.status.replace('_', ' ')}
                                         </span>
                                     </div>
-                                    {project.dueDate && (
+                                    {node.dueDate && (
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            Due {new Date(project.dueDate).toLocaleDateString()}
+                                            Due {new Date(node.dueDate).toLocaleDateString()}
                                         </p>
                                     )}
                                 </div>
                             ))}
-                            {projects.length === 0 && (
-                                <p className="text-sm text-muted-foreground italic">No projects.</p>
+                            {nodes.length === 0 && (
+                                <p className="text-sm text-muted-foreground italic">No nodes.</p>
                             )}
                         </div>
                     </BentoCard>
@@ -218,7 +218,7 @@ export default function Dashboard() {
                         <div className="space-y-2">
                             {recentTransactions.map((tx) => {
                                 // @ts-ignore
-                                const amount = tx.amount_base || tx.amount || 0;
+                                const amount = tx.amountBase || tx.amountOriginal || 0;
                                 const isIncome = amount > 0; // Assuming positive is income, or check tx.type
 
                                 return (
