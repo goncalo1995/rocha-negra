@@ -72,6 +72,16 @@ public class NodeService {
         if (updateDto.dueDate() != null)
             node.setDueDate(updateDto.dueDate());
 
+        if (updateDto.parentId() != null) {
+            // Validation: Prevent a node from becoming its own parent
+            if (updateDto.parentId().equals(nodeId)) {
+                throw new IllegalArgumentException("A node cannot be its own parent.");
+            }
+            Node parent = nodeRepository.findById(updateDto.parentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent node not found"));
+            node.setParent(parent);
+        }
+
         Node savedNode = nodeRepository.save(node);
         return toDetailDto(savedNode); // Return the full, updated object
     }
@@ -142,24 +152,35 @@ public class NodeService {
                 .map(m -> new NodeMemberDto(m.getUserId(), m.getRole().toString()))
                 .collect(Collectors.toList());
 
+        // Filter the stream to only include tasks where the parent is null.
         List<TaskSummaryDto> tasks = node.getTasks().stream()
+                .filter(t -> t.getParent() == null)
                 .map(t -> new TaskSummaryDto(t.getId(), t.getTitle(), t.getStatus().toString(), t.getDueDate()))
+                .collect(Collectors.toList());
+
+        List<NodeSummaryDto> children = node.getChildren().stream()
+                .map(this::toSummaryDto)
                 .collect(Collectors.toList());
 
         return new NodeDetailDto(
                 node.getId(),
-                node.getParentId(),
+                node.getParent() != null ? node.getParent().getId() : null,
                 node.getType(),
                 node.getName(),
                 node.getDescription(),
                 node.getStatus(),
+                node.getIcon(),
                 node.getContent(),
                 node.getUrl(),
                 node.getStoragePath(),
+                node.getStartDate(),
                 node.getDueDate(),
+                node.getCompletedAt(),
+                node.getCustomFields(),
                 node.getCreatedAt(),
                 node.getUpdatedAt(),
                 members,
-                tasks);
+                tasks,
+                children);
     }
 }

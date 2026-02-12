@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useFinance } from '@/hooks/useFinance';
-import { useTasks } from '@/hooks/useTasks';
+import { useTaskMutations, useTasks } from '@/hooks/useTasks';
 import { useNodes } from '@/hooks/useNodes';
 import { FinanceCalendar } from '@/components/calendar/FinanceCalendar';
 import { Button } from '@/components/ui/button';
@@ -57,8 +57,9 @@ export default function AgendaPage() {
         updateTransaction,
         useInfiniteTransactions
     } = useFinance();
-    const { tasks, isLoading: isLoadingTasks, updateTask } = useTasks();
-    const { nodes } = useNodes();
+    const { data: tasks = [], isLoading: isLoadingTasks } = useTasks();
+    const { updateTask } = useTaskMutations();
+    const { data: nodes } = useNodes();
 
     const {
         data: infiniteData,
@@ -247,7 +248,7 @@ export default function AgendaPage() {
         }
 
         try {
-            await updateTask(taskToToggle.id, { status: newStatus });
+            await updateTask.mutateAsync({ id: taskToToggle.id, updates: { status: newStatus } });
             toast.success("Task updated");
         } catch (error: any) {
             const message = error.response?.data?.message || "Failed to update task";

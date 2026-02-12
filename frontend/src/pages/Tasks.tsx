@@ -1,13 +1,16 @@
-import { Plus, Circle, CheckCircle2, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Circle, CheckCircle2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTasks } from "@/hooks/useTasks";
 import { useNodes } from "@/hooks/useNodes";
-import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
+import { TaskDialog } from "@/components/tasks/TaskDialog";
+import { Spinner } from "@/components/ui/spinner";
+import { useState } from "react";
 
 export default function Tasks() {
-    const { tasks } = useTasks();
-    const { nodes } = useNodes();
+    const { data: tasks = [], isLoading: isLoadingTasks } = useTasks();
+    const { data: nodes = [], isLoading: isLoadingNodes } = useNodes();
+
+    const [openDialog, setOpenDialog] = useState(false);
 
     const getProjectName = (id: string | null) => {
         if (!id) return null;
@@ -30,6 +33,14 @@ export default function Tasks() {
             default: return <Circle className="h-5 w-5 text-muted-foreground" />;
         }
     };
+
+    if (isLoadingTasks || isLoadingNodes) {
+        return (
+            <div className="flex min-h-screen items-center justify-center">
+                <Spinner />
+            </div>
+        );
+    }
 
     const todoTasks = tasks.filter(t => t.status === 'TODO' && !t.parentId);
     const inProgressTasks = tasks.filter(t => t.status === 'IN_PROGRESS' && !t.parentId);
@@ -76,7 +87,7 @@ export default function Tasks() {
                     <h1 className="text-3xl font-bold text-foreground">Tasks</h1>
                     <p className="text-muted-foreground mt-1">Track your work across all projects</p>
                 </div>
-                <CreateTaskDialog />
+                <TaskDialog open={openDialog} onOpenChange={setOpenDialog} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

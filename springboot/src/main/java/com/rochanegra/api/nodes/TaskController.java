@@ -48,6 +48,12 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getInboxTasks(userId));
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<List<TaskDto>> getActiveTasks(Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.ok(taskService.getActiveTasks(userId));
+    }
+
     @GetMapping
     public ResponseEntity<List<TaskDto>> getTasks(@RequestParam(required = false) UUID nodeId, Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());

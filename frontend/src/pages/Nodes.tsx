@@ -1,8 +1,7 @@
-import { useNodes } from "@/hooks/useNodes";
-import { CreateProjectDialog } from "@/components/nodes/CreateNodeDialog";
-import { BentoCard } from "@/components/BentoCard";
+import { useNodeMutations, useNodes } from "@/hooks/useNodes";
+import { NodeDialog } from "@/components/nodes/NodeDialog";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Calendar, CheckCircle2, Circle, Clock, MoreVertical } from "lucide-react";
+import { Briefcase, Calendar, CheckCircle2, Circle, Clock, MoreVertical, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -12,15 +11,39 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import { useMemo, useState } from "react";
+import { Node, NodeStatus } from "@/types/nodes";
 
 export default function Projects() {
-    const { nodes, isLoading, error, deleteNode } = useNodes();
+    const { data: nodes = [], isLoading, error } = useNodes();
+    const { deleteNode } = useNodeMutations();
 
-    const getStatusColor = (status: string) => {
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingNode, setEditingNode] = useState<Node | null>(null);
+
+    const projects = nodes.filter(node => node.type === 'PROJECT');
+
+    const handleOpenCreateDialog = () => {
+        setEditingNode(null);
+        setIsDialogOpen(true);
+    };
+
+    const handleOpenEditDialog = (node: Node, e: React.MouseEvent) => {
+        e.preventDefault();
+        setEditingNode(node);
+        setIsDialogOpen(true);
+    };
+
+    const handleOpenDeleteDialog = (node: Node, e: React.MouseEvent) => {
+        e.preventDefault();
+        deleteNode(node.id);
+    };
+
+    const getStatusColor = (status: NodeStatus) => {
         switch (status) {
-            case 'active': return 'text-primary bg-primary/10 border-primary/20';
-            case 'completed': return 'text-success bg-success/10 border-success/20';
-            case 'on_hold': return 'text-warning bg-warning/10 border-warning/20';
+            case 'ACTIVE': return 'text-primary bg-primary/10 border-primary/20';
+            case 'COMPLETED': return 'text-success bg-success/10 border-success/20';
+            case 'ON_HOLD': return 'text-warning bg-warning/10 border-warning/20';
             default: return 'text-muted-foreground bg-muted border-border';
         }
     };
@@ -59,67 +82,75 @@ export default function Projects() {
                     <h1 className="text-3xl font-bold text-foreground">Projects</h1>
                     <p className="text-muted-foreground mt-1">Manage your initiatives and goals</p>
                 </div>
-                <CreateProjectDialog />
+                <Button onClick={handleOpenCreateDialog}><Plus /> New Project</Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {nodes.map((node) => (
-                    <div
-                        key={node.id}
-                        className="group relative flex flex-col justify-between rounded-xl border border-border/50 bg-card/50 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
-                    >
-                        <div className="mb-4">
-                            <div className="flex items-start justify-between mb-2">
-                                <div className={cn(
-                                    "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border capitalize",
-                                    getStatusColor(node.nodeStatus)
-                                )}>
-                                    {node.nodeStatus.replace('_', ' ')}
+                {projects.map((node) => (
+                    <Link to={`/nodes/${node.id}`} className="block group-hover:text-primary transition-colors">
+                        <div
+                            key={node.id}
+                            className="group relative flex flex-col justify-between rounded-xl border border-border/50 bg-card/50 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+                        >
+                            <div className="mb-4">
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className={cn(
+                                        "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border capitalize",
+                                        getStatusColor(node.status)
+                                    )}>
+                                        {node.status?.replace('_', ' ') || 'Unknown'}
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={(e) => handleOpenEditDialog(node, e)}>
+                                                Edit Project
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={(e) => handleOpenDeleteDialog(node, e)} className="text-destructive focus:text-destructive">
+                                                Delete Project
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => deleteNode(node.id)} className="text-destructive focus:text-destructive">
-                                            Delete Project
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
 
-                            <Link to={`/nodes/${node.id}`} className="block group-hover:text-primary transition-colors">
                                 <h3 className="text-xl font-semibold mb-2">{node.name}</h3>
-                            </Link>
 
-                            {node.description && (
-                                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                                    {node.description}
-                                </p>
-                            )}
-                        </div>
+                                {node.description && (
+                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                                        {node.description}
+                                    </p>
+                                )}
+                            </div>
 
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-4 border-t border-border/30">
-                            {node.dueDate ? (
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-4 border-t border-border/30">
+                                {node.dueDate ? (
+                                    <div className="flex items-center gap-1.5">
+                                        <Calendar className="h-3.5 w-3.5" />
+                                        <span>Due {format(new Date(node.dueDate), 'MMM d, yyyy')}</span>
+                                    </div>
+                                ) : (
+                                    <span>No due date</span>
+                                )}
                                 <div className="flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5" />
-                                    <span>Due {format(new Date(node.dueDate), 'MMM d, yyyy')}</span>
+                                    <Clock className="h-3.5 w-3.5" />
+                                    <span>Updated {format(new Date(node.updatedAt || node.createdAt), 'MMM d')}</span>
                                 </div>
-                            ) : (
-                                <span>No due date</span>
-                            )}
-                            <div className="flex items-center gap-1.5">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>Updated {format(new Date(node.updatedAt || node.createdAt), 'MMM d')}</span>
                             </div>
                         </div>
-                    </div>
+                    </Link>
+
                 ))}
 
                 {/* Empty State / Add New Card */}
-                <CreateProjectDialog
+                <NodeDialog
+                    open={isDialogOpen}
+                    onOpenChange={setIsDialogOpen}
+                    node={editingNode}
+                    defaultType="PROJECT"
                     trigger={
                         <button className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-muted-foreground/30 bg-accent/10 p-6 transition-all hover:bg-accent/20 hover:border-primary/30 h-full min-h-[200px]">
                             <div className="rounded-full bg-background p-3 shadow-sm">
@@ -133,6 +164,6 @@ export default function Projects() {
                     }
                 />
             </div>
-        </div>
+        </div >
     );
 }

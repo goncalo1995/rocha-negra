@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useTasks } from "@/hooks/useTasks";
+import { useEffect, useState } from "react";
+import { useTaskMutations } from "@/hooks/useTasks";
 import { useNodes } from "@/hooks/useNodes";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,68 +13,89 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Task, TaskCreate, TaskUpdate } from "@/types/tasks";
+import { Plus } from "lucide-react";
 
-interface CreateTaskDialogProps {
+interface TaskDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    task?: Task | null; // Pass the task to edit
+    defaultNodeId?: string | null;
+    defaultParentId?: string | null;
     trigger?: React.ReactNode;
-    defaultProjectId?: string;
-    defaultParentId?: string;
 }
 
-export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }: CreateTaskDialogProps) {
-    const { createTask, createTaskInNode } = useTasks();
-    const { nodes } = useNodes();
+export function TaskDialog({ open, onOpenChange, task, defaultNodeId, defaultParentId, trigger }: TaskDialogProps) {
+    const isEditing = !!task;
+    const { createTask, updateTask } = useTaskMutations();
+    const { data: nodes = [] } = useNodes();
+
     const { toast } = useToast();
-    const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         title: "",
         description: "",
         priority: "2", // Medium
-        projectId: defaultProjectId || "inbox",
+        position: task?.position?.toString() || "0",
+        nodeId: defaultNodeId || "inbox",
         dueDate: "",
     });
+
+    useEffect(() => {
+        if (open) {
+            if (isEditing) {
+                // Populate form for editing
+                setFormData({
+                    title: task?.title || "",
+                    description: task?.description || "",
+                    priority: task?.priority?.toString() || "2",
+                    position: task?.position?.toString() || "0",
+                    nodeId: task?.nodeId || "inbox",
+                    dueDate: task?.dueDate || "",
+                });
+            } else {
+                // Reset form for creating, using defaults
+                setFormData(prev => ({ ...prev, nodeId: defaultNodeId || "inbox" }));
+            }
+        }
+    }, [open, task, isEditing, defaultNodeId]);
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
-            if (formData.projectId && formData.projectId !== "inbox") {
-                await createTaskInNode({
+            if (isEditing) {
+                const updates: TaskUpdate = {
                     title: formData.title,
                     description: formData.description || undefined,
                     priority: parseInt(formData.priority),
-                    nodeId: formData.projectId,
+                    nodeId: formData.nodeId !== "inbox" ? formData.nodeId : undefined,
                     parentId: defaultParentId,
                     dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
                     status: 'TODO',
-                });
+                };
+                updateTask.mutate({ id: task.id, updates });
             } else {
-                await createTask({
+                const payload: TaskCreate = {
                     title: formData.title,
                     description: formData.description || undefined,
                     priority: parseInt(formData.priority),
-                    nodeId: undefined,
+                    nodeId: formData.nodeId !== "inbox" ? formData.nodeId : undefined,
                     parentId: defaultParentId,
                     dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
                     status: 'TODO',
-                });
+                };
+                createTask.mutate(payload);
             }
+            onOpenChange(false);
+
             toast({
-                title: "Task created successfully",
-                description: "Your task has been created.",
-            });
-            setOpen(false);
-            setFormData({
-                title: "",
-                description: "",
-                priority: "2",
-                projectId: defaultProjectId || "inbox",
-                dueDate: ""
+                title: isEditing ? "Task updated successfully" : "Task created successfully",
             });
         } catch (error) {
             console.error(error);
@@ -83,13 +104,11 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
                 title: "Failed to create task",
                 description: "Please try again.",
             });
-        } finally {
-            setIsLoading(false);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 {trigger || (
                     <Button className="gap-2">
@@ -100,7 +119,7 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
             </DialogTrigger>
             <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 pb-0">
-                    <DialogTitle>Create New Task</DialogTitle>
+                    <DialogTitle>{isEditing ? "Edit Task" : "Create New Task"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
                     <ScrollArea className="flex-1 p-4 pt-2">
@@ -120,8 +139,8 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
                                 <div className="space-y-2">
                                     <Label htmlFor="project">Project</Label>
                                     <Select
-                                        value={formData.projectId}
-                                        onValueChange={(val) => setFormData({ ...formData, projectId: val })}
+                                        value={formData.nodeId}
+                                        onValueChange={(val) => setFormData({ ...formData, nodeId: val })}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select project" />
@@ -150,6 +169,15 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="position">Position (Order)</Label>
+                                    <Input
+                                        id="position"
+                                        type="number"
+                                        value={formData.position}
+                                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                                    />
+                                </div>
                             </div>
 
                             <div className="space-y-2">
@@ -174,10 +202,10 @@ export function CreateTaskDialog({ trigger, defaultProjectId, defaultParentId }:
                         </div>
                     </ScrollArea>
                     <div className="flex justify-end gap-2 p-6 pt-2 border-t mt-auto">
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
+                        <Button type="submit" disabled={createTask.isPending || updateTask.isPending}>
                             {isLoading ? "Creating..." : "Create Task"}
                         </Button>
                     </div>

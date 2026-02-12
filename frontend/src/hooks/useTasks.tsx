@@ -1,91 +1,136 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Task, TaskWithSubtasks } from '@/types/tasks';
-import { useMemo, useCallback } from 'react';
+import { Task, TaskCreate, TaskUpdate, TaskWithSubtasks } from '@/types/tasks';
+import { toast } from 'sonner';
 
-export function useTask(id?: string) {
-    const { data: task, isLoading, error } = useQuery({
-        queryKey: ['task', id],
-        enabled: !!id,
-        queryFn: async () => {
-            const res = await api.get<TaskWithSubtasks>(`/tasks/${id}`);
-            return res.data;
-        },
-    });
-
-    return { task, isLoading, error };
+interface UseTasksProps {
+    nodeId?: string | null; // For fetching tasks of a specific project/node
+    scope?: 'inbox' | 'today' | 'upcoming' | 'active'; // For GTD views
 }
 
-export function useTasks(projectId?: string) {
+/**
+ * A flexible hook to fetch a list of tasks based on different scopes.
+ */
+export function useTasks({ nodeId, scope }: UseTasksProps = {}) {
+    // The query key is crucial. It uniquely identifies the data being fetched.
+    const queryKey = ['tasks', { nodeId, scope }];
+
+    const queryFn = async () => {
+        let endpoint = '/tasks';
+        let params: Record<string, any> = {};
+
+        if (nodeId) {
+            // Fetch tasks for a specific node (project)
+            endpoint = `/nodes/${nodeId}/tasks`;
+        } else if (scope === 'inbox') {
+            // Fetch personal tasks not assigned to any node
+            endpoint = '/tasks/inbox';
+        } else if (scope === 'active') {
+            // Fetch personal tasks not assigned to any node
+            endpoint = '/tasks/active';
+        } else if (scope === 'today') {
+            endpoint = '/tasks';
+            params.dueDate = new Date().toISOString().split('T')[0];
+        } else if (scope === 'upcoming') {
+            const today = new Date();
+            const nextWeek = new Date(today.setDate(today.getDate() + 7));
+            endpoint = '/tasks';
+            params.endDate = nextWeek.toISOString().split('T')[0];
+        }
+
+        const res = await api.get<Task[]>(endpoint, { params });
+        return res.data;
+    };
+
+    return useQuery<Task[]>({ queryKey, queryFn });
+}
+
+/**
+ * Hook for fetching a single, detailed task with its subtasks.
+ */
+export function useTask(id?: string) {
+    return useQuery<TaskWithSubtasks>({
+        queryKey: ['tasks', id],
+        enabled: !!id,
+        queryFn: async () => (await api.get(`/tasks/${id}`)).data,
+    });
+}
+
+
+// =================================================================
+// MUTATION HOOK (For Actions: Create, Update, Delete)
+// =================================================================
+
+export function useTaskMutations() {
     const queryClient = useQueryClient();
 
-    const { data: tasks = [], isLoading, error } = useQuery({
-        queryKey: ['tasks', { projectId }],
-        // If projectId is strictly undefined, we fetch all. If it's null, we might fetch inbox (if we changed logic, but here strict check).
-        // Actually, we want to fetch if projectId is defined OR if we want global.
-        // Let's just always enable it, but pass the param if it exists.
-        queryFn: async () => {
-            const res = await api.get<Task[]>('/tasks', {
-                params: projectId ? { projectId } : undefined,
-            });
-            return res.data;
+    // A single, unified 'create' mutation
+    const createTask = useMutation({
+        mutationFn: (newTask: TaskCreate) => {
+            // The endpoint depends on whether a nodeId is provided
+            const endpoint = newTask.nodeId ? `/nodes/${newTask.nodeId}/tasks` : '/tasks';
+            return api.post(endpoint, newTask);
         },
-    });
-
-    const activeTasks = useMemo(
-        () => tasks.filter(t => t.status !== 'DONE'),
-        [tasks]
-    );
-
-    const createTaskMutation = useMutation({
-        mutationFn: (payload: Partial<Task> & { nodeId: string }) =>
-            api.post('/tasks', payload),
-        onSuccess: (_, { nodeId }) => {
-            queryClient.invalidateQueries({ queryKey: ['tasks', { nodeId }] });
-        },
-    });
-
-    const createTaskInNodeMutation = useMutation({
-        mutationFn: (payload: Partial<Task> & { nodeId: string }) =>
-            api.post(`/nodes/${payload.nodeId}/tasks`, payload),
-        onSuccess: (_, { nodeId }) => {
-            queryClient.invalidateQueries({ queryKey: ['tasks', { nodeId }] });
-        },
-    });
-
-    const updateTaskMutation = useMutation({
-        mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> }) =>
-            api.patch(`/tasks/${id}`, updates),
-        onSuccess: (_, { updates }) => {
-            queryClient.invalidateQueries({ queryKey: ['tasks'] });
-            if (updates.nodeId) {
-                queryClient.invalidateQueries({
-                    queryKey: ['tasks', { nodeId: updates.nodeId }],
-                });
+        onSuccess: (_, variables) => {
+            toast.success("Task created!");
+            // Invalidate the list of tasks for the specific node it was added to
+            if (variables.nodeId) {
+                queryClient.invalidateQueries({ queryKey: ['tasks', { nodeId: variables.nodeId }] });
+                queryClient.invalidateQueries({ queryKey: ['nodes', variables.nodeId] }); // Also invalidate the parent node detail
+            } else {
+                // Invalidate the inbox
+                queryClient.invalidateQueries({ queryKey: ['tasks', 'inbox'] });
             }
         },
+        onError: (error) => toast.error("Failed to create task: " + error.message),
     });
 
-    const deleteTaskMutation = useMutation({
-        mutationFn: (id: string) => api.delete(`/tasks/${id}`),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    const updateTask = useMutation({
+        mutationFn: ({ id, updates }: { id: string; updates: TaskUpdate }) => api.patch(`/tasks/${id}`, updates),
+        onSuccess: (_, { id }) => {
+            toast.success("Task updated.");
+            // Invalidate the specific task detail query and all task lists
+            queryClient.invalidateQueries({ queryKey: ['tasks', id] });
+            queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Broad invalidation for lists
         },
     });
 
-    // Callbacks to maintain original API
-    const createTask = useCallback(async (t: Partial<Task> & { nodeId: string }) => createTaskMutation.mutateAsync(t), [createTaskMutation]);
-    const createTaskInNode = useCallback(async (t: Partial<Task> & { nodeId: string }) => createTaskInNodeMutation.mutateAsync(t), [createTaskInNodeMutation]);
-    const updateTask = useCallback(async (id: string, updates: Partial<Task>) => updateTaskMutation.mutateAsync({ id, updates }), [updateTaskMutation]);
-    const deleteTask = useCallback(async (id: string) => deleteTaskMutation.mutateAsync(id), [deleteTaskMutation]);
+    const deleteTask = useMutation({
+        mutationFn: (id: string) => api.delete(`/tasks/${id}`),
+        // OPTIMISTIC UPDATE: Make the UI feel instant
+        onMutate: async (deletedTaskId: string) => {
+            // Cancel any outgoing refetches so they don't overwrite our optimistic update
+            await queryClient.cancelQueries({ queryKey: ['tasks'] });
+
+            // Snapshot the previous value
+            const previousTasks = queryClient.getQueryData(['tasks']); // You might need a more specific key
+
+            // Optimistically remove the task from the cache
+            queryClient.setQueryData(['tasks'], (old: Task[] | undefined) =>
+                old ? old.filter(task => task.id !== deletedTaskId) : []
+            );
+
+            // Return a context object with the snapshotted value
+            return { previousTasks };
+        },
+        // If the mutation fails, use the context we returned to roll back
+        onError: (err, deletedTaskId, context) => {
+            toast.error("Failed to delete task.");
+            if (context?.previousTasks) {
+                queryClient.setQueryData(['tasks'], context.previousTasks);
+            }
+        },
+        // Always refetch after error or success to ensure data consistency
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        },
+        onSuccess: () => {
+            toast.success("Task deleted.");
+        },
+    });
 
     return {
-        tasks,
-        activeTasks,
-        isLoading,
-        error,
         createTask,
-        createTaskInNode,
         updateTask,
         deleteTask,
     };

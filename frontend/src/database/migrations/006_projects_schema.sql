@@ -128,8 +128,8 @@ DECLARE
   new_node_id UUID;
 BEGIN
   -- Insert the new node
-  INSERT INTO public.nodes (user_id, type, name, description)
-  VALUES (p_user_id, p_type, p_name, p_description)
+  INSERT INTO public.nodes (user_id, type, name, description, status)
+  VALUES (p_user_id, p_type, p_name, p_description, 'ACTIVE')
   RETURNING id INTO new_node_id;
 
   -- Add the creator as the owner

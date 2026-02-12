@@ -1,70 +1,72 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
-import { useCallback } from 'react';
-import { Node, FullNode, NodeType } from '@/types/nodes';
-
-export function useNode(id?: string) {
-    const { data: node, isLoading, error } = useQuery({
-        queryKey: ['node', id],
-        enabled: !!id,
-        queryFn: async () => {
-            const res = await api.get<FullNode>(`/nodes/${id}`);
-            return res.data;
-        },
-    });
-
-    return { node, isLoading, error };
-}
+import api from "@/lib/api";
+import { FullNode, NodeCreate, NodeUpdate } from "@/types/nodes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Node } from "@/types/nodes";
+import { toast } from "sonner";
 
 export function useNodes() {
+    return useQuery<Node[]>({
+        queryKey: ['nodes'],
+        queryFn: async () => (await api.get('/nodes')).data,
+    });
+}
+
+// Hook for fetching a single, detailed node
+export function useNode(id?: string) {
+    return useQuery<FullNode>({
+        queryKey: ['nodes', id],
+        enabled: !!id,
+        queryFn: async () => (await api.get(`/nodes/${id}`)).data,
+    });
+}
+
+
+// --- MUTATION HOOK (for actions) ---
+// This single hook provides all the actions related to nodes.
+export function useNodeMutations() {
     const queryClient = useQueryClient();
 
-    const { data: nodes = [], isLoading, error } = useQuery({
-        queryKey: ['nodes'],
-        queryFn: async () => {
-            const res = await api.get<Node[]>('/nodes');
-            return res.data;
-        },
-    });
-
-    const createNodeMutation = useMutation({
-        mutationFn: (payload: { name: string; description?: string, type: NodeType }) =>
-            api.post('/nodes', payload),
+    const createNode = useMutation({
+        mutationFn: (newNode: NodeCreate) => api.post('/nodes', newNode),
         onSuccess: () => {
+            toast.success("Node created successfully!");
             queryClient.invalidateQueries({ queryKey: ['nodes'] });
         },
+        onError: (error) => {
+            toast.error("Failed to create node: " + error.message);
+        }
     });
 
-    const updateNodeMutation = useMutation({
-        mutationFn: ({ id, updates }: { id: string; updates: Partial<Node> }) =>
-            api.patch(`/nodes/${id}`, updates),
+    const updateNode = useMutation({
+        mutationFn: ({ id, updates }: { id: string; updates: NodeUpdate }) => api.patch(`/nodes/${id}`, updates),
         onSuccess: (_, { id }) => {
+            toast.success("Node updated.");
+            // Invalidate both the list and the specific detail query
             queryClient.invalidateQueries({ queryKey: ['nodes'] });
-            queryClient.invalidateQueries({ queryKey: ['node', id] });
+            queryClient.invalidateQueries({ queryKey: ['nodes', id] });
         },
+        onError: (error) => {
+            toast.error("Failed to update node: " + error.message);
+        }
     });
 
-    const deleteNodeMutation = useMutation({
+    const deleteNode = useMutation({
         mutationFn: (id: string) => api.delete(`/nodes/${id}`),
         onSuccess: (_, id) => {
+            toast.success("Node deleted.");
+            // Optimistically remove from the detail cache for an instant UI update
+            queryClient.removeQueries({ queryKey: ['nodes', id] });
+            // Refetch the main list
             queryClient.invalidateQueries({ queryKey: ['nodes'] });
-            queryClient.invalidateQueries({ queryKey: ['node', id] });
         },
+        onError: (error) => {
+            toast.error("Failed to delete node: " + error.message);
+        }
     });
 
-
-    // Callbacks to maintain original API
-    const createNode = useCallback(async (node: any) => createNodeMutation.mutateAsync(node), [createNodeMutation]);
-    const updateNode = useCallback(async (id: string, updates: any) => updateNodeMutation.mutateAsync({ id, updates }), [updateNodeMutation]);
-    const deleteNode = useCallback(async (id: string) => deleteNodeMutation.mutateAsync(id), [deleteNodeMutation]);
-
-
     return {
-        nodes,
-        isLoading,
-        error,
-        createNode,
-        updateNode,
-        deleteNode,
+        createNode: createNode.mutate,
+        updateNode: updateNode.mutate,
+        deleteNode: deleteNode.mutate,
     };
 }

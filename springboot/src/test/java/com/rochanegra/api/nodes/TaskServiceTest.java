@@ -123,7 +123,7 @@ class TaskServiceTest {
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTask));
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, TaskStatus.DONE, null, null, null);
+        TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, null, null, TaskStatus.DONE, null, null, null);
 
         Instant beforeUpdate = Instant.now();
         TaskDto resultDto = taskService.updateTask(taskId, updateDto, creatorId);
@@ -138,7 +138,7 @@ class TaskServiceTest {
     @Test
     void updateTask_taskNotFound_shouldThrowResourceNotFoundException() {
         UUID taskId = UUID.randomUUID();
-        TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, TaskStatus.DONE, null, null, null);
+        TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, null, null, TaskStatus.DONE, null, null, null);
         when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> taskService.updateTask(taskId, updateDto, creatorId));
@@ -164,7 +164,8 @@ class TaskServiceTest {
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTask));
         when(taskRepository.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
 
-        TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, TaskStatus.IN_PROGRESS, null, null, null);
+        TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, null, null, TaskStatus.IN_PROGRESS, null, null,
+                null);
 
         // Act
         TaskDto resultDto = taskService.updateTask(taskId, updateDto, creatorId);

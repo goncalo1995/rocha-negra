@@ -1,6 +1,7 @@
 package com.rochanegra.api.nodes;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -65,6 +66,16 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    public List<TaskDto> getActiveTasks(UUID userId) {
+        List<TaskStatus> excluded = List.of(TaskStatus.DONE, TaskStatus.ARCHIVED);
+        List<Task> tasks = taskRepository.findByCreatedByAndStatusNotIn(userId, excluded);
+        // By due date is common for a dashboard.
+        tasks.sort(Comparator.comparing(Task::getDueDate, Comparator.nullsLast(Comparator.naturalOrder())));
+        return tasks.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     public List<TaskDto> getAllTasksForUser(UUID userId) {
         return taskRepository.findAllByCreatedByOrderByCreatedAtDesc(userId).stream()
                 .map(this::toDto)
@@ -85,6 +96,23 @@ public class TaskService {
         // RLS ensures user has permission to update this task.
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        if (updateDto.nodeId() != null) {
+            Node node = projectRepository.findById(updateDto.nodeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Node not found"));
+            if (!node.getMembers().stream().anyMatch(member -> member.getId().equals(userId))) {
+                throw new IllegalArgumentException("User is not a member of the node");
+            }
+            task.setNode(node);
+        }
+        if (updateDto.parentId() != null) {
+            Task parentTask = taskRepository.findById(updateDto.parentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent task not found"));
+            if (parentTask.getNode() != null && !parentTask.getNode().equals(task.getNode())) {
+                throw new IllegalArgumentException("Parent task must be in the same node as the task");
+            }
+            task.setParent(parentTask);
+        }
 
         if (updateDto.title() != null)
             task.setTitle(updateDto.title());
@@ -117,10 +145,9 @@ public class TaskService {
 
     public void deleteTask(UUID taskId, UUID userId) {
         // RLS ensures user has permission (is owner or creator of personal task).
-        if (!taskRepository.existsById(taskId)) {
-            throw new ResourceNotFoundException("Task not found");
-        }
-        taskRepository.deleteById(taskId);
+        Task taskToDelete = taskRepository.findByIdAndCreatedBy(taskId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found or user not authorized"));
+        taskRepository.delete(taskToDelete);
     }
 
     // You will need to create a TaskDto record and this mapper

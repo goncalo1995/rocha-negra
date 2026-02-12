@@ -19,7 +19,7 @@ import { Spinner } from "./components/ui/spinner";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Projects from "./pages/Nodes";
-import ProjectDetail from "./pages/ProjectDetail";
+import NodeDetail from "./pages/NodeDetail";
 import TaskDetail from "./pages/TaskDetail";
 import Contacts from "./pages/Contacts";
 import ContactDetail from "./pages/ContactDetail";
@@ -92,7 +92,7 @@ const App = () => (
                 <Route path="/it" element={<IT />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/nodes" element={<Projects />} />
-                <Route path="/nodes/:nodeId" element={<ProjectDetail />} />
+                <Route path="/nodes/:nodeId" element={<NodeDetail />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/tasks/:taskId" element={<TaskDetail />} />
                 <Route path="/contacts" element={<Contacts />} />

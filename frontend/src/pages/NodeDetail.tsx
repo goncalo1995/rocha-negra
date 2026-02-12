@@ -1,10 +1,10 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useNode, useNodes } from "@/hooks/useNodes";
-import { useTasks } from "@/hooks/useTasks";
+import { useNode, useNodeMutations, useNodes } from "@/hooks/useNodes";
+import { useTaskMutations } from "@/hooks/useTasks";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, CheckCircle2, Circle, Clock, MoreVertical, Plus } from "lucide-react";
 import { format } from "date-fns";
-import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
+import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -13,41 +13,29 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 
-export default function ProjectDetail() {
+export default function NodeDetail() {
     const { nodeId } = useParams<{ nodeId: string }>();
-    const { node, isLoading: isLoadingNode } = useNode(nodeId);
-    const { tasks, isLoading: isLoadingTasks, updateTask } = useTasks(nodeId);
-    const { deleteNode } = useNodes();
     const navigate = useNavigate();
+
+    // This single query gets the node AND its tasks list.
+    const { data: node, isLoading: isLoadingNode } = useNode(nodeId);
+    // const { tasks, isLoading: isLoadingTasks, updateTask } = useTasks(nodeId);
+    const { deleteNode } = useNodeMutations();
+    const { updateTask } = useTaskMutations();
+
+    const [openDialog, setOpenDialog] = useState(false);
 
     const handleToggleTaskStatus = async (taskToToggle: any) => {
         const newStatus = taskToToggle.status === 'DONE' ? 'TODO' : 'DONE';
 
-        if (newStatus === 'DONE') {
-            const hasSubtasks = tasks.some(t => t.parentId === taskToToggle.id && t.status !== 'DONE');
-            if (hasSubtasks) {
-                toast.error("Cannot mark task as done because it has incomplete subtasks.");
-                return;
-            }
-        }
-
-        try {
-            await updateTask(taskToToggle.id, { status: newStatus });
-            toast.success("Task updated");
-        } catch (error: any) {
-            const message = error.response?.data?.message || "Failed to update task";
-            toast.error(message);
-        }
+        // We just call the mutation and let the backend handle the logic.
+        updateTask.mutateAsync({ id: taskToToggle.id, updates: { status: newStatus } }, {
+            onSuccess: () => toast.success("Task status updated!"),
+            onError: (error) => toast.error(error.message),
+        });
     };
-
-    if (isLoadingNode || isLoadingTasks) {
-        return <div className="p-8">Loading node details...</div>;
-    }
-
-    if (!node) {
-        return <div className="p-8">Node not found</div>;
-    }
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -58,10 +46,11 @@ export default function ProjectDetail() {
         }
     };
 
-    const handleDelete = async () => {
-        if (confirm("Are you sure you want to delete this node? This action cannot be undone.")) {
-            await deleteNode(node.id);
-            navigate("/nodes");
+    const handleDelete = () => {
+        if (confirm("Are you sure? This action cannot be undone.")) {
+            deleteNode(node!.id, {
+                onSuccess: () => navigate("/projects"), // Navigate away on success
+            });
         }
     };
 
@@ -73,13 +62,22 @@ export default function ProjectDetail() {
         }
     };
 
+
+    if (isLoadingNode) {
+        return <div className="p-8">Loading details...</div>;
+    }
+
+    if (!node) {
+        return <div className="p-8">Node not found</div>;
+    }
+
     return (
         <div className="space-y-6">
             {/* Header */}
             <div>
                 <Link to="/nodes" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Nodes
+                    Back to Projects
                 </Link>
                 <div className="flex items-start justify-between">
                     <div>
@@ -109,8 +107,10 @@ export default function ProjectDetail() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <CreateTaskDialog
-                            defaultProjectId={node.id}
+                        <TaskDialog
+                            open={openDialog}
+                            onOpenChange={setOpenDialog}
+                            defaultNodeId={node.id}
                             trigger={
                                 <Button className="gap-2">
                                     <Plus className="h-4 w-4" />
@@ -159,14 +159,14 @@ export default function ProjectDetail() {
 
             {/* Tasks List */}
             <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Tasks ({tasks.length})</h2>
-                {tasks.length === 0 ? (
+                <h2 className="text-xl font-semibold">Tasks ({node.tasks.length})</h2>
+                {node.tasks.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-muted-foreground/30 p-8 text-center text-muted-foreground">
                         No tasks yet. Create one to get started.
                     </div>
                 ) : (
                     <div className="grid gap-3">
-                        {tasks.map(task => (
+                        {node.tasks.map(task => (
                             <div key={task.id} className="group flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card/50 hover:bg-accent/50 transition-all">
                                 <div className="flex items-center gap-4 flex-1">
                                     <button

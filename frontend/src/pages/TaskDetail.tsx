@@ -1,10 +1,10 @@
 import { useParams, Link } from "react-router-dom";
-import { useTask, useTasks } from "@/hooks/useTasks";
+import { useTask, useTaskMutations } from "@/hooks/useTasks";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, CheckCircle2, Circle, Clock, MoreVertical, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog"; // Reusing this if possible or need a new one for subtasks?
+import { TaskDialog } from "@/components/tasks/TaskDialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,15 +13,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { EditTaskDialog } from "@/components/tasks/EditTaskDialog";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function TaskDetail() {
     const { taskId } = useParams<{ taskId: string }>();
-    const { task, isLoading } = useTask(taskId);
-    const { updateTask, deleteTask } = useTasks();
+    const { data: task, isLoading } = useTask(taskId);
+    const { updateTask, deleteTask } = useTaskMutations();
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isSubtaskOpen, setIsSubtaskOpen] = useState(false);
 
     const hasIncompleteSubtasks = task?.subtasks?.some(s => s.status !== 'DONE');
 
@@ -34,6 +34,10 @@ export default function TaskDetail() {
     }
 
     const handleStatusToggle = async () => {
+        if (!task) {
+            toast.error("Task not found");
+            return;
+        }
         const newStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
 
         if (newStatus === 'DONE' && hasIncompleteSubtasks) {
@@ -41,7 +45,7 @@ export default function TaskDetail() {
             return;
         }
 
-        await updateTask(task.id, { status: newStatus });
+        await updateTask.mutateAsync({ id: task.id, updates: { status: newStatus } });
     };
 
     const getPriorityColor = (priority: number) => {
@@ -49,6 +53,13 @@ export default function TaskDetail() {
             case 1: return 'bg-destructive/10 text-destructive border-destructive/20';
             case 2: return 'bg-warning/10 text-warning border-warning/20';
             default: return 'bg-muted text-muted-foreground border-border';
+        }
+    };
+
+    const handleDelete = () => {
+        // A simple browser confirmation
+        if (window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
+            deleteTask.mutateAsync(task.id);
         }
     };
 
@@ -88,6 +99,12 @@ export default function TaskDetail() {
                         )}
                     </div>
                 </div>
+                <TaskDialog
+                    task={task}
+                    open={isEditOpen}
+                    onOpenChange={setIsEditOpen}
+                    trigger={<></>}
+                />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -98,17 +115,11 @@ export default function TaskDetail() {
                         <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
                             Edit Task
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => deleteTask(task.id)} className="text-destructive focus:text-destructive">
+                        <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
                             Delete Task
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-
-                <EditTaskDialog
-                    task={task}
-                    open={isEditOpen}
-                    onOpenChange={setIsEditOpen}
-                />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -130,14 +141,16 @@ export default function TaskDetail() {
                             {/* For MVP, let's just use a simple inline add or a modified dialog. 
                                  Actually, CreateTaskDialog doesn't support parentId yet. We should update it.
                              */}
-                            <CreateTaskDialog
+                            <TaskDialog
+                                open={isSubtaskOpen}
+                                onOpenChange={setIsSubtaskOpen}
                                 trigger={
                                     <Button variant="outline" size="sm" className="gap-2">
                                         <Plus className="h-3.5 w-3.5" />
                                         Add Subtask
                                     </Button>
                                 }
-                                defaultProjectId={task.nodeId || undefined}
+                                defaultNodeId={task.nodeId || undefined}
                                 defaultParentId={task.id}
                             />
                         </div>

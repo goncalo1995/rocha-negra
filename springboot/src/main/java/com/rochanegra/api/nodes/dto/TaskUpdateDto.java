@@ -7,6 +7,8 @@ import com.rochanegra.api.nodes.types.TaskStatus;
 import java.time.LocalDate;
 
 public record TaskUpdateDto(
+        UUID nodeId,
+        UUID parentId,
         String title,
         String description,
         UUID assignedTo,

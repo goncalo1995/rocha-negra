@@ -1,6 +1,3 @@
-import React, { useState } from 'react';
-import { ProjectDetailsModal } from './ProjectDetailsModal';
-import { Button } from '../ui/button';
 import { detailedProjects, simpleExperience, workExperience } from '@/data/cv/cvData';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';

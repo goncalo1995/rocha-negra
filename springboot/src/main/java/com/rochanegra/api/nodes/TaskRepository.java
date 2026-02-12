@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import com.rochanegra.api.nodes.types.TaskStatus;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -14,8 +15,13 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
     // For getting tasks for a project
     List<Task> findByNodeIdOrderByPositionAsc(UUID nodeId);
 
+    Optional<Task> findByIdAndCreatedBy(UUID taskId, UUID createdBy);
+
     // For getting personal "Inbox" tasks
     List<Task> findByNodeIdIsNullAndCreatedByOrderByCreatedAtDesc(UUID createdBy);
+
+    // For getting active tasks
+    List<Task> findByCreatedByAndStatusNotIn(UUID createdBy, List<TaskStatus> excludedStatuses);
 
     // For getting ALL tasks created by user (across nodes and inbox)
     List<Task> findAllByCreatedByOrderByCreatedAtDesc(UUID createdBy);

@@ -37,14 +37,15 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useMemo } from "react";
 
 export default function Dashboard() {
     const { widgets, enabledWidgets, toggleWidget, moveWidget, resetToDefault } = useDashboardWidgets();
 
     // Data Hooks
     const { metrics, transactions, liabilities } = useFinance();
-    const { activeTasks } = useTasks();
-    const { nodes } = useNodes();
+    const { data: activeTasks = [] } = useTasks({ scope: 'active' });
+    const { data: nodes } = useNodes();
     const { metrics: itMetrics } = useIT();
     const { metrics: vehicleMetrics } = useVehicles();
     const { contacts } = useNetwork();
@@ -135,7 +136,7 @@ export default function Dashboard() {
                                     key={task.id}
                                     className="flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors"
                                 >
-                                    {task.status === 'in_progress' ? (
+                                    {task.status === 'IN_PROGRESS' ? (
                                         <Clock className="h-4 w-4 text-warning shrink-0" />
                                     ) : (
                                         <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -159,7 +160,7 @@ export default function Dashboard() {
                 );
 
             case 'nodes':
-                const activeNodes = nodes.filter(p => p.status === 'active');
+                const activeNodes = nodes.filter(p => p.status === 'ACTIVE');
                 return (
                     <BentoCard
                         key={widget.id}
@@ -180,8 +181,8 @@ export default function Dashboard() {
                                         <p className="text-sm font-medium text-foreground">{node.name}</p>
                                         <span className={cn(
                                             "px-2 py-0.5 rounded-full text-xs font-medium capitalize",
-                                            node.status === 'active' ? "bg-success/20 text-success" :
-                                                node.status === 'on_hold' ? "bg-warning/20 text-warning" :
+                                            node.status === 'ACTIVE' ? "bg-success/20 text-success" :
+                                                node.status === 'ON_HOLD' ? "bg-warning/20 text-warning" :
                                                     "bg-muted text-muted-foreground"
                                         )}>
                                             {node.status.replace('_', ' ')}

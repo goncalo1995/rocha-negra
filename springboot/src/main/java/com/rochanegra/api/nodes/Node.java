@@ -8,6 +8,8 @@ import lombok.Data;
 import org.hibernate.annotations.*;
 import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.rochanegra.api.nodes.types.NodeStatus;
 import com.rochanegra.api.nodes.types.NodeType;
 
@@ -34,7 +36,17 @@ public class Node {
     @JdbcType(PostgreSQLEnumJdbcType.class)
     private NodeType type;
 
-    private UUID parentId;
+    // --- PARENT RELATIONSHIP (Child-to-Parent) ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    @JsonBackReference // Prevents infinite loops during JSON serialization
+    private Node parent;
+
+    // --- CHILD RELATIONSHIP (Parent-to-Children) ---
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // Prevents infinite loops during JSON serialization
+    @OrderBy("name ASC")
+    private List<Node> children = new ArrayList<>();
 
     @Column(nullable = false)
     private String name;
