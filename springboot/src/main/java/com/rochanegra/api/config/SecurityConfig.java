@@ -34,6 +34,8 @@ public class SecurityConfig {
         private static final String[] PUBLIC_URLS = {
                         "/", // The root path
                         "/error", // Spring's default error page
+                        "/favicon.ico", // Spring's default favicon
+                        "/actuator/**", // Actuator endpoints
                         // --- SWAGGER UI ---
                         "/swagger-ui.html",
                         "/swagger-ui/**",
