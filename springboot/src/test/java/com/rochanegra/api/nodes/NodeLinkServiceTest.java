@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import com.rochanegra.api.nodes.dto.NodeLinkDto;
+import com.rochanegra.api.nodes.types.NodeLinkType;
 import com.rochanegra.api.nodes.types.NodeType;
 
 import java.util.Optional;
@@ -54,7 +55,7 @@ class NodeLinkServiceTest {
         // Arrange
         UUID sourceId = UUID.randomUUID();
         UUID targetId = UUID.randomUUID();
-        String label = "related to";
+        NodeLinkType type = NodeLinkType.RELATED_TO;
 
         Node sourceNode = new Node();
         sourceNode.setId(sourceId);
@@ -70,14 +71,14 @@ class NodeLinkServiceTest {
         createdLink.setId(UUID.randomUUID());
         createdLink.setSourceNode(sourceNode);
         createdLink.setTargetNode(targetNode);
-        createdLink.setLabel(label);
+        createdLink.setType(type);
 
         when(nodeRepository.findById(sourceId)).thenReturn(Optional.of(sourceNode));
         when(nodeRepository.findById(targetId)).thenReturn(Optional.of(targetNode));
         when(linkRepository.save(any(NodeLink.class))).thenReturn(createdLink);
 
         // Act
-        nodeService.addLink(sourceId, targetId, label, mockUserId);
+        nodeService.addLink(sourceId, targetId, type, mockUserId);
 
         // Assert
         verify(linkRepository, times(1)).save(any(NodeLink.class));
@@ -96,7 +97,7 @@ class NodeLinkServiceTest {
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> {
-            nodeService.addLink(sourceId, targetId, "related to", mockUserId);
+            nodeService.addLink(sourceId, targetId, NodeLinkType.RELATED_TO, mockUserId);
         });
 
         // Verify the repository was not called to save (it should fail before that)
@@ -117,7 +118,7 @@ class NodeLinkServiceTest {
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> {
-            nodeService.addLink(sourceId, targetId, "related to", mockUserId);
+            nodeService.addLink(sourceId, targetId, NodeLinkType.RELATED_TO, mockUserId);
         });
 
         // Verify the repository was not called to save
@@ -130,11 +131,10 @@ class NodeLinkServiceTest {
     void addLink_LinkToSelf_ThrowsException() {
         // Arrange
         UUID nodeId = UUID.randomUUID();
-        String label = "self-reference";
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            nodeService.addLink(nodeId, nodeId, label, mockUserId);
+            nodeService.addLink(nodeId, nodeId, NodeLinkType.RELATED_TO, mockUserId);
         });
 
         // Verify no repository methods were called
@@ -142,14 +142,12 @@ class NodeLinkServiceTest {
         verify(linkRepository, never()).save(any(NodeLink.class));
     }
 
-    // addLink_AlreadyExists_DoesNothing: Test that calling addLink twice with the
-    // same IDs doesn't cause an error (idempotency).
     @Test
-    void addLink_AlreadyExists_DoesNothing() {
+    void addLink_SameSourceTargetAndType_ShouldNotSaveTwice() {
         // Arrange
         UUID sourceId = UUID.randomUUID();
         UUID targetId = UUID.randomUUID();
-        String label = "related to";
+        NodeLinkType type = NodeLinkType.RELATED_TO;
 
         Node sourceNode = new Node();
         sourceNode.setId(sourceId);
@@ -162,26 +160,68 @@ class NodeLinkServiceTest {
         NodeLink existingLink = new NodeLink();
         existingLink.setSourceNode(sourceNode);
         existingLink.setTargetNode(targetNode);
-        existingLink.setLabel(label);
+        existingLink.setType(type);
+
+        when(nodeRepository.findById(sourceId)).thenReturn(Optional.of(sourceNode));
+        when(nodeRepository.findById(targetId)).thenReturn(Optional.of(targetNode));
+        when(linkRepository.findBySourceNodeIdAndTargetNodeIdAndType(
+                sourceId, targetId, type)).thenReturn(Optional.of(existingLink));
+
+        // Act
+        NodeLinkDto result = nodeService.addLink(sourceId, targetId, type, mockUserId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(targetId, result.nodeId());
+        assertEquals("Target", result.nodeName());
+        assertEquals(NodeType.AREA, result.nodeType());
+        assertEquals(type, result.type());
+
+        verify(linkRepository, times(1))
+                .findBySourceNodeIdAndTargetNodeIdAndType(sourceId, targetId, type);
+        verify(linkRepository, never()).save(any(NodeLink.class));
+    }
+
+    // addLink_AlreadyExists_DoesNothing: Test that calling addLink twice with the
+    // same IDs doesn't cause an error (idempotency).
+    @Test
+    void addLink_AlreadyExists_DoesNothing() {
+        // Arrange
+        UUID sourceId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        NodeLinkType linkType = NodeLinkType.RELATED_TO;
+
+        Node sourceNode = new Node();
+        sourceNode.setId(sourceId);
+
+        Node targetNode = new Node();
+        targetNode.setId(targetId);
+        targetNode.setName("Target");
+        targetNode.setType(NodeType.AREA);
+
+        NodeLink existingLink = new NodeLink();
+        existingLink.setSourceNode(sourceNode);
+        existingLink.setTargetNode(targetNode);
+        existingLink.setType(linkType);
 
         when(nodeRepository.findById(sourceId)).thenReturn(Optional.of(sourceNode));
         when(nodeRepository.findById(targetId)).thenReturn(Optional.of(targetNode));
 
-        when(linkRepository.findBySourceNodeIdAndTargetNodeId(sourceId, targetId))
+        when(linkRepository.findBySourceNodeIdAndTargetNodeIdAndType(sourceId, targetId, linkType))
                 .thenReturn(Optional.of(existingLink));
 
         // Act
-        NodeLinkDto result = nodeService.addLink(sourceId, targetId, label, mockUserId);
+        NodeLinkDto result = nodeService.addLink(sourceId, targetId, linkType, mockUserId);
 
         // Assert
         assertNotNull(result);
-        assertEquals(targetId, result.targetNodeId());
-        assertEquals("Target", result.targetNodeName());
-        assertEquals(NodeType.AREA, result.targetNodeType());
-        assertEquals(label, result.label());
+        assertEquals(targetId, result.nodeId());
+        assertEquals("Target", result.nodeName());
+        assertEquals(NodeType.AREA, result.nodeType());
+        assertEquals(linkType, result.type());
 
         verify(linkRepository, times(1))
-                .findBySourceNodeIdAndTargetNodeId(sourceId, targetId);
+                .findBySourceNodeIdAndTargetNodeIdAndType(sourceId, targetId, linkType);
 
         verify(linkRepository, never()).save(any(NodeLink.class));
     }

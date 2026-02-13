@@ -1,11 +1,11 @@
 package com.rochanegra.api.nodes.dto;
 
-import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 import com.rochanegra.api.nodes.types.NodeLinkType;
 
-public record NodeLinkCreateDto(
-        @NotNull UUID targetNodeId,
+public record GraphEdgeDto(
+        UUID sourceId,
+        UUID targetId,
         NodeLinkType type) {
 }

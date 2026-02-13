@@ -88,7 +88,7 @@ public class NodeController {
     public ResponseEntity<Void> addLink(@PathVariable UUID sourceNodeId, @RequestBody @Valid NodeLinkCreateDto linkDto,
             Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
-        nodeService.addLink(sourceNodeId, linkDto.targetNodeId(), linkDto.label(), userId);
+        nodeService.addLink(sourceNodeId, linkDto.targetNodeId(), linkDto.type(), userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -97,5 +97,11 @@ public class NodeController {
     public void removeLink(@PathVariable UUID sourceNodeId, @PathVariable UUID targetNodeId, Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
         nodeService.removeLink(sourceNodeId, targetNodeId, userId);
+    }
+
+    @GetMapping("/{nodeId}/graph")
+    public ResponseEntity<GraphDto> getGraph(@PathVariable UUID nodeId, Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.ok(nodeService.getGraph(nodeId, userId));
     }
 }

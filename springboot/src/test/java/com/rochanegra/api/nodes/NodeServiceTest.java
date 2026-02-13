@@ -36,6 +36,8 @@ class NodeServiceTest {
     @Mock
     private NodeMemberRepository memberRepository;
     @Mock
+    private NodeLinkRepository linkRepository;
+    @Mock
     private JdbcTemplate jdbcTemplate;
 
     // --- CLASS UNDER TEST ---

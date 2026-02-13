@@ -5,6 +5,7 @@ CREATE TYPE public.node_type AS ENUM ('PROJECT', 'AREA', 'RESOURCE', 'GOAL');
 CREATE TYPE public.node_status AS ENUM ('ACTIVE', 'ON_HOLD', 'COMPLETED', 'ARCHIVED');
 CREATE TYPE public.node_role AS ENUM ('OWNER', 'EDITOR', 'VIEWER');
 CREATE TYPE public.task_status AS ENUM ('TODO', 'IN_PROGRESS', 'DONE', 'ARCHIVED');
+CREATE TYPE public.node_link_type AS ENUM ('REFERENCES', 'DEPENDS_ON', 'BELONGS_TO', 'SUPPORTS', 'RELATED_TO');
 
 -- === STEP 2: CREATE THE UNIFIED 'NODES' TABLE (The Heart of PARA) ===
 CREATE TABLE public.nodes (
@@ -72,11 +73,11 @@ CREATE TABLE public.node_links (
   source_node_id UUID REFERENCES public.nodes(id) ON DELETE CASCADE NOT NULL,
   target_node_id UUID REFERENCES public.nodes(id) ON DELETE CASCADE NOT NULL,
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL NOT NULL,
-  label TEXT, 
+  type public.node_link_type NOT NULL, 
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
   -- Prevent duplicate links between the same two nodes
-  CONSTRAINT unique_source_target_link UNIQUE (source_node_id, target_node_id)
+  CONSTRAINT unique_source_target_link UNIQUE (source_node_id, target_node_id, type)
 );
 
 

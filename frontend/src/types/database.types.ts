@@ -442,25 +442,25 @@ export type Database = {
           created_at: string | null
           created_by: string
           id: string
-          label: string | null
           source_node_id: string
           target_node_id: string
+          type: Database["public"]["Enums"]["node_link_type"]
         }
         Insert: {
           created_at?: string | null
           created_by: string
           id?: string
-          label?: string | null
           source_node_id: string
           target_node_id: string
+          type: Database["public"]["Enums"]["node_link_type"]
         }
         Update: {
           created_at?: string | null
           created_by?: string
           id?: string
-          label?: string | null
           source_node_id?: string
           target_node_id?: string
+          type?: Database["public"]["Enums"]["node_link_type"]
         }
         Relationships: [
           {
@@ -987,6 +987,7 @@ export type Database = {
     }
     Functions: {
       can_edit_node: { Args: { p_node_id: string }; Returns: boolean }
+      can_view_node: { Args: { p_node_id: string }; Returns: boolean }
       create_node_and_add_owner: {
         Args: {
           p_description: string
@@ -1035,6 +1036,12 @@ export type Database = {
       contact_category: "personal" | "professional" | "service_provider"
       liability_type: "loan" | "credit_card" | "mortgage" | "other"
       linkable_entity_type: "vehicle" | "liability" | "property" | "project"
+      node_link_type:
+        | "REFERENCES"
+        | "DEPENDS_ON"
+        | "BELONGS_TO"
+        | "SUPPORTS"
+        | "RELATED_TO"
       node_role: "OWNER" | "EDITOR" | "VIEWER"
       node_status: "ACTIVE" | "ON_HOLD" | "COMPLETED" | "ARCHIVED"
       node_type: "PROJECT" | "AREA" | "RESOURCE" | "GOAL"
@@ -1208,6 +1215,13 @@ export const Constants = {
       contact_category: ["personal", "professional", "service_provider"],
       liability_type: ["loan", "credit_card", "mortgage", "other"],
       linkable_entity_type: ["vehicle", "liability", "property", "project"],
+      node_link_type: [
+        "REFERENCES",
+        "DEPENDS_ON",
+        "BELONGS_TO",
+        "SUPPORTS",
+        "RELATED_TO",
+      ],
       node_role: ["OWNER", "EDITOR", "VIEWER"],
       node_status: ["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"],
       node_type: ["PROJECT", "AREA", "RESOURCE", "GOAL"],

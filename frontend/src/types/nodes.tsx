@@ -36,7 +36,6 @@ export type FullNode = Node & {
     members: { userId: string; role: NodeRole }[];
     tasks: Task[];
     subNodes: Node[];
-    incomingLinks: NodeLink[];
-    outgoingLinks: NodeLink[];
+    referencedBy: NodeLink[];
+    references: NodeLink[];
 };
-

@@ -8,6 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.rochanegra.api.exception.ForbiddenException;
 import com.rochanegra.api.exception.ResourceNotFoundException;
+import com.rochanegra.api.nodes.dto.GraphDto;
+import com.rochanegra.api.nodes.dto.GraphEdgeDto;
+import com.rochanegra.api.nodes.dto.GraphNodeDto;
 import com.rochanegra.api.nodes.dto.MemberAddDto;
 import com.rochanegra.api.nodes.dto.NodeCreateDto;
 import com.rochanegra.api.nodes.dto.NodeDetailDto;
@@ -16,11 +19,15 @@ import com.rochanegra.api.nodes.dto.NodeMemberDto;
 import com.rochanegra.api.nodes.dto.NodeSummaryDto;
 import com.rochanegra.api.nodes.dto.NodeUpdateDto;
 import com.rochanegra.api.nodes.dto.TaskSummaryDto;
+import com.rochanegra.api.nodes.types.NodeLinkType;
 import com.rochanegra.api.nodes.types.NodeRole;
 import com.rochanegra.api.nodes.types.NodeType;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -147,11 +154,12 @@ public class NodeService {
             throw new ForbiddenException("Only owners can delete a node.");
         }
 
+        linkRepository.deleteBySourceNodeIdOrTargetNodeId(nodeId, nodeId);
         nodeRepository.delete(node);
     }
 
     @Transactional
-    public NodeLinkDto addLink(UUID sourceNodeId, UUID targetNodeId, String label, UUID userId) {
+    public NodeLinkDto addLink(UUID sourceNodeId, UUID targetNodeId, NodeLinkType type, UUID userId) {
         // Business rule: A node cannot link to itself.
         if (sourceNodeId.equals(targetNodeId)) {
             throw new IllegalArgumentException("A node cannot be linked to itself.");
@@ -164,7 +172,8 @@ public class NodeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Target node not found"));
 
         // Check for existing link
-        Optional<NodeLink> existingLink = linkRepository.findBySourceNodeIdAndTargetNodeId(sourceNodeId, targetNodeId);
+        Optional<NodeLink> existingLink = linkRepository.findBySourceNodeIdAndTargetNodeIdAndType(
+                sourceNodeId, targetNodeId, type);
         if (existingLink.isPresent()) {
             // Link already exists, maybe just return 200 OK or throw an exception.
             // For idempotency, we can just do nothing.
@@ -174,7 +183,7 @@ public class NodeService {
         NodeLink newLink = new NodeLink();
         newLink.setSourceNode(sourceNode);
         newLink.setTargetNode(targetNode);
-        newLink.setLabel(label);
+        newLink.setType(type);
         newLink.setCreatedBy(userId);
 
         linkRepository.save(newLink);
@@ -192,6 +201,43 @@ public class NodeService {
         linkRepository.delete(link);
     }
 
+    // Graph
+    public GraphDto getGraph(UUID rootNodeId, UUID userId) {
+
+        Node root = nodeRepository.findById(rootNodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Node not found"));
+
+        List<NodeLink> links = linkRepository
+                .findBySourceNodeIdOrTargetNodeId(rootNodeId, rootNodeId);
+
+        Set<Node> nodes = new HashSet<>();
+        nodes.add(root);
+
+        List<GraphEdgeDto> edges = new ArrayList<>();
+
+        for (NodeLink link : links) {
+            Node source = link.getSourceNode();
+            Node target = link.getTargetNode();
+
+            nodes.add(source);
+            nodes.add(target);
+
+            edges.add(new GraphEdgeDto(
+                    source.getId(),
+                    target.getId(),
+                    link.getType()));
+        }
+
+        List<GraphNodeDto> nodeDtos = nodes.stream()
+                .map(n -> new GraphNodeDto(
+                        n.getId(),
+                        n.getName(),
+                        n.getType()))
+                .toList();
+
+        return new GraphDto(nodeDtos, edges);
+    }
+
     // --- Mapper Methods ---
 
     private NodeLinkDto toLinkDto(NodeLink link) {
@@ -199,7 +245,7 @@ public class NodeService {
                 link.getTargetNode().getId(),
                 link.getTargetNode().getName(),
                 link.getTargetNode().getType(),
-                link.getLabel(),
+                link.getType(),
                 link.getCreatedBy(),
                 link.getCreatedAt());
     }
@@ -232,22 +278,22 @@ public class NodeService {
                 .map(this::toSummaryDto)
                 .collect(Collectors.toList());
 
-        List<NodeLinkDto> outgoingLinks = node.getLinksTo().stream()
+        List<NodeLinkDto> references = node.getLinksTo().stream()
                 .map(link -> new NodeLinkDto(
                         link.getTargetNode().getId(),
                         link.getTargetNode().getName(),
                         link.getTargetNode().getType(),
-                        link.getLabel(),
+                        link.getType(),
                         link.getCreatedBy(),
                         link.getCreatedAt()))
                 .collect(Collectors.toList());
 
-        List<NodeLinkDto> incomingLinks = node.getLinkedFrom().stream()
+        List<NodeLinkDto> referencedBy = node.getLinkedFrom().stream()
                 .map(link -> new NodeLinkDto(
                         link.getSourceNode().getId(),
                         link.getSourceNode().getName(),
                         link.getSourceNode().getType(),
-                        link.getLabel(),
+                        link.getType(),
                         link.getCreatedBy(),
                         link.getCreatedAt()))
                 .collect(Collectors.toList());
@@ -271,7 +317,7 @@ public class NodeService {
                 members,
                 tasks,
                 children,
-                incomingLinks,
-                outgoingLinks);
+                referencedBy,
+                references);
     }
 }
