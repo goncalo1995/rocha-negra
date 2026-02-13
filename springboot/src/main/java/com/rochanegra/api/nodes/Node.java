@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.rochanegra.api.nodes.types.NodeStatus;
 import com.rochanegra.api.nodes.types.NodeType;
+import com.rochanegra.api.tasks.Task;
 
 import java.time.Instant;
 import java.time.LocalDate;

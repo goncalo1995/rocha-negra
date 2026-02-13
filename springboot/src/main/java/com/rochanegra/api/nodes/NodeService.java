@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.rochanegra.api.dashboard.dtos.ProjectsWidgetDto;
 import com.rochanegra.api.exception.ForbiddenException;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import com.rochanegra.api.nodes.dto.GraphDto;
@@ -18,10 +19,11 @@ import com.rochanegra.api.nodes.dto.NodeLinkDto;
 import com.rochanegra.api.nodes.dto.NodeMemberDto;
 import com.rochanegra.api.nodes.dto.NodeSummaryDto;
 import com.rochanegra.api.nodes.dto.NodeUpdateDto;
-import com.rochanegra.api.nodes.dto.TaskSummaryDto;
 import com.rochanegra.api.nodes.types.NodeLinkType;
 import com.rochanegra.api.nodes.types.NodeRole;
+import com.rochanegra.api.nodes.types.NodeStatus;
 import com.rochanegra.api.nodes.types.NodeType;
+import com.rochanegra.api.tasks.dtos.TaskSummaryDto;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,6 +41,18 @@ public class NodeService {
     private final NodeMemberRepository memberRepository;
     private final NodeLinkRepository linkRepository;
     private final JdbcTemplate jdbcTemplate;
+
+    public ProjectsWidgetDto getNodesWidget(UUID userId) {
+
+        List<Node> active = nodeRepository.findTop3ByUserIdAndStatusOrderByDueDateAsc(
+                userId, NodeStatus.ACTIVE);
+
+        return new ProjectsWidgetDto(
+                active.size(),
+                active.stream()
+                        .map(NodeSummaryDto::fromEntity)
+                        .toList());
+    }
 
     @Transactional
     public NodeDetailDto createNode(NodeCreateDto createDto, UUID userId) {

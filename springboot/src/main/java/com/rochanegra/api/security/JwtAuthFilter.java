@@ -39,15 +39,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             final String token = authHeader.substring(7);
-            // --- DEBUG LOG 3: Print the token we are about to validate ---
-            System.out.println(">>> Attempting to validate token: " + token.substring(0, 15) + "...");
 
             DecodedJWT decodedJWT = jwtUtil.validateToken(token);
             String userId = decodedJWT.getSubject(); // "sub" claim is the user ID
-
-            // --- DEBUG LOG 4: Log on successful validation ---
-            System.out.println(">>> SUCCESS! Token validated for user ID: " + userId);
-
 
             if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 // We don't have roles, so we use an empty list of authorities
@@ -55,12 +49,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         userId, null, Collections.emptyList());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-
-                // --- DEBUG LOG 5: Log when user is set in Security Context ---
-                System.out.println(">>> User set in SecurityContextHolder.");
             }
         } catch (Exception e) {
-            // --- DEBUG LOG 6: CRITICAL! Log the exact validation error ---
             System.err.println(">>> JWT token validation failed: " + e.getMessage());
         }
 

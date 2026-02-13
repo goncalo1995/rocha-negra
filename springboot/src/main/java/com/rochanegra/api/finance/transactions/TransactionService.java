@@ -98,6 +98,13 @@ public class TransactionService {
         return toDto(transaction);
     }
 
+    public List<TransactionDto> getRecentTransactions(UUID userId, int limit) {
+        return transactionRepository.findTopNByUserIdOrderByDateDesc(userId, limit)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     public void deleteTransaction(UUID transactionId, UUID userId) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .filter(tx -> tx.getUserId().equals(userId))
@@ -276,6 +283,9 @@ public class TransactionService {
         Page<Transaction> page = transactionRepository.findAll(spec, pageable);
         // Manually map the Page object to your PageDto
         List<TransactionDto> content = page.getContent().stream().map(this::toDto).collect(Collectors.toList());
+
+        // remove duplicates
+        content = content.stream().distinct().collect(Collectors.toList());
 
         return new PageDto<>(
                 content,

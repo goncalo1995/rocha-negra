@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.rochanegra.api.nodes.dto.*;
 import com.rochanegra.api.nodes.types.NodeType;
+import com.rochanegra.api.tasks.TaskService;
+import com.rochanegra.api.tasks.dtos.TaskCreateDto;
+import com.rochanegra.api.tasks.dtos.TaskDto;
 
 import java.util.List;
 import java.util.UUID;

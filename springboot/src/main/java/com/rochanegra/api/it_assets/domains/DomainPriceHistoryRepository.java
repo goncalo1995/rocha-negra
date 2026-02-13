@@ -1,6 +1,7 @@
 package com.rochanegra.api.it_assets.domains;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,5 +12,7 @@ public interface DomainPriceHistoryRepository extends JpaRepository<DomainPriceH
     List<DomainPriceHistory> findByDomainId(UUID domainId);
 
     List<DomainPriceHistory> findByDomainIdInOrderByEffectiveDateDesc(List<UUID> domainIds);
+
+    Optional<DomainPriceHistory> findTopByDomainIdOrderByEffectiveDateDesc(UUID domainId);
 
 }

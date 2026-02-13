@@ -7,6 +7,7 @@ import com.rochanegra.api.finance.types.TransactionType;
 import com.rochanegra.api.links.EntityLinkDto;
 import com.rochanegra.api.finance.recurring.RecurringRuleCreateDto;
 import com.rochanegra.api.finance.recurring.RecurringRuleService;
+import com.rochanegra.api.dashboard.dtos.VehiclesWidgetDto;
 import com.rochanegra.api.finance.assets.AssetCreateDto;
 import com.rochanegra.api.finance.assets.AssetDto;
 import com.rochanegra.api.finance.assets.AssetService;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,6 +35,16 @@ public class VehicleService {
     private final RecurringRuleService recurringRuleService;
     private final AssetService assetService;
     private final CategoryService categoryService;
+
+    public VehiclesWidgetDto getVehiclesWidget(UUID userId) {
+
+        int total = vehicleRepository.countByUserId(userId);
+
+        BigDecimal yearlyCost = vehicleRepository.sumMaintenanceAndFuelByUserId(userId,
+                LocalDate.now().withDayOfYear(1));
+
+        return new VehiclesWidgetDto(total, yearlyCost);
+    }
 
     @Transactional
     public VehicleDto createVehicle(VehicleCreateDto createDto, UUID userId) {

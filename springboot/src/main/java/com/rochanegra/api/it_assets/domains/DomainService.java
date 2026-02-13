@@ -4,6 +4,7 @@ package com.rochanegra.api.it_assets.domains;
 import com.rochanegra.api.finance.recurring.RecurringRuleService;
 import com.rochanegra.api.finance.recurring.RecurringRuleCreateDto;
 import com.rochanegra.api.core.SanitizationService;
+import com.rochanegra.api.dashboard.dtos.ItWidgetDto;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import com.rochanegra.api.finance.recurring.RecurringFrequency;
 import com.rochanegra.api.finance.recurring.RecurringGeneratorRepository;
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -33,6 +35,30 @@ public class DomainService {
     private final RecurringRuleService recurringRuleService; // <-- The key integration
     private final RecurringGeneratorRepository recurringGeneratorRepository;
     private final SanitizationService sanitizationService;
+
+    public ItWidgetDto getItWidget(UUID userId) {
+
+        int totalDomains = domainRepository.countByUserId(userId);
+        BigDecimal annualCost = sumCurrentAnnualCostByUserId(userId);
+
+        return new ItWidgetDto(totalDomains, annualCost);
+    }
+
+    public BigDecimal sumCurrentAnnualCostByUserId(UUID userId) {
+        List<Domain> domains = domainRepository.findByUserId(userId);
+
+        return domains.stream()
+                .map(domain -> getCurrentPrice(domain.getId()))
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal getCurrentPrice(UUID domainId) {
+        return priceHistoryRepository
+                .findTopByDomainIdOrderByEffectiveDateDesc(domainId)
+                .map(DomainPriceHistory::getPrice)
+                .orElse(BigDecimal.ZERO);
+    }
 
     @Transactional(readOnly = true) // Use readOnly for GET methods for a performance boost
     public List<DomainDto> getAllDomains(UUID userId) {

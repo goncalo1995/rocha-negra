@@ -1,6 +1,6 @@
 package com.rochanegra.api.finance.projections;
 
-import com.rochanegra.api.finance.dashboard.DashboardService;
+import com.rochanegra.api.finance.FinanceService;
 import com.rochanegra.api.finance.recurring.RecurringFrequency;
 import com.rochanegra.api.finance.recurring.RecurringGenerator;
 import com.rochanegra.api.finance.recurring.RecurringGeneratorRepository;
@@ -32,7 +32,7 @@ class ProjectionServiceTest {
     @Mock
     private TransactionTemplateRepository templateRepository;
     @Mock
-    private DashboardService dashboardService;
+    private FinanceService financeService;
 
     @InjectMocks
     private ProjectionService projectionService;
@@ -47,7 +47,7 @@ class ProjectionServiceTest {
     @Test
     void generateProjections_oneMonthOneIncome_shouldCalculateCorrectly() {
         // Starting net worth: 1000
-        when(dashboardService.calculateNetWorth(userId)).thenReturn(BigDecimal.valueOf(1000));
+        when(financeService.calculateNetWorth(userId)).thenReturn(BigDecimal.valueOf(1000));
 
         // One active monthly rule: Salary 2000
         RecurringGenerator rule = new RecurringGenerator();
@@ -77,7 +77,7 @@ class ProjectionServiceTest {
 
     @Test
     void generateProjections_noRules_shouldStayFlat() {
-        when(dashboardService.calculateNetWorth(userId)).thenReturn(BigDecimal.valueOf(500));
+        when(financeService.calculateNetWorth(userId)).thenReturn(BigDecimal.valueOf(500));
         when(generatorRepository.findByUserIdAndIsActiveTrue(userId)).thenReturn(Collections.emptyList());
 
         List<ProjectionMonthDto> results = projectionService.generateProjections(userId, 3);

@@ -1,6 +1,6 @@
 package com.rochanegra.api.finance.projections;
 
-import com.rochanegra.api.finance.dashboard.DashboardService;
+import com.rochanegra.api.finance.FinanceService;
 import com.rochanegra.api.finance.recurring.RecurringFrequency;
 import com.rochanegra.api.finance.recurring.RecurringGenerator;
 import com.rochanegra.api.finance.recurring.RecurringGeneratorRepository;
@@ -29,10 +29,10 @@ public class ProjectionService {
 
     private final RecurringGeneratorRepository generatorRepository;
     private final TransactionTemplateRepository templateRepository;
-    private final DashboardService dashboardService;
+    private final FinanceService financeService;
 
     public List<ProjectionMonthDto> generateProjections(UUID userId, int monthsIntoFuture) {
-        BigDecimal cumulativeBalance = dashboardService.calculateNetWorth(userId);
+        BigDecimal cumulativeBalance = financeService.calculateNetWorth(userId);
         List<RecurringGenerator> activeRules = generatorRepository.findByUserIdAndIsActiveTrue(userId);
 
         // --- OPTIMIZATION: BATCH FETCH TEMPLATES ---

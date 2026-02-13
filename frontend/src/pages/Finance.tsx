@@ -12,18 +12,9 @@ const Finance = () => {
     assets,
     categories,
     transactions,
-    metrics,
-    isLoadingMetrics,
-    addTransaction
+    addTransaction,
+    isLoading
   } = useFinance();
-
-  if (isLoadingMetrics || metrics == null) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -35,11 +26,11 @@ const Finance = () => {
       </div>
 
       <div className="grid gap-6">
-        <DashboardCockpit
+        {/* <DashboardCockpit
           metrics={metrics}
           transactions={transactions}
           categories={categories}
-        />
+        /> */}
 
         <Card className="bg-gradient-to-br from-card to-accent/5 border-primary/10">
           <CardHeader>
@@ -60,12 +51,16 @@ const Finance = () => {
       </div>
 
       {/* Quick Add FAB remains available everywhere in Treasury */}
-      <QuickAddButton
-        categories={categories}
-        assets={assets}
-        baseCurrency="EUR"
-        onAddTransaction={addTransaction}
-      />
+      {isLoading ?
+        <div className="flex min-h-screen items-center justify-center">
+          <Spinner />
+        </div>
+        : <QuickAddButton
+          categories={categories}
+          assets={assets}
+          baseCurrency="EUR"
+          onAddTransaction={addTransaction}
+        />}
     </div>
   );
 };

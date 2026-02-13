@@ -1,10 +1,13 @@
 package com.rochanegra.api.nodes;
 
 import com.rochanegra.api.exception.ResourceNotFoundException;
-import com.rochanegra.api.nodes.dto.TaskCreateDto;
-import com.rochanegra.api.nodes.dto.TaskDto;
-import com.rochanegra.api.nodes.dto.TaskUpdateDto;
-import com.rochanegra.api.nodes.types.TaskStatus;
+import com.rochanegra.api.tasks.Task;
+import com.rochanegra.api.tasks.TaskRepository;
+import com.rochanegra.api.tasks.TaskService;
+import com.rochanegra.api.tasks.TaskStatus;
+import com.rochanegra.api.tasks.dtos.TaskCreateDto;
+import com.rochanegra.api.tasks.dtos.TaskDto;
+import com.rochanegra.api.tasks.dtos.TaskUpdateDto;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

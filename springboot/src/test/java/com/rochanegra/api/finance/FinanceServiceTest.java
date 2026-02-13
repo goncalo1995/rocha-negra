@@ -1,4 +1,4 @@
-package com.rochanegra.api.finance.dashboard;
+package com.rochanegra.api.finance;
 
 import com.rochanegra.api.finance.assets.Asset;
 import com.rochanegra.api.finance.assets.AssetRepository;
@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class DashboardServiceTest {
+class FinanceServiceTest {
 
     @Mock
     private AssetRepository assetRepository;
@@ -40,7 +40,7 @@ class DashboardServiceTest {
     private UserPreferencesService userPreferencesService;
 
     @InjectMocks
-    private DashboardService dashboardService;
+    private FinanceService dashboardService;
 
     private UUID userId;
 

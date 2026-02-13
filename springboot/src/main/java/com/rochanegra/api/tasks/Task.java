@@ -1,8 +1,8 @@
-package com.rochanegra.api.nodes;
+package com.rochanegra.api.tasks;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.rochanegra.api.nodes.types.TaskStatus;
+import com.rochanegra.api.nodes.Node;
 
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;

@@ -16,6 +16,8 @@ import java.time.LocalDate;
 public interface TransactionRepository extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
     List<Transaction> findByUserIdOrderByDateDesc(UUID userId);
 
+    List<Transaction> findTopNByUserIdOrderByDateDesc(UUID userId, int limit);
+
     @Query("SELECT COALESCE(SUM(t.amountBase), 0) FROM Transaction t WHERE t.userId = :userId AND t.type = :type AND t.date BETWEEN :startDate AND :endDate")
     BigDecimal sumAmountBaseByUserIdAndTypeAndDateBetween(
             @Param("userId") UUID userId,

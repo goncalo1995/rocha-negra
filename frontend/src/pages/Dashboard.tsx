@@ -1,29 +1,18 @@
-import { BentoCard } from "@/components/BentoCard";
 import { useDashboardWidgets, widgetLabels } from "@/hooks/useDashboardWidgets";
-import { useFinance } from "@/hooks/useFinance";
-import { useTasks } from "@/hooks/useTasks";
-import { useNodes } from "@/hooks/useNodes";
-import { useIT } from "@/hooks/useIT";
-import { useVehicles } from "@/hooks/useVehicles";
-import { useNetwork } from "@/hooks/useNetwork";
 import { DashboardWidget } from "@/types/dashboard";
-import { formatCurrency } from "@/lib/formatters";
 import {
-    Circle,
-    Clock,
-    ArrowUpRight,
-    ArrowDownRight,
-    Wallet,
     ChevronUp,
     ChevronDown,
     Settings2,
-    Users,
-    TrendingDown,
-    Calendar,
-    Briefcase,
-    Globe,
-    Car
 } from "lucide-react";
+import { FinancialWidget } from "@/components/dashboard/widgets/FinancialWidget";
+import { TasksWidget } from "@/components/dashboard/widgets/TasksWidget";
+import { ProjectsWidget } from "@/components/dashboard/widgets/ProjectsWidget";
+import { TransactionsWidget } from "@/components/dashboard/widgets/TransactionsWidget";
+import { ItWidget } from "@/components/dashboard/widgets/ItWidget";
+import { VehiclesWidget } from "@/components/dashboard/widgets/VehiclesWidget";
+import { NetworkWidget } from "@/components/dashboard/widgets/NetworkWidget";
+import { DebtsWidget } from "@/components/dashboard/widgets/DebtsWidget";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -37,356 +26,46 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { DashboardResponseDto } from "@/types/dashboard";
 
 export default function Dashboard() {
-    const { widgets, enabledWidgets, toggleWidget, moveWidget, resetToDefault } = useDashboardWidgets();
+    const { widgets, enabledWidgets, toggleWidget, moveWidget } = useDashboardWidgets();
 
     // Data Hooks
-    const { metrics, transactions, liabilities } = useFinance();
-    const { data: activeTasks = [] } = useTasks({ scope: 'active' });
-    const { data: nodes } = useNodes();
-    const { metrics: itMetrics } = useIT();
-    const { metrics: vehicleMetrics } = useVehicles();
-    const { contacts } = useNetwork();
+    const { data, isLoading } = useQuery<DashboardResponseDto>({
+        queryKey: ['dashboard'],
+        queryFn: () => api.get('/dashboard').then(r => r.data),
+    });
 
-    // Derived Data
-    const recentTransactions = transactions.slice(0, 3);
-    // TypeScript type fix: Liability uses snake_case from DB type definition
-    // @ts-ignore
-    const totalLiabilities = liabilities.reduce((acc, curr) => acc + (curr.remainingAmount || curr.current_balance || 0), 0);
+    console.log("widgets", widgets)
 
-    const getPriorityColor = (priority: number) => {
-        switch (priority) {
-            case 1: return 'text-destructive'; // High
-            case 2: return 'text-warning'; // Medium
-            default: return 'text-muted-foreground'; // Low
-        }
-    };
-
-    const getPriorityLabel = (priority: number) => {
-        switch (priority) {
-            case 1: return 'High';
-            case 2: return 'Medium';
-            case 3: return 'Low';
-            default: return 'Normal';
-        }
-    }
 
     const renderWidget = (widget: DashboardWidget) => {
-        switch (widget.type) {
+        switch (widget.key) {
             case 'financial':
-                return (
-                    <BentoCard
-                        key={widget.id}
-                        title="Financial Health"
-                        subtitle="Your wealth at a glance"
-                        headerAction={
-                            <Link to="/finance">
-                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                                    <Wallet className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        }
-                    >
-                        <div className="space-y-4">
-                            <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-900/50 to-emerald-800/30 border border-emerald-700/30">
-                                <p className="text-sm text-emerald-400 mb-1">Net Worth</p>
-                                <p className="text-2xl font-bold text-foreground">{formatCurrency(metrics.netWorth)}</p>
-                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                                    <span>Assets: {formatCurrency(metrics.totalAssets)}</span>
-                                    <span>Debts: {formatCurrency(metrics.totalLiabilities)}</span>
-                                </div>
-                            </div>
-
-                            <div className="p-4 rounded-xl bg-accent">
-                                <p className="text-sm text-muted-foreground mb-1">Safe to Spend</p>
-                                <p className={cn(
-                                    "text-xl font-bold",
-                                    metrics.safeToSpend > 0 ? "text-success" : "text-destructive"
-                                )}>
-                                    {formatCurrency(metrics.safeToSpend)}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    After {formatCurrency(metrics.monthlyBurn)} monthly costs
-                                </p>
-                            </div>
-                        </div>
-                    </BentoCard>
-                );
-
+                return <FinancialWidget key={widget.key} data={data?.financial} debts={data?.debts} />;
             case 'tasks':
-                return (
-                    <BentoCard
-                        key={widget.id}
-                        title="Active Tasks"
-                        subtitle={`${activeTasks.length} items need attention`}
-                        className="lg:col-span-2"
-                        headerAction={
-                            <Link to="/tasks">
-                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                                    View all
-                                </Button>
-                            </Link>
-                        }
-                    >
-                        <div className="space-y-3">
-                            {activeTasks.slice(0, 4).map((task) => (
-                                <div
-                                    key={task.id}
-                                    className="flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors"
-                                >
-                                    {task.status === 'IN_PROGRESS' ? (
-                                        <Clock className="h-4 w-4 text-warning shrink-0" />
-                                    ) : (
-                                        <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {task.dueDate ? `Due ${new Date(task.dueDate).toLocaleDateString()}` : 'No due date'}
-                                        </p>
-                                    </div>
-                                    <span className={cn("text-xs font-medium capitalize", getPriorityColor(task.priority))}>
-                                        {getPriorityLabel(task.priority)}
-                                    </span>
-                                </div>
-                            ))}
-                            {activeTasks.length === 0 && (
-                                <p className="text-sm text-muted-foreground italic">No active tasks.</p>
-                            )}
-                        </div>
-                    </BentoCard>
-                );
-
-            case 'nodes':
-                const activeNodes = nodes.filter(p => p.status === 'ACTIVE');
-                return (
-                    <BentoCard
-                        key={widget.id}
-                        title="Nodes"
-                        subtitle={`${activeNodes.length} active`}
-                        headerAction={
-                            <Link to="/nodes">
-                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                                    <Briefcase className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        }
-                    >
-                        <div className="space-y-3">
-                            {nodes.slice(0, 3).map((node) => (
-                                <div key={node.id} className="p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium text-foreground">{node.name}</p>
-                                        <span className={cn(
-                                            "px-2 py-0.5 rounded-full text-xs font-medium capitalize",
-                                            node.status === 'ACTIVE' ? "bg-success/20 text-success" :
-                                                node.status === 'ON_HOLD' ? "bg-warning/20 text-warning" :
-                                                    "bg-muted text-muted-foreground"
-                                        )}>
-                                            {node.status.replace('_', ' ')}
-                                        </span>
-                                    </div>
-                                    {node.dueDate && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Due {new Date(node.dueDate).toLocaleDateString()}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
-                            {nodes.length === 0 && (
-                                <p className="text-sm text-muted-foreground italic">No nodes.</p>
-                            )}
-                        </div>
-                    </BentoCard>
-                );
-
+                return <TasksWidget key={widget.key} data={data?.tasks} />;
+            case 'projects':
+                return <ProjectsWidget key={widget.key} data={data?.projects} />;
             case 'transactions':
-                return (
-                    <BentoCard
-                        key={widget.id}
-                        title="Recent Transactions"
-                        className="lg:col-span-2"
-                        headerAction={
-                            <Link to="/finance">
-                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                                    View all
-                                </Button>
-                            </Link>
-                        }
-                    >
-                        <div className="space-y-2">
-                            {recentTransactions.map((tx) => {
-                                // @ts-ignore
-                                const amount = tx.amountBase || tx.amountOriginal || 0;
-                                const isIncome = amount > 0; // Assuming positive is income, or check tx.type
-
-                                return (
-                                    <div
-                                        key={tx.id}
-                                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
-                                    >
-                                        <div className={cn(
-                                            "w-10 h-10 rounded-full flex items-center justify-center",
-                                            isIncome ? "bg-success/20" : "bg-destructive/20"
-                                        )}>
-                                            {isIncome ? (
-                                                <ArrowUpRight className="h-5 w-5 text-success" />
-                                            ) : (
-                                                <ArrowDownRight className="h-5 w-5 text-destructive" />
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-foreground truncate">{tx.description}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {new Date(tx.createdAt).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                        <p className={cn(
-                                            "font-semibold",
-                                            isIncome ? "text-success" : "text-foreground"
-                                        )}>
-                                            {isIncome ? '+' : ''}{formatCurrency(amount)}
-                                        </p>
-                                    </div>
-                                );
-                            })}
-                            {recentTransactions.length === 0 && (
-                                <p className="text-sm text-muted-foreground italic">No recent transactions.</p>
-                            )}
-                        </div>
-                    </BentoCard>
-                );
-
+                return <TransactionsWidget key={widget.key} data={data?.transactions} />;
             case 'it':
-                return (
-                    <BentoCard
-                        key={widget.id}
-                        title="IT Assets"
-                        subtitle="Domains & Renewals"
-                        headerAction={
-                            <Link to="/it">
-                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                                    <Globe className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        }
-                    >
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-xs text-muted-foreground">Domains</p>
-                                <p className="text-lg font-bold">{itMetrics.totalDomains}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground">Annual Cost</p>
-                                <p className="text-lg font-bold text-destructive">{formatCurrency(itMetrics.annualCost)}</p>
-                            </div>
-                        </div>
-                    </BentoCard>
-                );
-
+                return <ItWidget key={widget.key} data={data?.it} />;
             case 'vehicles':
-                return (
-                    <BentoCard
-                        key={widget.id}
-                        title="Vehicles"
-                        subtitle="Maintenance & Fuel"
-                        headerAction={
-                            <Link to="/vehicles">
-                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                                    <Car className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        }
-                    >
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-xs text-muted-foreground">Vehicles</p>
-                                <p className="text-lg font-bold">{vehicleMetrics.totalVehicles}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground">Costs (Year)</p>
-                                <p className="text-lg font-bold text-destructive">
-                                    {formatCurrency(vehicleMetrics.totalMaintenanceCostThisYear + vehicleMetrics.totalFuelCostThisYear)}
-                                </p>
-                            </div>
-                        </div>
-                    </BentoCard>
-                );
-
+                return <VehiclesWidget key={widget.key} data={data?.vehicles} />;
             case 'network':
-                return (
-                    <BentoCard
-                        key={widget.id}
-                        title="Network"
-                        subtitle={`${contacts.length} contacts`}
-                        headerAction={
-                            <Link to="/contacts">
-                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                                    <Users className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        }
-                    >
-                        <div className="space-y-3">
-                            {contacts.slice(0, 3).map((contact) => (
-                                <div key={contact.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
-                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                                        {(contact.firstName[0] + (contact.lastName?.[0] || "")).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-foreground truncate">{contact.firstName} {contact.lastName}</p>
-                                        <p className="text-xs text-muted-foreground truncate">{contact.company || contact.role || contact.category}</p>
-                                    </div>
-                                </div>
-                            ))}
-                            {contacts.length === 0 && (
-                                <p className="text-sm text-muted-foreground italic">No contacts yet.</p>
-                            )}
-                        </div>
-                    </BentoCard>
-                );
-
+                return <NetworkWidget key={widget.key} data={data?.network} />;
             case 'debts':
-                return (
-                    <BentoCard
-                        key={widget.id}
-                        title="Debts Overview"
-                        subtitle={`${liabilities.length} active debts`}
-                        headerAction={
-                            <Link to="/finance">
-                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                                    <TrendingDown className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        }
-                    >
-                        <div className="space-y-3">
-                            <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20">
-                                <p className="text-sm text-destructive mb-1">Total Outstanding</p>
-                                <p className="text-2xl font-bold text-destructive">{formatCurrency(totalLiabilities)}</p>
-                            </div>
-                            {liabilities.slice(0, 2).map((l) => (
-                                <div key={l.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-foreground truncate">{l.name}</p>
-                                        {/* @ts-ignore */}
-                                        <p className="text-xs text-muted-foreground">{formatCurrency(l.remainingAmount || l.current_balance || 0)} remaining</p>
-                                    </div>
-                                </div>
-                            ))}
-                            {liabilities.length === 0 && (
-                                <p className="text-sm text-muted-foreground italic">No debts.</p>
-                            )}
-                        </div>
-                    </BentoCard>
-                );
-
+                return <DebtsWidget key={widget.key} data={data?.debts} />;
             default:
                 return null;
         }
     };
+
+    console.log("widgets", widgets)
 
     return (
         <div className="space-y-6">
@@ -415,14 +94,14 @@ export default function Dashboard() {
                                 </p>
                                 <div className="space-y-3 pb-4">
                                     {[...widgets].sort((a, b) => a.order - b.order).map((widget) => (
-                                        <div key={widget.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/50 group">
+                                        <div key={widget.key} className="flex items-center justify-between p-3 rounded-lg bg-accent/50 group">
                                             <div className="flex items-center gap-3">
                                                 <div className="flex flex-col gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
                                                         className="h-6 w-6"
-                                                        onClick={() => moveWidget(widget.id, 'up')}
+                                                        onClick={() => moveWidget(widget.key, 'up')}
                                                     >
                                                         <ChevronUp className="h-4 w-4" />
                                                     </Button>
@@ -430,30 +109,30 @@ export default function Dashboard() {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="h-6 w-6"
-                                                        onClick={() => moveWidget(widget.id, 'down')}
+                                                        onClick={() => moveWidget(widget.key, 'down')}
                                                     >
                                                         <ChevronDown className="h-4 w-4" />
                                                     </Button>
                                                 </div>
-                                                <Label htmlFor={widget.id} className="cursor-pointer font-medium">
-                                                    {widgetLabels[widget.type]}
+                                                <Label htmlFor={`widgetswitch-${widget.key}`} className="cursor-pointer font-medium">
+                                                    {widgetLabels[widget.key]}
                                                 </Label>
                                             </div>
                                             <Switch
-                                                id={widget.id}
+                                                id={`widgetswitch-${widget.key}`}
                                                 checked={widget.enabled}
-                                                onCheckedChange={() => toggleWidget(widget.id)}
+                                                onCheckedChange={() => toggleWidget(widget.key)}
                                             />
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </ScrollArea>
-                        <div className="p-6 pt-0 mt-auto">
+                        {/* <div className="p-6 pt-0 mt-auto">
                             <Button variant="outline" size="sm" onClick={resetToDefault} className="w-full">
                                 Reset to Default
                             </Button>
-                        </div>
+                        </div> */}
                     </DialogContent>
                 </Dialog>
             </div>
@@ -463,7 +142,7 @@ export default function Dashboard() {
                 {enabledWidgets.map(renderWidget)}
             </div>
 
-            {enabledWidgets.length === 0 && (
+            {!isLoading && enabledWidgets.length === 0 && (
                 <div className="bento-card text-center py-12">
                     <p className="text-muted-foreground">No widgets enabled. Click "Customize" to add widgets to your dashboard.</p>
                 </div>

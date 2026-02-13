@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.rochanegra.api.dashboard.dtos.NetworkWidgetDto;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ContactService {
     private final ContactRepository contactRepository;
+
+    public NetworkWidgetDto getNetworkWidget(UUID userId) {
+
+        List<Contact> contacts = contactRepository.findTop3ByUserId(userId);
+
+        return new NetworkWidgetDto(
+                contactRepository.countByUserId(userId),
+                contacts.stream()
+                        .map(ContactDto::fromEntity)
+                        .toList());
+    }
 
     public List<ContactDto.Detail> getAll(UUID userId) {
         return contactRepository.findAllByUserIdOrderByFirstNameAsc(userId).stream()
