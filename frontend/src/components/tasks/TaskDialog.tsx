@@ -206,7 +206,7 @@ export function TaskDialog({ open, onOpenChange, task, defaultNodeId, defaultPar
                             Cancel
                         </Button>
                         <Button type="submit" disabled={createTask.isPending || updateTask.isPending}>
-                            {isLoading ? "Creating..." : "Create Task"}
+                            {isLoading && !isEditing ? "Creating..." : isLoading && isEditing ? "Updating..." : isEditing ? "Update Task" : "Create Task"}
                         </Button>
                     </div>
                 </form>

@@ -100,7 +100,7 @@ public class TaskService {
         if (updateDto.nodeId() != null) {
             Node node = projectRepository.findById(updateDto.nodeId())
                     .orElseThrow(() -> new ResourceNotFoundException("Node not found"));
-            if (!node.getMembers().stream().anyMatch(member -> member.getId().equals(userId))) {
+            if (!node.getMembers().stream().anyMatch(member -> member.getUserId().equals(userId))) {
                 throw new IllegalArgumentException("User is not a member of the node");
             }
             task.setNode(node);

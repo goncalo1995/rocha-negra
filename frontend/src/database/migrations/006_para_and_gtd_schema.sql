@@ -67,6 +67,19 @@ CREATE TABLE public.tasks (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE public.node_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_node_id UUID REFERENCES public.nodes(id) ON DELETE CASCADE NOT NULL,
+  target_node_id UUID REFERENCES public.nodes(id) ON DELETE CASCADE NOT NULL,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL NOT NULL,
+  label TEXT, 
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  -- Prevent duplicate links between the same two nodes
+  CONSTRAINT unique_source_target_link UNIQUE (source_node_id, target_node_id)
+);
+
+
 -- === STEP 5: INDEXES & TRIGGERS ===
 -- Indexes for 'nodes'
 CREATE INDEX idx_nodes_user_id_type ON public.nodes(user_id, type);
@@ -77,12 +90,29 @@ CREATE INDEX idx_node_members_user_id ON public.node_members(user_id);
 CREATE INDEX idx_tasks_node_id ON public.tasks(node_id);
 CREATE INDEX idx_tasks_created_by ON public.tasks(created_by);
 CREATE INDEX idx_tasks_assignee_status_due ON public.tasks (assigned_to, status, due_date);
+-- Indexes for 'node_links'
+CREATE INDEX idx_node_links_source_id ON public.node_links(source_node_id);
+CREATE INDEX idx_node_links_target_id ON public.node_links(target_node_id);
 
 -- Triggers
 CREATE TRIGGER update_nodes_updated_at BEFORE UPDATE ON public.nodes FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TRIGGER update_tasks_updated_at BEFORE UPDATE ON public.tasks FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- === STEP 6: HELPER FUNCTIONS (FOR SECURE RLS) ===
+
+CREATE OR REPLACE FUNCTION public.can_view_node(p_node_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER -- Bypasses RLS for the internal check.
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.node_members
+    WHERE node_id = p_node_id
+      AND user_id = auth.uid()
+  );
+$$;
+
 
 -- Function to check if the current user is an owner or editor of a specific node.
 CREATE OR REPLACE FUNCTION public.can_edit_node(p_node_id UUID)
@@ -144,6 +174,7 @@ $$;
 ALTER TABLE public.nodes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.node_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.node_links ENABLE ROW LEVEL SECURITY;
 
 -- Node Policies (A node is visible if you are a member OR if it's your personal node)
 CREATE POLICY "Users can view nodes they are a member of or own" ON public.nodes FOR SELECT
@@ -184,3 +215,28 @@ CREATE POLICY "Update tasks based on role or assignment" ON public.tasks FOR UPD
 
 CREATE POLICY "Delete personal tasks or tasks in nodes they own" ON public.tasks FOR DELETE
   USING ((node_id IS NULL AND created_by = auth.uid()) OR (public.is_node_owner(node_id)));
+
+-- == Node Links Policies ==
+CREATE POLICY "Users can view links if they can view both connected nodes"
+  ON public.node_links FOR SELECT
+  USING (
+    can_view_node(source_node_id) AND can_view_node(target_node_id)
+  );
+
+-- INSERT Policy: A user can create a link if they can EDIT the source node.
+-- (They only need to be able to view the target node).
+CREATE POLICY "Users can create links from nodes they can edit"
+  ON public.node_links FOR INSERT
+  WITH CHECK (
+    can_edit_node(source_node_id) AND can_view_node(target_node_id)
+  );
+
+-- DELETE Policy: A user can delete a link if they can EDIT the source node.
+CREATE POLICY "Users can delete links from nodes they can edit"
+  ON public.node_links FOR DELETE
+  USING (
+    can_edit_node(source_node_id)
+  );
+
+-- NOTE: It's often safer to disallow UPDATE on join tables like this.
+-- If a user needs to change a link, they can DELETE and re-CREATE it.

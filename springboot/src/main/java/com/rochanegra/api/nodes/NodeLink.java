@@ -1,0 +1,36 @@
+package com.rochanegra.api.nodes;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Entity
+@Table(name = "node_links", uniqueConstraints = @UniqueConstraint(columnNames = { "source_node_id", "target_node_id" }))
+@Getter
+@Setter
+@ToString(exclude = { "sourceNode", "targetNode" }) // Explicitly exclude lazy relationships from toString
+public class NodeLink {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_node_id", nullable = false)
+    private Node sourceNode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_node_id", nullable = false)
+    private Node targetNode;
+
+    @Column(name = "created_by", nullable = false)
+    private UUID createdBy;
+
+    private String label;
+
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt = Instant.now();
+}

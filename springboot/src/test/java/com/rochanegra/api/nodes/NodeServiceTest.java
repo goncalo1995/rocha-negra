@@ -13,18 +13,15 @@ import com.rochanegra.api.nodes.dto.NodeCreateDto;
 import com.rochanegra.api.nodes.dto.NodeDetailDto;
 import com.rochanegra.api.nodes.dto.NodeUpdateDto;
 import com.rochanegra.api.nodes.types.NodeRole;
-import com.rochanegra.api.nodes.types.NodeStatus;
 import com.rochanegra.api.nodes.types.NodeType;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -346,10 +343,22 @@ class NodeServiceTest {
     @Test
     void deleteProject_found_shouldCallRepositoryDelete() {
         UUID projectId = UUID.randomUUID();
+
         Node existingProject = new Node();
         existingProject.setId(projectId);
+        existingProject.setUserId(mockUserId);
+        existingProject.setMembers(new ArrayList<>());
+
+        NodeMember member = new NodeMember();
+        member.setUserId(mockUserId);
+        member.setNode(existingProject);
+        member.setRole(NodeRole.OWNER);
+
+        existingProject.getMembers().add(member);
 
         when(nodeRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(memberRepository.findByNodeIdAndUserId(projectId, mockUserId))
+                .thenReturn(Optional.of(member));
 
         nodeService.deleteNode(projectId, mockUserId);
 

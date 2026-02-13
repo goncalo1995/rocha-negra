@@ -6,17 +6,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.rochanegra.api.exception.ForbiddenException;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import com.rochanegra.api.nodes.dto.MemberAddDto;
 import com.rochanegra.api.nodes.dto.NodeCreateDto;
 import com.rochanegra.api.nodes.dto.NodeDetailDto;
+import com.rochanegra.api.nodes.dto.NodeLinkDto;
 import com.rochanegra.api.nodes.dto.NodeMemberDto;
 import com.rochanegra.api.nodes.dto.NodeSummaryDto;
 import com.rochanegra.api.nodes.dto.NodeUpdateDto;
 import com.rochanegra.api.nodes.dto.TaskSummaryDto;
 import com.rochanegra.api.nodes.types.NodeRole;
+import com.rochanegra.api.nodes.types.NodeType;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,6 +30,7 @@ public class NodeService {
 
     private final NodeRepository nodeRepository;
     private final NodeMemberRepository memberRepository;
+    private final NodeLinkRepository linkRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Transactional
@@ -37,8 +42,13 @@ public class NodeService {
         return getNodeById(newNodeId, userId);
     }
 
-    public List<NodeSummaryDto> getNodesForUser(UUID userId) {
-        List<Node> nodes = nodeRepository.findNodesByMember(userId);
+    public List<NodeSummaryDto> getNodesForUser(UUID userId, NodeType type) {
+        List<Node> nodes;
+        if (type != null) {
+            nodes = nodeRepository.findNodesByMemberAndType(userId, type);
+        } else {
+            nodes = nodeRepository.findNodesByMember(userId);
+        }
         return nodes.stream().map(this::toSummaryDto).collect(Collectors.toList());
     }
 
@@ -129,10 +139,70 @@ public class NodeService {
         Node node = nodeRepository.findById(nodeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Node not found"));
 
+        // Application-level check provides a better error message.
+        NodeMember member = memberRepository.findByNodeIdAndUserId(nodeId, userId)
+                .orElseThrow(() -> new ForbiddenException("You are not a member of this node."));
+
+        if (member.getRole() != NodeRole.OWNER) {
+            throw new ForbiddenException("Only owners can delete a node.");
+        }
+
         nodeRepository.delete(node);
     }
 
+    @Transactional
+    public NodeLinkDto addLink(UUID sourceNodeId, UUID targetNodeId, String label, UUID userId) {
+        // Business rule: A node cannot link to itself.
+        if (sourceNodeId.equals(targetNodeId)) {
+            throw new IllegalArgumentException("A node cannot be linked to itself.");
+        }
+
+        // RLS will ensure user has at least read access to both nodes
+        Node sourceNode = nodeRepository.findById(sourceNodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Source node not found"));
+        Node targetNode = nodeRepository.findById(targetNodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Target node not found"));
+
+        // Check for existing link
+        Optional<NodeLink> existingLink = linkRepository.findBySourceNodeIdAndTargetNodeId(sourceNodeId, targetNodeId);
+        if (existingLink.isPresent()) {
+            // Link already exists, maybe just return 200 OK or throw an exception.
+            // For idempotency, we can just do nothing.
+            return toLinkDto(existingLink.get());
+        }
+
+        NodeLink newLink = new NodeLink();
+        newLink.setSourceNode(sourceNode);
+        newLink.setTargetNode(targetNode);
+        newLink.setLabel(label);
+        newLink.setCreatedBy(userId);
+
+        linkRepository.save(newLink);
+        return toLinkDto(newLink);
+    }
+
+    @Transactional
+    public void removeLink(UUID sourceNodeId, UUID targetNodeId, UUID userId) {
+        // RLS ensures user has permission to modify the source node.
+        NodeLink link = linkRepository.findBySourceNodeIdAndTargetNodeId(sourceNodeId, targetNodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Link between nodes not found"));
+
+        // Optional: Add role check here later if needed
+
+        linkRepository.delete(link);
+    }
+
     // --- Mapper Methods ---
+
+    private NodeLinkDto toLinkDto(NodeLink link) {
+        return new NodeLinkDto(
+                link.getTargetNode().getId(),
+                link.getTargetNode().getName(),
+                link.getTargetNode().getType(),
+                link.getLabel(),
+                link.getCreatedBy(),
+                link.getCreatedAt());
+    }
 
     private NodeSummaryDto toSummaryDto(Node node) {
         return new NodeSummaryDto(
@@ -162,6 +232,25 @@ public class NodeService {
                 .map(this::toSummaryDto)
                 .collect(Collectors.toList());
 
+        List<NodeLinkDto> outgoingLinks = node.getLinksTo().stream()
+                .map(link -> new NodeLinkDto(
+                        link.getTargetNode().getId(),
+                        link.getTargetNode().getName(),
+                        link.getTargetNode().getType(),
+                        link.getLabel(),
+                        link.getCreatedBy(),
+                        link.getCreatedAt()))
+                .collect(Collectors.toList());
+
+        List<NodeLinkDto> incomingLinks = node.getLinkedFrom().stream()
+                .map(link -> new NodeLinkDto(
+                        link.getSourceNode().getId(),
+                        link.getSourceNode().getName(),
+                        link.getSourceNode().getType(),
+                        link.getLabel(),
+                        link.getCreatedBy(),
+                        link.getCreatedAt()))
+                .collect(Collectors.toList());
         return new NodeDetailDto(
                 node.getId(),
                 node.getParent() != null ? node.getParent().getId() : null,
@@ -181,6 +270,8 @@ public class NodeService {
                 node.getUpdatedAt(),
                 members,
                 tasks,
-                children);
+                children,
+                incomingLinks,
+                outgoingLinks);
     }
 }

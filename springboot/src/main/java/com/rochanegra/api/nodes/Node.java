@@ -16,8 +16,10 @@ import com.rochanegra.api.nodes.types.NodeType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -81,6 +83,12 @@ public class Node {
 
     @OneToMany(mappedBy = "node", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "sourceNode", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<NodeLink> linksTo = new HashSet<>();
+
+    @OneToMany(mappedBy = "targetNode", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<NodeLink> linkedFrom = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

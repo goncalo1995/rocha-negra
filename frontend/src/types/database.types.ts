@@ -437,6 +437,48 @@ export type Database = {
           },
         ]
       }
+      node_links: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          label: string | null
+          source_node_id: string
+          target_node_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          label?: string | null
+          source_node_id: string
+          target_node_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          label?: string | null
+          source_node_id?: string
+          target_node_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "node_links_source_node_id_fkey"
+            columns: ["source_node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "node_links_target_node_id_fkey"
+            columns: ["target_node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       node_members: {
         Row: {
           created_at: string | null

@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.rochanegra.api.nodes.dto.*;
+import com.rochanegra.api.nodes.types.NodeType;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,9 +30,10 @@ public class NodeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<NodeSummaryDto>> getMyNodes(Authentication auth) {
+    public ResponseEntity<List<NodeSummaryDto>> getMyNodes(@RequestParam(required = false) NodeType type,
+            Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
-        return ResponseEntity.ok(nodeService.getNodesForUser(userId));
+        return ResponseEntity.ok(nodeService.getNodesForUser(userId, type));
     }
 
     @GetMapping("/{nodeId}")
@@ -79,5 +81,21 @@ public class NodeController {
         }
         UUID userId = UUID.fromString(auth.getName());
         return new ResponseEntity<>(taskService.createTask(createDto, userId), HttpStatus.CREATED);
+    }
+
+    // --- Link Endpoints ---
+    @PostMapping("/{sourceNodeId}/links")
+    public ResponseEntity<Void> addLink(@PathVariable UUID sourceNodeId, @RequestBody @Valid NodeLinkCreateDto linkDto,
+            Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        nodeService.addLink(sourceNodeId, linkDto.targetNodeId(), linkDto.label(), userId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/{sourceNodeId}/links/{targetNodeId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeLink(@PathVariable UUID sourceNodeId, @PathVariable UUID targetNodeId, Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        nodeService.removeLink(sourceNodeId, targetNodeId, userId);
     }
 }

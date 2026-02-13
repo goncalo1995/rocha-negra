@@ -10,6 +10,7 @@ export type NodeRole = Database['public']['Enums']['node_role'];
 // --- DATABASE TYPES ---
 export type Node = FromDb<Database['public']['Tables']['nodes']['Row']>;
 export type NodeMember = FromDb<Database['public']['Tables']['node_members']['Row']>;
+export type NodeLink = FromDb<Database['public']['Tables']['node_links']['Row']>;
 
 // --- API CONTRACT (DTOs) ---
 export interface NodeCreate {
@@ -35,5 +36,7 @@ export type FullNode = Node & {
     members: { userId: string; role: NodeRole }[];
     tasks: Task[];
     subNodes: Node[];
+    incomingLinks: NodeLink[];
+    outgoingLinks: NodeLink[];
 };
 

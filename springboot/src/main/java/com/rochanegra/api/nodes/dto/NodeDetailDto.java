@@ -29,5 +29,7 @@ public record NodeDetailDto(
                 Instant updatedAt,
                 List<NodeMemberDto> members,
                 List<TaskSummaryDto> tasks,
-                List<NodeSummaryDto> children) {
+                List<NodeSummaryDto> children,
+                List<NodeLinkDto> incomingLinks,
+                List<NodeLinkDto> outgoingLinks) {
 }
