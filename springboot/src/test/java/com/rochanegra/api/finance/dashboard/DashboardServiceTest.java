@@ -5,6 +5,7 @@ import com.rochanegra.api.finance.assets.AssetRepository;
 import com.rochanegra.api.finance.liabilities.Liability;
 import com.rochanegra.api.finance.liabilities.LiabilityRepository;
 import com.rochanegra.api.finance.services.CurrencyConversionService;
+import com.rochanegra.api.finance.services.FinanceService;
 import com.rochanegra.api.finance.transactions.TransactionRepository;
 import com.rochanegra.api.finance.transactions.TransactionService;
 import com.rochanegra.api.preferences.UserPreferencesService;
@@ -40,7 +41,7 @@ class DashboardServiceTest {
     private UserPreferencesService userPreferencesService;
 
     @InjectMocks
-    private DashboardService dashboardService;
+    private FinanceService dashboardService;
 
     private UUID userId;
 

@@ -1,11 +1,11 @@
 package com.rochanegra.api.finance.projections;
 
-import com.rochanegra.api.finance.dashboard.DashboardService;
 import com.rochanegra.api.finance.recurring.RecurringFrequency;
 import com.rochanegra.api.finance.recurring.RecurringGenerator;
 import com.rochanegra.api.finance.recurring.RecurringGeneratorRepository;
 import com.rochanegra.api.finance.recurring.TransactionTemplate;
 import com.rochanegra.api.finance.recurring.TransactionTemplateRepository;
+import com.rochanegra.api.finance.services.FinanceService;
 import com.rochanegra.api.finance.types.TransactionType;
 
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class ProjectionService {
 
     private final RecurringGeneratorRepository generatorRepository;
     private final TransactionTemplateRepository templateRepository;
-    private final DashboardService dashboardService;
+    private final FinanceService dashboardService;
 
     public List<ProjectionMonthDto> generateProjections(UUID userId, int monthsIntoFuture) {
         BigDecimal cumulativeBalance = dashboardService.calculateNetWorth(userId);

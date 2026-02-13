@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.rochanegra.api.dashboard.dtos.WidgetPreferenceDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 public class UserPreferencesService {
 
     private final UserPreferencesRepository preferencesRepository;
+
+    // private final ObjectMapper objectMapper;
 
     public String getBaseCurrency(UUID userId) {
         return getStringPreference(userId, "display_currency", "EUR");
@@ -51,6 +54,40 @@ public class UserPreferencesService {
         return preferencesRepository.save(preference);
     }
 
+    // public List<WidgetPreferenceDto> getDashboardWidgets(UUID userId) {
+
+    // Map<String, Object> pref = getMapPreference(userId, "dashboard.widgets");
+
+    // if (pref == null || !pref.containsKey("widgets"))
+    // return getDefaultWidgets();
+
+    // return objectMapper.convertValue(
+    // pref.get("widgets"),
+    // new TypeReference<List<WidgetPreferenceDto>>() {
+    // });
+    // }
+
+    public void saveDashboardWidgets(
+            UUID userId,
+            List<WidgetPreferenceDto> widgets) {
+
+        Map<String, Object> value = Map.of("widgets", widgets);
+
+        setPreference(userId, "dashboard.widgets", value);
+    }
+
+    private List<WidgetPreferenceDto> getDefaultWidgets() {
+        return List.of(
+                new WidgetPreferenceDto("financial", true, 0),
+                new WidgetPreferenceDto("tasks", true, 1),
+                new WidgetPreferenceDto("projects", true, 2),
+                new WidgetPreferenceDto("transactions", true, 3),
+                new WidgetPreferenceDto("it", true, 4),
+                new WidgetPreferenceDto("vehicles", true, 5),
+                new WidgetPreferenceDto("network", true, 6),
+                new WidgetPreferenceDto("debts", true, 7));
+    }
+
     // --- PRIVATE HELPERS ---
 
     /**
@@ -77,4 +114,16 @@ public class UserPreferencesService {
                 })
                 .orElse(defaultValue);
     }
+
+    /**
+     * Retrieves a preference value that is expected to be a Map.
+     */
+    // public Map<String, Object> getMapPreference(UUID userId, String key) {
+    // return preferencesRepository.findByUserIdAndPreferenceKey(userId, key)
+    // .map(pref -> objectMapper.convertValue(
+    // pref.getPreferenceValue(),
+    // new TypeReference<Map<String, Object>>() {
+    // }))
+    // .orElse(null);
+    // }
 }

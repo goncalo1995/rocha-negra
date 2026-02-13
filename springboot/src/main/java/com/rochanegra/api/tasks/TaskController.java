@@ -1,4 +1,4 @@
-package com.rochanegra.api.nodes;
+package com.rochanegra.api.tasks;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.rochanegra.api.nodes.dto.TaskCreateDto;
-import com.rochanegra.api.nodes.dto.TaskDto;
-import com.rochanegra.api.nodes.dto.TaskUpdateDto;
+import com.rochanegra.api.tasks.dtos.TaskCreateDto;
+import com.rochanegra.api.tasks.dtos.TaskDto;
+import com.rochanegra.api.tasks.dtos.TaskUpdateDto;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

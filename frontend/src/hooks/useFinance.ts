@@ -78,26 +78,26 @@ export function useFinance() {
     },
   });
 
-  const { data: metricsData, isLoading: isLoadingMetrics, error: errorMetrics } = useQuery({
-    queryKey: ['dashboard-metrics'],
-    queryFn: async () => {
-      const response = await api.get<any>('/dashboard');
-      return response.data;
-    },
-  });
+  // const { data: metricsData, isLoading: isLoadingMetrics, error: errorMetrics } = useQuery({
+  //   queryKey: ['dashboard-metrics'],
+  //   queryFn: async () => {
+  //     const response = await api.get<any>('/dashboard');
+  //     return response.data;
+  //   },
+  // });
 
   // Mapping backend dashboard to frontend metrics
-  const metrics: DashboardMetrics = useMemo(() => ({
-    netWorth: metricsData?.totalNetWorth || 0,
-    totalAssets: metricsData?.totalNetWorth || 0, // Simplified
-    totalLiabilities: metricsData?.totalLiabilities || 0,
-    monthlyBurn: Math.abs(metricsData?.monthlyExpenses || 0),
-    monthlyIncome: metricsData?.monthlyIncome || 0,
-    monthlyBudget: metricsData?.monthlyIncome || 0,
-    safeToSpend: metricsData?.monthlySavings || 0,
-    upcomingBills: 0,
-    upcomingBillsCount: 0,
-  }), [metricsData]);
+  // const metrics: DashboardMetrics = useMemo(() => ({
+  //   netWorth: metricsData?.totalNetWorth || 0,
+  //   totalAssets: metricsData?.totalNetWorth || 0, // Simplified
+  //   totalLiabilities: metricsData?.totalLiabilities || 0,
+  //   monthlyBurn: Math.abs(metricsData?.monthlyExpenses || 0),
+  //   monthlyIncome: metricsData?.monthlyIncome || 0,
+  //   monthlyBudget: metricsData?.monthlyIncome || 0,
+  //   safeToSpend: metricsData?.monthlySavings || 0,
+  //   upcomingBills: 0,
+  //   upcomingBillsCount: 0,
+  // }), [metricsData]);
 
   // Asset Mutations
   const addAssetMutation = useMutation({
@@ -336,8 +336,8 @@ export function useFinance() {
   }, [categories, assets, recurringRules, transactions, addCategory, addAsset, addRecurringRule, addTransactions, queryClient]);
 
   const isLoading = isLoadingAssets || isLoadingCategories || isLoadingLiabilities || isLoadingTransactions || isLoadingRecurringRules;
-  const isError = !!(errorAssets || errorLiabilities || errorCategories || errorTransactions || errorRecurringRules || errorMetrics);
-  const error = errorAssets || errorLiabilities || errorCategories || errorTransactions || errorRecurringRules || errorMetrics;
+  const isError = !!(errorAssets || errorLiabilities || errorCategories || errorTransactions || errorRecurringRules);
+  const error = errorAssets || errorLiabilities || errorCategories || errorTransactions || errorRecurringRules;
 
   return {
     isLoading,
@@ -348,8 +348,8 @@ export function useFinance() {
     liabilities,
     transactions,
     recurringRules,
-    metrics,
-    isLoadingMetrics,
+    // metrics,
+    // isLoadingMetrics,
     addAsset,
     updateAsset,
     deleteAsset,

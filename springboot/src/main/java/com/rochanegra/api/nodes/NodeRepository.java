@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.rochanegra.api.nodes.types.NodeStatus;
 import com.rochanegra.api.nodes.types.NodeType;
 
 import java.util.List;
@@ -21,4 +22,6 @@ public interface NodeRepository extends JpaRepository<Node, UUID> {
 
     @Query("SELECT count(m) FROM NodeMember m WHERE m.node.id = :nodeId AND m.role = 'owner'")
     Long countOwners(@Param("nodeId") UUID nodeId);
+
+    List<Node> findTop3ByUserIdAndStatusOrderByDueDateAsc(UUID userId, NodeStatus status);
 }

@@ -4,6 +4,7 @@ package com.rochanegra.api.it_assets.domains;
 import com.rochanegra.api.finance.recurring.RecurringRuleService;
 import com.rochanegra.api.finance.recurring.RecurringRuleCreateDto;
 import com.rochanegra.api.core.SanitizationService;
+import com.rochanegra.api.dashboard.dtos.ItWidgetDto;
 import com.rochanegra.api.exception.ResourceNotFoundException;
 import com.rochanegra.api.finance.recurring.RecurringFrequency;
 import com.rochanegra.api.finance.recurring.RecurringGeneratorRepository;
@@ -33,6 +34,14 @@ public class DomainService {
     private final RecurringRuleService recurringRuleService; // <-- The key integration
     private final RecurringGeneratorRepository recurringGeneratorRepository;
     private final SanitizationService sanitizationService;
+
+    public ItWidgetDto getItWidget(UUID userId) {
+
+        int totalDomains = domainRepository.countByUserId(userId);
+        BigDecimal annualCost = domainRepository.sumAnnualCostByUserId(userId);
+
+        return new ItWidgetDto(totalDomains, annualCost);
+    }
 
     @Transactional(readOnly = true) // Use readOnly for GET methods for a performance boost
     public List<DomainDto> getAllDomains(UUID userId) {

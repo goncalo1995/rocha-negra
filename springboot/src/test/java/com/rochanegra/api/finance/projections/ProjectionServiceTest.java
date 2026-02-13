@@ -1,11 +1,11 @@
 package com.rochanegra.api.finance.projections;
 
-import com.rochanegra.api.finance.dashboard.DashboardService;
 import com.rochanegra.api.finance.recurring.RecurringFrequency;
 import com.rochanegra.api.finance.recurring.RecurringGenerator;
 import com.rochanegra.api.finance.recurring.RecurringGeneratorRepository;
 import com.rochanegra.api.finance.recurring.TransactionTemplate;
 import com.rochanegra.api.finance.recurring.TransactionTemplateRepository;
+import com.rochanegra.api.finance.services.FinanceService;
 import com.rochanegra.api.finance.types.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ class ProjectionServiceTest {
     @Mock
     private TransactionTemplateRepository templateRepository;
     @Mock
-    private DashboardService dashboardService;
+    private FinanceService dashboardService;
 
     @InjectMocks
     private ProjectionService projectionService;

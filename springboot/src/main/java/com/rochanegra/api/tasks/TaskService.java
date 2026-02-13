@@ -1,4 +1,4 @@
-package com.rochanegra.api.nodes;
+package com.rochanegra.api.tasks;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -9,11 +9,14 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.rochanegra.api.dashboard.dtos.TasksWidgetDto;
 import com.rochanegra.api.exception.ResourceNotFoundException;
-import com.rochanegra.api.nodes.dto.TaskCreateDto;
-import com.rochanegra.api.nodes.dto.TaskDto;
-import com.rochanegra.api.nodes.dto.TaskUpdateDto;
-import com.rochanegra.api.nodes.types.TaskStatus;
+import com.rochanegra.api.nodes.Node;
+import com.rochanegra.api.nodes.NodeRepository;
+import com.rochanegra.api.tasks.dtos.TaskCreateDto;
+import com.rochanegra.api.tasks.dtos.TaskDto;
+import com.rochanegra.api.tasks.dtos.TaskSummaryDto;
+import com.rochanegra.api.tasks.dtos.TaskUpdateDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +27,18 @@ public class TaskService {
     private final TaskRepository taskRepository;
     // We inject repositories directly to avoid circular service dependencies
     private final NodeRepository projectRepository;
+
+    public TasksWidgetDto getTasksWidget(UUID userId) {
+
+        List<TaskStatus> excluded = List.of(TaskStatus.DONE, TaskStatus.ARCHIVED);
+        List<Task> active = taskRepository.findByCreatedByAndStatusNotIn(userId, excluded);
+
+        return new TasksWidgetDto(
+                active.size(),
+                active.stream()
+                        .map(TaskSummaryDto::fromEntity)
+                        .toList());
+    }
 
     @Transactional
     public TaskDto createTask(TaskCreateDto createDto, UUID creatorId) {

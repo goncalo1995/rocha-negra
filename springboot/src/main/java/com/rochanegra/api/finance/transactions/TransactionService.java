@@ -98,6 +98,13 @@ public class TransactionService {
         return toDto(transaction);
     }
 
+    public List<TransactionDto> getRecentTransactions(UUID userId, int limit) {
+        return transactionRepository.findTopNByUserIdOrderByDateDesc(userId, limit)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     public void deleteTransaction(UUID transactionId, UUID userId) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .filter(tx -> tx.getUserId().equals(userId))

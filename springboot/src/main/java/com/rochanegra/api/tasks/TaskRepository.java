@@ -1,10 +1,8 @@
-package com.rochanegra.api.nodes;
+package com.rochanegra.api.tasks;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
-
-import com.rochanegra.api.nodes.types.TaskStatus;
 
 import java.util.List;
 import java.util.Optional;

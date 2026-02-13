@@ -1,11 +1,13 @@
-package com.rochanegra.api.finance.dashboard;
+package com.rochanegra.api.finance.services;
 
 import com.rochanegra.api.core.PageDto;
+import com.rochanegra.api.dashboard.dtos.DebtsWidgetDto;
+import com.rochanegra.api.dashboard.dtos.TransactionsWidgetDto;
 import com.rochanegra.api.finance.assets.Asset;
 import com.rochanegra.api.finance.assets.AssetRepository;
 import com.rochanegra.api.finance.liabilities.Liability;
 import com.rochanegra.api.finance.liabilities.LiabilityRepository;
-import com.rochanegra.api.finance.services.CurrencyConversionService;
+import com.rochanegra.api.finance.services.dto.FinancialWidgetDto;
 import com.rochanegra.api.finance.transactions.TransactionDto;
 import com.rochanegra.api.finance.transactions.TransactionRepository;
 import com.rochanegra.api.finance.transactions.TransactionService;
@@ -22,11 +24,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class DashboardService {
+public class FinanceService {
 
     private final AssetRepository assetRepository;
     private final LiabilityRepository liabilityRepository;
@@ -75,7 +78,7 @@ public class DashboardService {
         return totalAssets.subtract(totalLiabilities);
     }
 
-    public DashboardDto getDashboardData(UUID userId) {
+    public FinancialWidgetDto getFinancialWidget(UUID userId) {
         LocalDate now = LocalDate.now();
         LocalDate firstDayOfMonth = now.with(TemporalAdjusters.firstDayOfMonth());
         LocalDate lastDayOfMonth = now.with(TemporalAdjusters.lastDayOfMonth());
@@ -104,15 +107,60 @@ public class DashboardService {
         // Let's make it robust:
         monthlySavings = monthlyIncome.add(monthlyExpenses);
 
-        PageDto<TransactionDto> recentTransactions = transactionService.getTransactions(
-                userId, null, null, null, null,
-                PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "date", "createdAt")));
+        // PageDto<TransactionDto> recentTransactions =
+        // transactionService.getTransactions(
+        // userId, null, null, null, null,
+        // PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "date", "createdAt")));
 
-        return new DashboardDto(
+        List<TransactionDto> recentTransactions = transactionService.getRecentTransactions(userId, 5);
+
+        return new FinancialWidgetDto(
                 totalNetWorth,
                 monthlyIncome,
                 monthlyExpenses,
                 monthlySavings,
                 recentTransactions);
     }
+
+    public TransactionsWidgetDto getTransactionsWidget(UUID userId) {
+
+        List<TransactionDto> recent = transactionService.getRecentTransactions(userId, 5);
+
+        return new TransactionsWidgetDto(recent);
+    }
+
+    public DebtsWidgetDto getDebtsWidget(UUID userId) {
+
+        List<Liability> liabilities = liabilityRepository.findByUserId(userId);
+
+        BigDecimal total = liabilities.stream()
+                .map(Liability::getCurrentBalance)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new DebtsWidgetDto(
+                liabilities.size(),
+                total);
+    }
+
+    // public FinancialWidgetDto getFinancialWidget(UUID userId) {
+
+    // BigDecimal netWorth = calculateNetWorth(userId);
+
+    // BigDecimal totalAssets = assetRepository.sumBalanceByUserId(userId);
+    // BigDecimal totalLiabilities = liabilityRepository.sumBalanceByUserId(userId);
+
+    // BigDecimal monthlyBurn = transactionRepository
+    // .sumMonthlyExpenses(userId);
+
+    // BigDecimal safeToSpend =
+    // totalAssets.subtract(totalLiabilities).subtract(monthlyBurn);
+
+    // return new FinancialWidgetDto(
+    // netWorth,
+    // totalAssets,
+    // totalLiabilities,
+    // monthlyBurn,
+    // safeToSpend);
+    // }
 }

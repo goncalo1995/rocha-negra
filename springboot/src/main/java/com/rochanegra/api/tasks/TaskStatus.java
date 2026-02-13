@@ -1,4 +1,4 @@
-package com.rochanegra.api.nodes.types;
+package com.rochanegra.api.tasks;
 
 public enum TaskStatus {
     TODO,

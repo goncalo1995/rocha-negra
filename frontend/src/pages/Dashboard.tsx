@@ -38,14 +38,22 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 export default function Dashboard() {
-    const { widgets, enabledWidgets, toggleWidget, moveWidget, resetToDefault } = useDashboardWidgets();
+    const { widgets, enabledWidgets, toggleWidget, moveWidget } = useDashboardWidgets();
 
     // Data Hooks
-    const { metrics, transactions, liabilities } = useFinance();
-    const { data: activeTasks = [] } = useTasks({ scope: 'active' });
-    const { data: nodes } = useNodes();
+
+    const { data, isLoading } = useQuery({
+        queryKey: ['dashboard'],
+        queryFn: () => api.get('/dashboard').then(r => r.data),
+    });
+
+    const { transactions, liabilities } = useFinance();
+    const { data: activeTasks = [], isLoading: isLoadingTasks } = useTasks({ scope: 'active' });
+    const { data: nodes = [] } = useNodes();
     const { metrics: itMetrics } = useIT();
     const { metrics: vehicleMetrics } = useVehicles();
     const { contacts } = useNetwork();
@@ -90,7 +98,7 @@ export default function Dashboard() {
                         }
                     >
                         <div className="space-y-4">
-                            <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-900/50 to-emerald-800/30 border border-emerald-700/30">
+                            {/* <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-900/50 to-emerald-800/30 border border-emerald-700/30">
                                 <p className="text-sm text-emerald-400 mb-1">Net Worth</p>
                                 <p className="text-2xl font-bold text-foreground">{formatCurrency(metrics.netWorth)}</p>
                                 <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
@@ -110,7 +118,7 @@ export default function Dashboard() {
                                 <p className="text-xs text-muted-foreground mt-1">
                                     After {formatCurrency(metrics.monthlyBurn)} monthly costs
                                 </p>
-                            </div>
+                            </div> */}
                         </div>
                     </BentoCard>
                 );
@@ -152,19 +160,21 @@ export default function Dashboard() {
                                     </span>
                                 </div>
                             ))}
-                            {activeTasks.length === 0 && (
+                            {isLoadingTasks ? (
+                                <p className="text-sm text-muted-foreground italic">Loading tasks...</p>
+                            ) : activeTasks.length === 0 && (
                                 <p className="text-sm text-muted-foreground italic">No active tasks.</p>
                             )}
                         </div>
                     </BentoCard>
                 );
 
-            case 'nodes':
+            case 'projects':
                 const activeNodes = nodes.filter(p => p.status === 'ACTIVE');
                 return (
                     <BentoCard
                         key={widget.id}
-                        title="Nodes"
+                        title="Projects"
                         subtitle={`${activeNodes.length} active`}
                         headerAction={
                             <Link to="/nodes">
@@ -449,11 +459,11 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         </ScrollArea>
-                        <div className="p-6 pt-0 mt-auto">
+                        {/* <div className="p-6 pt-0 mt-auto">
                             <Button variant="outline" size="sm" onClick={resetToDefault} className="w-full">
                                 Reset to Default
                             </Button>
-                        </div>
+                        </div> */}
                     </DialogContent>
                 </Dialog>
             </div>
