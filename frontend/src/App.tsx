@@ -31,6 +31,7 @@ import FixedCosts from "./pages/FixedCosts";
 import Categories from "./pages/Categories";
 import Agenda from "./pages/Agenda";
 import ParaDashboard from "./pages/ParaDashboard";
+import Landing from "./pages/Landing";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,15 +47,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center">
+    return <div className="flex min-h-screen items-center justify-center bg-background">
       <Spinner />
     </div>;
   }
 
   if (!session) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
+  return <>{children}</>;
+};
+
+const AuthRedirect = ({ children }: { children: React.ReactNode }) => {
+  const { session, isLoading } = useAuth();
+
+  if (isLoading) return null;
+  if (session) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
@@ -70,7 +79,16 @@ const App = () => (
             v7_startTransition: true,
           }}>
             <Routes>
-              <Route path="/login" element={<Login />} />
+              <Route path="/" element={
+                <AuthRedirect>
+                  <Landing />
+                </AuthRedirect>
+              } />
+              <Route path="/login" element={
+                <AuthRedirect>
+                  <Login />
+                </AuthRedirect>
+              } />
               <Route path="/cv" element={<CVPage />} />
               <Route path="/cv/skills" element={<SkillsPage />} />
 
@@ -82,7 +100,7 @@ const App = () => (
                 }
               >
                 {/* These routes are now children of MainLayout */}
-                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<Index />} />
                 <Route path="/old" element={<Home />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/finance/projections" element={<ProjectionsPage />} />
