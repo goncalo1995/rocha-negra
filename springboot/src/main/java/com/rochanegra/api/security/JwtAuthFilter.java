@@ -17,6 +17,7 @@ import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
@@ -26,13 +27,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         // --- DEBUG LOG 1: Check if the filter is running for the correct path ---
-        System.out.println(">>> JwtAuthFilter running for URI: " + request.getRequestURI());
+        log.debug(">>> JwtAuthFilter running for URI: {}", request.getRequestURI());
 
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             // --- DEBUG LOG 2: Log if the header is missing or incorrect ---
-            System.out.println(">>> No valid Authorization header found. Passing to next filter.");
+            log.trace(">>> No valid Authorization header found. Passing to next filter.");
             filterChain.doFilter(request, response);
             return;
         }
@@ -51,7 +52,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         } catch (Exception e) {
-            System.err.println(">>> JWT token validation failed: " + e.getMessage());
+            log.error(">>> JWT token validation failed for URI {}: {}", request.getRequestURI(), e.getMessage());
         }
 
         filterChain.doFilter(request, response);

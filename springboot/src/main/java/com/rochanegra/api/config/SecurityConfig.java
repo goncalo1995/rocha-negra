@@ -9,6 +9,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -58,14 +61,11 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/v1/**").authenticated() // Secure our API
                                                 .anyRequest().denyAll() // Deny all other requests
                                 )
+                                .exceptionHandling(exceptions -> exceptions
+                                                .authenticationEntryPoint(unauthorizedEntryPoint()))
                                 .formLogin(form -> form.disable())
                                 .httpBasic(httpBasic -> httpBasic.disable())
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
-                // You can still configure the entry point for more customized 401 errors
-                // .exceptionHandling(exceptions ->
-                // exceptions.authenticationEntryPoint(customAuthEntryPoint)
-                // );
 
                 return http.build();
         }
@@ -75,12 +75,31 @@ public class SecurityConfig {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOrigins(Arrays.asList(CORS_URLS));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                configuration
-                                .setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With",
-                                                "X-Test-User"));
+                configuration.setAllowedHeaders(Arrays.asList(
+                                "Authorization",
+                                "Content-Type",
+                                "X-Requested-With",
+                                "X-Test-User",
+                                "Accept",
+                                "Origin",
+                                "Pragma",
+                                "Cache-Control",
+                                "Priority",
+                                "X-Client-Info"));
                 configuration.setAllowCredentials(true);
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);
                 return source;
+        }
+
+        @Bean
+        public AuthenticationEntryPoint unauthorizedEntryPoint() {
+                return (request, response, authException) -> {
+                        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        // Generic message for security. Details are logged on the server.
+                        response.getWriter().write(
+                                        "{\"error\": \"Unauthorized\", \"message\": \"Authentication required\"}");
+                };
         }
 }

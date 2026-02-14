@@ -14,6 +14,7 @@ import java.net.URI;
 import java.security.interfaces.ECPublicKey;
 
 @Component
+@lombok.extern.slf4j.Slf4j
 public class JwtUtil {
 
     private final JwkProvider jwkProvider;
@@ -29,13 +30,31 @@ public class JwtUtil {
 
     public DecodedJWT validateToken(String token) throws Exception {
         DecodedJWT jwt = JWT.decode(token);
-        Jwk jwk = jwkProvider.get(jwt.getKeyId());
+        String kid = jwt.getKeyId();
 
+        if (kid == null) {
+            log.error(">>> JWT token does not contain a 'kid' (Key ID). Token header: {}", jwt.getHeader());
+            throw new Exception("JWT missing Key ID");
+        }
+
+        Jwk jwk = jwkProvider.get(kid);
+
+        // Supabase tokens are usually ECDSA256 or HS256.
+        // This code assumes ECDSA256 via JWKS.
         Algorithm algorithm = Algorithm.ECDSA256((ECPublicKey) jwk.getPublicKey(), null);
+
+        // Use a more flexible verifier if audience mismatch is a problem
         JWTVerifier verifier = JWT.require(algorithm)
-                .withAudience("authenticated")
+                .withAudience("authenticated") // Standard Supabase audience
+                .acceptLeeway(30) // 30 seconds leeway for clock skew
                 .build();
 
-        return verifier.verify(token);
+        try {
+            return verifier.verify(token);
+        } catch (Exception e) {
+            log.error(">>> Token verification failed. Algorithm: {}, Audience: {}, Claims: {}",
+                    jwt.getAlgorithm(), jwt.getAudience(), jwt.getClaims());
+            throw e;
+        }
     }
 }
