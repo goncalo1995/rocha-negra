@@ -219,6 +219,8 @@ export function useFinance() {
   });
 
   // Callbacks to maintain original API
+  // Using mutate is generally preferred unless you specifically need to await the result of the mutation inside the same function (which is rare).
+
   const addAsset = useCallback(async (asset: any) => addAssetMutation.mutateAsync(asset), [addAssetMutation]);
   const updateAsset = useCallback(async (id: string, updates: any) => updateAssetMutation.mutateAsync({ id, updates }), [updateAssetMutation]);
   const deleteAsset = useCallback(async (id: string) => deleteAssetMutation.mutateAsync(id), [deleteAssetMutation]);

@@ -29,6 +29,7 @@ export interface NodeCreate {
     name: string;
     description?: string | null;
     type: NodeType;
+    status?: NodeStatus;
     parentId?: string | null;
     dueDate?: string | null;
 }
@@ -59,4 +60,5 @@ export type FullNode = Node & {
     subNodes: Node[];
     referencedBy: NodeLinkDto[];
     references: NodeLinkDto[];
+    ancestors: NodeSummary[];
 };

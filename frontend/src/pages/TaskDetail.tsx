@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
+import { MarkdownPreview } from "@/components/ui/markdown-editor";
 
 export default function TaskDetail() {
     const { taskId } = useParams<{ taskId: string }>();
@@ -45,7 +46,13 @@ export default function TaskDetail() {
             return;
         }
 
-        await updateTask.mutateAsync({ id: task.id, updates: { status: newStatus } });
+        updateTask.mutate(
+            { id: task.id, updates: { status: newStatus } },
+            {
+                onSuccess: () => toast.success("Task status updated!"),
+                onError: (error) => toast.error(error.message),
+            }
+        );
     };
 
     const getPriorityColor = (priority: number) => {
@@ -59,7 +66,10 @@ export default function TaskDetail() {
     const handleDelete = () => {
         // A simple browser confirmation
         if (window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
-            deleteTask.mutateAsync(task.id);
+            deleteTask.mutate(task.id, {
+                onSuccess: () => toast.success("Task deleted!"),
+                onError: (error) => toast.error(error.message),
+            });
         }
     };
 
@@ -127,8 +137,12 @@ export default function TaskDetail() {
                     {/* Description */}
                     <div className="space-y-2">
                         <Label className="text-lg font-semibold">Description</Label>
-                        <div className="p-4 rounded-xl bg-card border border-border/50 min-h-[100px] whitespace-pre-wrap text-sm text-muted-foreground">
-                            {task.description || "No description provided."}
+                        <div className="p-4 rounded-xl bg-card border border-border/50 min-h-[100px] text-sm text-foreground">
+                            {task.description ? (
+                                <MarkdownPreview source={task.description} />
+                            ) : (
+                                <span className="text-muted-foreground">No description provided.</span>
+                            )}
                         </div>
                     </div>
 

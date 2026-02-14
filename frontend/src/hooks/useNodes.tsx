@@ -4,10 +4,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Node } from "@/types/nodes";
 import { toast } from "sonner";
 
-export function useNodes() {
+export function useNodes(type?: string, query?: string) {
     return useQuery<Node[]>({
-        queryKey: ['nodes'],
-        queryFn: async () => (await api.get('/nodes')).data,
+        queryKey: ['nodes', type, query],
+        queryFn: async () => {
+            const params = new URLSearchParams();
+            if (type) params.append('type', type);
+            if (query) params.append('query', query);
+            return (await api.get(`/nodes?${params.toString()}`)).data;
+        },
     });
 }
 
@@ -31,6 +36,7 @@ export function useNodeMutations() {
         onSuccess: () => {
             toast.success("Node created successfully!");
             queryClient.invalidateQueries({ queryKey: ['nodes'] });
+            queryClient.invalidateQueries({ queryKey: ['nodes-tree'] });
         },
         onError: (error) => {
             toast.error("Failed to create node: " + error.message);
@@ -39,11 +45,13 @@ export function useNodeMutations() {
 
     const updateNode = useMutation({
         mutationFn: ({ id, updates }: { id: string; updates: NodeUpdate }) => api.patch(`/nodes/${id}`, updates),
-        onSuccess: (_, { id }) => {
+        onSuccess: () => {
             toast.success("Node updated.");
-            // Invalidate both the list and the specific detail query
+            // Invalidate 'nodes' covers both list queries and detail queries for ANY node
+            // because list queries use ['nodes', type, query] and details use ['nodes', id].
+            // React Query default behavior with invalidateQueries is to match by prefix.
             queryClient.invalidateQueries({ queryKey: ['nodes'] });
-            queryClient.invalidateQueries({ queryKey: ['nodes', id] });
+            queryClient.invalidateQueries({ queryKey: ['nodes-tree'] });
         },
         onError: (error) => {
             toast.error("Failed to update node: " + error.message);
@@ -52,12 +60,10 @@ export function useNodeMutations() {
 
     const deleteNode = useMutation({
         mutationFn: (id: string) => api.delete(`/nodes/${id}`),
-        onSuccess: (_, id) => {
+        onSuccess: () => {
             toast.success("Node deleted.");
-            // Optimistically remove from the detail cache for an instant UI update
-            queryClient.removeQueries({ queryKey: ['nodes', id] });
-            // Refetch the main list
             queryClient.invalidateQueries({ queryKey: ['nodes'] });
+            queryClient.invalidateQueries({ queryKey: ['nodes-tree'] });
         },
         onError: (error) => {
             toast.error("Failed to delete node: " + error.message);

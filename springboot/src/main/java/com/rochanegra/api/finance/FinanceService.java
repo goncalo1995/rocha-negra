@@ -6,7 +6,6 @@ import com.rochanegra.api.dashboard.dtos.FinancialWidgetDto;
 import com.rochanegra.api.dashboard.dtos.TransactionsWidgetDto;
 import com.rochanegra.api.finance.assets.Asset;
 import com.rochanegra.api.finance.assets.AssetRepository;
-import com.rochanegra.api.finance.dashboard.DashboardDto;
 import com.rochanegra.api.finance.liabilities.Liability;
 import com.rochanegra.api.finance.liabilities.LiabilityRepository;
 import com.rochanegra.api.finance.services.CurrencyConversionService;

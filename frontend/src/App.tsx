@@ -30,6 +30,7 @@ import Ledger from "./pages/Ledger";
 import FixedCosts from "./pages/FixedCosts";
 import Categories from "./pages/Categories";
 import Agenda from "./pages/Agenda";
+import ParaDashboard from "./pages/ParaDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,7 +65,10 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter future={{
+            v7_relativeSplatPath: true,
+            v7_startTransition: true,
+          }}>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/cv" element={<CVPage />} />
@@ -91,7 +95,12 @@ const App = () => (
                 <Route path="/vehicles" element={<Vehicles />} />
                 <Route path="/it" element={<IT />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/nodes" element={<Projects />} />
+                <Route path="/nodes" element={<ParaDashboard />} />
+                <Route path="/projects" element={<Projects type="PROJECT" />} />
+                <Route path="/areas" element={<Projects type="AREA" />} />
+                <Route path="/resources" element={<Projects type="RESOURCE" />} />
+                <Route path="/goals" element={<Projects type="GOAL" />} />
+                <Route path="/archive" element={<Projects type="ARCHIVE" />} />
                 <Route path="/nodes/:nodeId" element={<NodeDetail />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/tasks/:taskId" element={<TaskDetail />} />

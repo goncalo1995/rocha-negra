@@ -73,13 +73,12 @@ export function useTaskMutations() {
         },
         onSuccess: (_, variables) => {
             toast.success("Task created!");
-            // Invalidate the list of tasks for the specific node it was added to
+            // Broad invalidation of 'tasks' covers nodeId lists, GTD views, and details
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+
+            // If it belongs to a project, refresh the project too since it embeds tasks
             if (variables.nodeId) {
-                queryClient.invalidateQueries({ queryKey: ['tasks', { nodeId: variables.nodeId }] });
-                queryClient.invalidateQueries({ queryKey: ['nodes', variables.nodeId] }); // Also invalidate the parent node detail
-            } else {
-                // Invalidate the inbox
-                queryClient.invalidateQueries({ queryKey: ['tasks', 'inbox'] });
+                queryClient.invalidateQueries({ queryKey: ['nodes', variables.nodeId] });
             }
         },
         onError: (error) => toast.error("Failed to create task: " + error.message),
@@ -89,9 +88,10 @@ export function useTaskMutations() {
         mutationFn: ({ id, updates }: { id: string; updates: TaskUpdate }) => api.patch(`/tasks/${id}`, updates),
         onSuccess: (_, { id }) => {
             toast.success("Task updated.");
-            // Invalidate the specific task detail query and all task lists
-            queryClient.invalidateQueries({ queryKey: ['tasks', id] });
-            queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Broad invalidation for lists
+            // Invalidate 'tasks' prefix refreshes the detail and all lists/GTD views
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            // Refresh parent nodes as they might embed task status/counts
+            queryClient.invalidateQueries({ queryKey: ['nodes'] });
         },
     });
 
@@ -123,6 +123,7 @@ export function useTaskMutations() {
         // Always refetch after error or success to ensure data consistency
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            queryClient.invalidateQueries({ queryKey: ['nodes'] });
         },
         onSuccess: () => {
             toast.success("Task deleted.");

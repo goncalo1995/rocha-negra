@@ -18,6 +18,7 @@ import com.rochanegra.api.nodes.dto.NodeDetailDto;
 import com.rochanegra.api.nodes.dto.NodeLinkDto;
 import com.rochanegra.api.nodes.dto.NodeMemberDto;
 import com.rochanegra.api.nodes.dto.NodeSummaryDto;
+import com.rochanegra.api.nodes.dto.NodeTreeDto;
 import com.rochanegra.api.nodes.dto.NodeUpdateDto;
 import com.rochanegra.api.nodes.types.NodeLinkType;
 import com.rochanegra.api.nodes.types.NodeRole;
@@ -56,9 +57,9 @@ public class NodeService {
 
     @Transactional
     public NodeDetailDto createNode(NodeCreateDto createDto, UUID userId) {
-        String sql = "SELECT create_node_and_add_owner(?, ?::node_type, ?, ?)";
+        String sql = "SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)";
         UUID newNodeId = jdbcTemplate.queryForObject(sql, UUID.class, userId, createDto.type().name(), createDto.name(),
-                createDto.description());
+                createDto.description(), createDto.parentId(), createDto.dueDate(), createDto.status().name());
 
         return getNodeById(newNodeId, userId);
     }
@@ -112,6 +113,11 @@ public class NodeService {
             if (updateDto.parentId().equals(nodeId)) {
                 throw new IllegalArgumentException("A node cannot be its own parent.");
             }
+            // Validation: Prevent cycles (moving into a descendant)
+            if (nodeRepository.isDescendant(nodeId, updateDto.parentId())) {
+                throw new IllegalArgumentException("Cannot move a node into one of its own descendants.");
+            }
+
             Node parent = nodeRepository.findById(updateDto.parentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Parent node not found"));
             node.setParent(parent);
@@ -256,6 +262,73 @@ public class NodeService {
         return new GraphDto(nodeDtos, edges);
     }
 
+    // --- Tree & Move Logic ---
+
+    public List<NodeTreeDto> getNodesTree(UUID userId) {
+        // Fetch all non-archived nodes for the user to build tree in memory
+        // We exclude ARCHIVED nodes from the sidebar tree usually.
+        List<Node> allNodes = nodeRepository.findAllByUserIdAndStatusNot(userId, NodeStatus.ARCHIVED);
+
+        // Group by parentId
+        // We want to return a list of "Root" nodes (where parent is null or parent is
+        // not in the set)
+        // But for PARA, we might want to group by Type explicitly if they are roots.
+
+        // 1. Map all nodes by ID for easy access
+        // 2. Build children lists
+        // 3. Identification of Roots
+
+        // Let's do a simple build.
+        // We will organize roots by PARA types specifically for the sidebar structure?
+        // Or just return the raw tree and let frontend organize?
+        // The user asked for Projects, Areas, Resources.
+        // Let's return a list where top-level items are the ones with parentId = null.
+
+        // Actually, to make it easier for the recursion, we convert to DTOs first and
+        // link them.
+
+        return buildTree(allNodes);
+    }
+
+    private List<NodeTreeDto> buildTree(List<Node> nodes) {
+        // This can be optimized, but for N < 1000 this is fine.
+
+        // Map id -> NodeTreeDto (mutable children list initially)
+        // We need a helper class or just use the record strings.
+        // Records are immutable, so we can't easily add children after creation.
+        // Let's use a helper map of Id -> List<ChildNode>.
+
+        var childrenMap = nodes.stream()
+                .filter(n -> n.getParent() != null)
+                .collect(Collectors.groupingBy(n -> n.getParent().getId()));
+
+        // Helper to recursively build
+        return nodes.stream()
+                .filter(n -> n.getParent() == null) // Roots
+                .map(root -> buildDtoRecursive(root, childrenMap))
+                .collect(Collectors.toList());
+    }
+
+    private NodeTreeDto buildDtoRecursive(Node node, java.util.Map<UUID, List<Node>> childrenMap) {
+        List<Node> childrenEntities = childrenMap.getOrDefault(node.getId(), List.of());
+
+        // Sort children by Name or other criteria?
+        // Sort projects/areas by name?
+        // childrenEntities.sort(Comparator.comparing(Node::getName));
+
+        List<NodeTreeDto> childrenDtos = childrenEntities.stream()
+                .map(child -> buildDtoRecursive(child, childrenMap))
+                .collect(Collectors.toList());
+
+        return new NodeTreeDto(
+                node.getId(),
+                node.getName(),
+                node.getType(),
+                childrenDtos,
+                childrenDtos.size() // Or task count? For now expanding children count.
+        );
+    }
+
     // --- Mapper Methods ---
 
     private NodeLinkDto toLinkDto(NodeLink link) {
@@ -315,6 +388,11 @@ public class NodeService {
                         link.getCreatedBy(),
                         link.getCreatedAt()))
                 .collect(Collectors.toList());
+
+        List<NodeSummaryDto> ancestors = nodeRepository.findAncestors(node.getId()).stream()
+                .map(this::toSummaryDto)
+                .collect(Collectors.toList());
+
         return new NodeDetailDto(
                 node.getId(),
                 node.getParent() != null ? node.getParent().getId() : null,
@@ -336,6 +414,7 @@ public class NodeService {
                 tasks,
                 children,
                 referencedBy,
-                references);
+                references,
+                ancestors);
     }
 }

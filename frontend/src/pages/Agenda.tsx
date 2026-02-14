@@ -247,13 +247,13 @@ export default function AgendaPage() {
             }
         }
 
-        try {
-            await updateTask.mutateAsync({ id: taskToToggle.id, updates: { status: newStatus } });
-            toast.success("Task updated");
-        } catch (error: any) {
-            const message = error.response?.data?.message || "Failed to update task";
-            toast.error(message);
-        }
+        updateTask.mutate(
+            { id: taskToToggle.id, updates: { status: newStatus } },
+            {
+                onSuccess: () => toast.success("Task updated"),
+                onError: (error) => toast.error(error.message),
+            }
+        );
     };
 
     const isLoading = isLoadingFinance || isLoadingTasks || (isLoadingInfinite && combinedInfiniteEvents.length === 0);

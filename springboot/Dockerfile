@@ -1,3 +1,6 @@
+#railway shows different but this works
+# https://docs.railway.com/guides/spring-boot
+
 # Build stage
 FROM eclipse-temurin:25-jdk-jammy AS builder
 WORKDIR /app
@@ -10,7 +13,7 @@ RUN ./mvnw package -DskipTests
 # Runtime stage
 FROM eclipse-temurin:25-jre-jammy
 WORKDIR /app
-COPY --from=builder /app/target/api-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8080
 CMD ["java", "-jar", "app.jar"]
 

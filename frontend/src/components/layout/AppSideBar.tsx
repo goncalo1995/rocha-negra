@@ -12,10 +12,17 @@ import {
     Settings,
     PieChart,
     CreditCard,
-    Calendar as CalendarIcon
+    Calendar as CalendarIcon,
+    Archive,
+    Layers,
+    BookOpen,
+    Target,
+    CircleDot
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
+import { NodeTreeItem, useNodesTree } from "@/hooks/useNodesTree";
+import { SidebarTreeItem } from "./SidebarTreeItem";
 import {
     Sidebar,
     SidebarContent,
@@ -37,10 +44,18 @@ import { cn } from "@/lib/utils";
 
 const executionItems = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Nodes", url: "/nodes", icon: FolderKanban },
     { title: "Tasks", url: "/tasks", icon: CheckSquare },
     { title: "Agenda", url: "/agenda", icon: CalendarIcon },
 ];
+
+const paraItems = [
+    { title: "Projects", url: "/projects", icon: FolderKanban },
+    { title: "Areas", url: "/areas", icon: Layers },
+    { title: "Resources", url: "/resources", icon: BookOpen },
+    { title: "Goals", url: "/goals", icon: Target },
+    { title: "Archive", url: "/archive", icon: Archive },
+];
+
 
 const treasuryItems = [
     { title: "Assets", url: "/assets", icon: Wallet },
@@ -60,7 +75,6 @@ interface NavGroup {
 }
 
 const navigationGroups: NavGroup[] = [
-    { label: "Execution", items: executionItems },
     { label: "Treasury", items: treasuryItems },
     { label: "Others", items: otherItems },
 ];
@@ -71,7 +85,45 @@ export function AppSidebar() {
     const collapsed = state === "collapsed";
     const location = useLocation();
 
+    const { data: tree = [], isLoading: isLoadingTree } = useNodesTree();
+
     const isActive = (path: string) => location.pathname === path;
+
+    // Construct virtual root items for the PARA categories
+    const virtualRoots: (NodeTreeItem & { isVirtual?: boolean })[] = [
+        {
+            id: 'root-projects',
+            name: 'Projects',
+            type: 'PROJECT' as any,
+            children: tree.filter(n => n.type === 'PROJECT'),
+            count: tree.filter(n => n.type === 'PROJECT').length,
+            isVirtual: true
+        },
+        {
+            id: 'root-areas',
+            name: 'Areas',
+            type: 'AREA' as any,
+            children: tree.filter(n => n.type === 'AREA'),
+            count: tree.filter(n => n.type === 'AREA').length,
+            isVirtual: true
+        },
+        {
+            id: 'root-resources',
+            name: 'Resources',
+            type: 'RESOURCE' as any,
+            children: tree.filter(n => n.type === 'RESOURCE'),
+            count: tree.filter(n => n.type === 'RESOURCE').length,
+            isVirtual: true
+        },
+        {
+            id: 'root-goals',
+            name: 'Goals',
+            type: 'GOAL' as any,
+            children: tree.filter(n => n.type === 'GOAL'),
+            count: tree.filter(n => n.type === 'GOAL').length,
+            isVirtual: true
+        }
+    ];
 
     return (
         <Sidebar collapsible="icon" className="border-r border-border">
@@ -89,8 +141,57 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent className="px-2">
+                {/* Execution Group */}
+                <SidebarGroup>
+                    <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-2">
+                        {!collapsed && "Execution"}
+                    </SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {executionItems.map((item) => (
+                                <SidebarMenuItem key={item.title}>
+                                    <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title} onClick={() => setOpenMobile(false)}>
+                                        <NavLink to={item.url} end className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-accent" activeClassName="bg-accent glow-active">
+                                            <item.icon className="h-4 w-4 shrink-0" />
+                                            {!collapsed && <span>{item.title}</span>}
+                                        </NavLink>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+
+                {/* Second Brain Group */}
+                <SidebarGroup>
+                    <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-2">
+                        {!collapsed && "Second Brain"}
+                    </SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {virtualRoots.map(root => (
+                                <SidebarTreeItem
+                                    key={root.id}
+                                    item={root}
+                                />
+                            ))}
+
+                            {/* Archive Link (Static) */}
+                            <SidebarMenuItem className="mt-2">
+                                <SidebarMenuButton asChild tooltip="Archive" onClick={() => setOpenMobile(false)}>
+                                    <Link to="/archive" className="flex items-center gap-2 px-3">
+                                        <Archive className="h-4 w-4 text-node-archive" />
+                                        {!collapsed && <span className="text-sm">Archive</span>}
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+
+                {/* Other Groups */}
                 {navigationGroups.map((group) => (
-                    <SidebarGroup key={group.label} className={cn(group.label !== "Execution" && "mt-6")}>
+                    <SidebarGroup key={group.label} className="mt-6">
                         <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-2">
                             {!collapsed && group.label}
                         </SidebarGroupLabel>

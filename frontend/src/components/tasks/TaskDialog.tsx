@@ -8,15 +8,16 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Task, TaskCreate, TaskUpdate } from "@/types/tasks";
 import { Plus } from "lucide-react";
+import { MarkdownEditor } from "@/components/ui/markdown-editor";
 
 interface TaskDialogProps {
     open: boolean;
@@ -120,6 +121,9 @@ export function TaskDialog({ open, onOpenChange, task, defaultNodeId, defaultPar
             <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{isEditing ? "Edit Task" : "Create New Task"}</DialogTitle>
+                    <DialogDescription>
+                        Fill in the details below to {isEditing ? "update the" : "create a new"} task.
+                    </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
                     <ScrollArea className="flex-1 p-4 pt-2">
@@ -192,12 +196,13 @@ export function TaskDialog({ open, onOpenChange, task, defaultNodeId, defaultPar
 
                             <div className="space-y-2">
                                 <Label htmlFor="description">Description</Label>
-                                <Textarea
-                                    id="description"
-                                    placeholder="Additional details..."
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                />
+                                <div data-color-mode="dark">
+                                    <MarkdownEditor
+                                        value={formData.description || ""}
+                                        onChange={(val) => setFormData({ ...formData, description: val || "" })}
+                                        height={200}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </ScrollArea>

@@ -991,7 +991,10 @@ export type Database = {
       create_node_and_add_owner: {
         Args: {
           p_description: string
+          p_due_date: string
           p_name: string
+          p_parent_id: string
+          p_status?: Database["public"]["Enums"]["node_status"]
           p_type: Database["public"]["Enums"]["node_type"]
           p_user_id: string
         }

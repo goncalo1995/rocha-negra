@@ -149,7 +149,10 @@ CREATE OR REPLACE FUNCTION public.create_node_and_add_owner(
   p_user_id UUID,
   p_type public.node_type,
   p_name TEXT,
-  p_description TEXT
+  p_description TEXT,
+  p_parent_id UUID,
+  p_due_date DATE,
+  p_status public.node_status DEFAULT 'ACTIVE'
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -159,8 +162,8 @@ DECLARE
   new_node_id UUID;
 BEGIN
   -- Insert the new node
-  INSERT INTO public.nodes (user_id, type, name, description, status)
-  VALUES (p_user_id, p_type, p_name, p_description, 'ACTIVE')
+  INSERT INTO public.nodes (user_id, type, name, description, parent_id, due_date, status)
+  VALUES (p_user_id, p_type, p_name, p_description, p_parent_id, p_due_date, p_status)
   RETURNING id INTO new_node_id;
 
   -- Add the creator as the owner

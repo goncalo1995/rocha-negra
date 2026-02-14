@@ -57,6 +57,12 @@
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 220 10% 18%;
     --sidebar-ring: 152 60% 45%;
+
+    --node-project: 217 91% 60%;
+    --node-area: 270 91% 65%;
+    --node-resource: 38 92% 50%;
+    --node-goal: 142 71% 45%;
+    --node-archive: 240 5% 65%;
   }
 
   .dark {
@@ -123,8 +129,9 @@
 
   /* Prevent mobile zoom on focus */
   @media (max-width: 767px) {
-    input, 
-    select, 
+
+    input,
+    select,
     textarea {
       font-size: 16px !important;
     }
@@ -170,6 +177,46 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  .text-node-project {
+    color: hsl(var(--node-project));
+  }
+
+  .text-node-area {
+    color: hsl(var(--node-area));
+  }
+
+  .text-node-resource {
+    color: hsl(var(--node-resource));
+  }
+
+  .text-node-goal {
+    color: hsl(var(--node-goal));
+  }
+
+  .text-node-archive {
+    color: hsl(var(--node-archive));
+  }
+
+  .bg-node-project {
+    background-color: hsla(var(--node-project), 0.1);
+  }
+
+  .bg-node-area {
+    background-color: hsla(var(--node-area), 0.1);
+  }
+
+  .bg-node-resource {
+    background-color: hsla(var(--node-resource), 0.1);
+  }
+
+  .bg-node-goal {
+    background-color: hsla(var(--node-goal), 0.1);
+  }
+
+  .bg-node-archive {
+    background-color: hsla(var(--node-archive), 0.1);
   }
 }
 

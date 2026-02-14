@@ -13,6 +13,7 @@ import com.rochanegra.api.nodes.dto.NodeCreateDto;
 import com.rochanegra.api.nodes.dto.NodeDetailDto;
 import com.rochanegra.api.nodes.dto.NodeUpdateDto;
 import com.rochanegra.api.nodes.types.NodeRole;
+import com.rochanegra.api.nodes.types.NodeStatus;
 import com.rochanegra.api.nodes.types.NodeType;
 
 import java.util.Optional;
@@ -53,26 +54,28 @@ class NodeServiceTest {
     void setUp() {
         // Set up common variables before each test
         mockUserId = UUID.randomUUID();
-        createDto = new NodeCreateDto("Test Project", "A description", NodeType.PROJECT);
+        createDto = new NodeCreateDto("Test Project", "A description", NodeType.PROJECT, NodeStatus.ACTIVE, null, null);
     }
 
     // --- CREATE TESTS ---
     @Test
     void createNode_shouldCallFunctionAndReturnCorrectlyMappedDto() {
         // Arrange
-        NodeCreateDto createDto = new NodeCreateDto("Test Project", "A description", NodeType.PROJECT);
         UUID newNodeId = UUID.randomUUID();
 
         // We use 'eq()' for specific values and 'any()' for types we don't care to
         // match exactly.
         // However, it's best to be as specific as possible.
         when(jdbcTemplate.queryForObject(
-                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?)"), // Expect this exact SQL string
+                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class), // Expect this exact class
                 eq(mockUserId), // Expect the mock user's ID
                 eq("PROJECT"), // Expect the string "PROJECT"
                 eq(createDto.name()), // Expect the name from the DTO
-                eq(createDto.description()) // Expect the description from the DTO
+                eq(createDto.description()), // Expect the description from the DTO
+                eq(createDto.parentId()), // Expect the parent ID from the DTO
+                eq(createDto.dueDate()), // Expect the due date from the DTO
+                eq("ACTIVE") // Expect the string "ACTIVE"
         )).thenReturn(newNodeId);
 
         // This is the complete entity that findById should return
@@ -81,6 +84,7 @@ class NodeServiceTest {
         mockNode.setName("Test Project");
         mockNode.setDescription("A description");
         mockNode.setType(NodeType.PROJECT);
+        mockNode.setDueDate(createDto.dueDate());
         mockNode.setUserId(mockUserId); // Important for RLS check tests
 
         // Mock the relationships that the DTO mapper needs
@@ -101,17 +105,23 @@ class NodeServiceTest {
         assertEquals(newNodeId, resultDto.id());
         assertEquals("Test Project", resultDto.name());
         assertEquals(NodeType.PROJECT, resultDto.type());
+        assertEquals(NodeStatus.ACTIVE, resultDto.status());
+        assertEquals(createDto.parentId(), resultDto.parentId());
+        assertEquals(createDto.dueDate(), resultDto.dueDate());
         assertEquals(1, resultDto.members().size());
         assertEquals(mockUserId, resultDto.members().get(0).userId());
 
         // Verify the DB function was called correctly
         verify(jdbcTemplate).queryForObject(
-                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?)"),
+                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class),
                 eq(mockUserId),
                 eq("PROJECT"),
                 eq("Test Project"),
-                eq("A description"));
+                eq("A description"),
+                eq(createDto.parentId()),
+                eq(createDto.dueDate()),
+                eq("ACTIVE"));
     }
 
     @Test
@@ -119,12 +129,15 @@ class NodeServiceTest {
         UUID newProjectId = UUID.randomUUID();
 
         when(jdbcTemplate.queryForObject(
-                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?)"),
+                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class),
                 eq(mockUserId), // 1. p_user_id UUID
                 eq("PROJECT"), // 2. p_type ← string
                 eq("Test Project"), // 3. p_name
-                eq("A description") // 4. p_description
+                eq("A description"), // 4. p_description
+                eq(createDto.parentId()), // 5. p_parent_id UUID
+                eq(createDto.dueDate()), // 6. p_due_date DATE
+                eq("ACTIVE") // 7. p_status ← string
         )).thenReturn(newProjectId);
 
         Node mockProject = new Node();
@@ -143,12 +156,15 @@ class NodeServiceTest {
         assertEquals(newProjectId, resultDto.id());
 
         verify(jdbcTemplate, times(1)).queryForObject(
-                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?)"),
+                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class),
                 eq(mockUserId),
                 eq("PROJECT"), // ← must match stub
                 eq("Test Project"),
-                eq("A description"));
+                eq("A description"),
+                eq(createDto.parentId()),
+                eq(createDto.dueDate()),
+                eq("ACTIVE"));
         verify(nodeRepository, times(1)).findById(newProjectId);
     }
 
@@ -157,12 +173,15 @@ class NodeServiceTest {
         // --- ARRANGE ---
         UUID newProjectId = UUID.randomUUID();
         when(jdbcTemplate.queryForObject(
-                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?)"),
+                eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class),
                 eq(mockUserId), // 1
                 eq("PROJECT"), // 2 – string representation of NodeType.PROJECT
                 eq("Test Project"), // 3
-                eq("A description") // 4
+                eq("A description"), // 4
+                eq(createDto.parentId()), // 5
+                eq(createDto.dueDate()), // 6
+                eq("ACTIVE") // 7
         )).thenReturn(newProjectId);
 
         // --- FIX: SET UP THE MOCK ENTITY COMPLETELY ---

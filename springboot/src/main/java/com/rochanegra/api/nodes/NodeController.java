@@ -40,6 +40,12 @@ public class NodeController {
         return ResponseEntity.ok(nodeService.getNodesForUser(userId, type, query));
     }
 
+    @GetMapping("/tree")
+    public ResponseEntity<List<NodeTreeDto>> getNodesTree(Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.ok(nodeService.getNodesTree(userId));
+    }
+
     @GetMapping("/{nodeId}")
     public ResponseEntity<NodeDetailDto> getNodeById(@PathVariable UUID nodeId, Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
@@ -76,6 +82,12 @@ public class NodeController {
     }
 
     // --- Task Endpoints ---
+    @GetMapping("/{nodeId}/tasks")
+    public ResponseEntity<List<TaskDto>> getTasksForNode(@PathVariable UUID nodeId, Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.ok(taskService.getTasksForNode(nodeId, userId));
+    }
+
     @PostMapping("/{nodeId}/tasks")
     public ResponseEntity<TaskDto> createTaskInNode(@PathVariable UUID nodeId,
             @RequestBody @Valid TaskCreateDto createDto, Authentication auth) {
