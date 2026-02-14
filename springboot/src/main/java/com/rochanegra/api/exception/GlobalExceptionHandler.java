@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 
@@ -22,6 +23,18 @@ public class GlobalExceptionHandler {
                 ErrorResponse error = new ErrorResponse(
                                 HttpStatus.NOT_FOUND.value(),
                                 ex.getMessage(),
+                                request.getRequestURI(),
+                                Instant.now());
+                return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(NoResourceFoundException.class)
+        public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex,
+                        HttpServletRequest request) {
+                // Return a clear 404 for missing static resources or unknown routes
+                ErrorResponse error = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                "Resource not found: " + ex.getResourcePath(),
                                 request.getRequestURI(),
                                 Instant.now());
                 return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
@@ -57,13 +70,10 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, HttpServletRequest request) {
                 // --- LOG THE FULL STACK TRACE TO THE TERMINAL ---
                 logger.error("Caught unhandled exception for request {}:", ex);
-                logger.error("Message:", ex.getMessage());
 
                 ErrorResponse error = new ErrorResponse(
                                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                                "An unexpected error occurred. Please contact support." + ex.getMessage(), // A more
-                                                                                                           // user-friendly
-                                                                                                           // message
+                                "An unexpected error occurred. Please contact support." + ex.getMessage(),
                                 request.getRequestURI(),
                                 Instant.now());
                 return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);

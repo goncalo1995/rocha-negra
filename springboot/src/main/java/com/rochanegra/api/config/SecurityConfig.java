@@ -62,9 +62,7 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(PUBLIC_URLS).permitAll() // <-- PERMIT all public URLs
                                                 .requestMatchers("/api/v1/**").authenticated() // Secure our API
-                                                .anyRequest().permitAll() // Temporary change for debugging: permit
-                                                                          // everything else too
-                                )
+                                                .anyRequest().denyAll())
                                 .exceptionHandling(exceptions -> exceptions
                                                 .authenticationEntryPoint(unauthorizedEntryPoint()))
                                 .formLogin(form -> form.disable())
