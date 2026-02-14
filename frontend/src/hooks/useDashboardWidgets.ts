@@ -1,5 +1,5 @@
 import { DashboardWidget } from '@/types/dashboard';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 
 export const widgetLabels: Record<DashboardWidget['key'], string> = {
@@ -15,6 +15,7 @@ export const widgetLabels: Record<DashboardWidget['key'], string> = {
 };
 
 export function useDashboardWidgets() {
+    const queryClient = useQueryClient();
     const { data: widgets = [], refetch } = useQuery<DashboardWidget[]>({
         queryKey: ['dashboard-widgets'],
         queryFn: () => api.get('/dashboard/widgets').then(r => r.data),
@@ -23,7 +24,10 @@ export function useDashboardWidgets() {
     const mutation = useMutation({
         mutationFn: (updated: DashboardWidget[]) =>
             api.put('/dashboard/widgets', updated),
-        onSuccess: () => refetch(),
+        onSuccess: () => {
+            refetch();
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        },
     });
 
     const toggleWidget = (key: string) => {

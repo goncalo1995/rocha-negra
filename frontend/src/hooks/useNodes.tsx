@@ -64,9 +64,35 @@ export function useNodeMutations() {
         }
     });
 
+    const linkNode = useMutation({
+        mutationFn: ({ sourceId, targetId, type }: { sourceId: string; targetId: string; type: string }) =>
+            api.post(`/nodes/${sourceId}/links`, { targetNodeId: targetId, type }),
+        onSuccess: (_, { sourceId }) => {
+            toast.success("Link added.");
+            queryClient.invalidateQueries({ queryKey: ['nodes', sourceId] });
+        },
+        onError: (error) => {
+            toast.error("Failed to link node: " + error.message);
+        }
+    });
+
+    const unlinkNode = useMutation({
+        mutationFn: ({ sourceId, targetId }: { sourceId: string; targetId: string }) =>
+            api.delete(`/nodes/${sourceId}/links/${targetId}`),
+        onSuccess: (_, { sourceId }) => {
+            toast.success("Link removed.");
+            queryClient.invalidateQueries({ queryKey: ['nodes', sourceId] });
+        },
+        onError: (error) => {
+            toast.error("Failed to remove link: " + error.message);
+        }
+    });
+
     return {
-        createNode: createNode.mutate,
-        updateNode: updateNode.mutate,
-        deleteNode: deleteNode.mutate,
+        createNode,
+        updateNode,
+        deleteNode,
+        linkNode,
+        unlinkNode,
     };
 }

@@ -34,9 +34,10 @@ public class NodeController {
 
     @GetMapping
     public ResponseEntity<List<NodeSummaryDto>> getMyNodes(@RequestParam(required = false) NodeType type,
+            @RequestParam(required = false) String query,
             Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
-        return ResponseEntity.ok(nodeService.getNodesForUser(userId, type));
+        return ResponseEntity.ok(nodeService.getNodesForUser(userId, type, query));
     }
 
     @GetMapping("/{nodeId}")

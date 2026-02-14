@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useNode, useNodeMutations, useNodes } from "@/hooks/useNodes";
 import { useTaskMutations } from "@/hooks/useTasks";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, CheckCircle2, Circle, Clock, MoreVertical, Plus } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle2, Circle, Clock, MoreVertical, Plus, Link as LinkIcon, Trash2, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { cn } from "@/lib/utils";
@@ -14,15 +14,19 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import { LinkNodeDialog } from "@/components/nodes/LinkNodeDialog";
+import api from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function NodeDetail() {
     const { nodeId } = useParams<{ nodeId: string }>();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     // This single query gets the node AND its tasks list.
     const { data: node, isLoading: isLoadingNode } = useNode(nodeId);
     // const { tasks, isLoading: isLoadingTasks, updateTask } = useTasks(nodeId);
-    const { deleteNode } = useNodeMutations();
+    const { deleteNode, unlinkNode } = useNodeMutations();
     const { updateTask } = useTaskMutations();
 
     const [openDialog, setOpenDialog] = useState(false);
@@ -48,8 +52,8 @@ export default function NodeDetail() {
 
     const handleDelete = () => {
         if (confirm("Are you sure? This action cannot be undone.")) {
-            deleteNode(node!.id, {
-                onSuccess: () => navigate("/projects"), // Navigate away on success
+            deleteNode.mutate(node!.id, {
+                onSuccess: () => navigate("/nodes"), // Navigate away on success
             });
         }
     };
@@ -60,6 +64,10 @@ export default function NodeDetail() {
             case 2: return 'text-warning';
             default: return 'text-muted-foreground';
         }
+    };
+
+    const handleUnlink = (targetNodeId: string) => {
+        unlinkNode.mutate({ sourceId: nodeId!, targetId: targetNodeId });
     };
 
 
@@ -107,6 +115,7 @@ export default function NodeDetail() {
                         </div>
                     </div>
                     <div className="flex gap-2">
+                        <LinkNodeDialog sourceNodeId={node.id} />
                         <TaskDialog
                             open={openDialog}
                             onOpenChange={setOpenDialog}
@@ -131,29 +140,6 @@ export default function NodeDetail() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
-                </div>
-            </div>
-
-            {/* Stats / Overview could go here (e.g. progress bar) */}
-
-            {/* Members Section */}
-            <div>
-                <h2 className="text-xl font-semibold mb-4">Members ({node.members?.length || 0})</h2>
-                <div className="flex gap-4">
-                    {node.members?.map((member: any) => (
-                        <div key={member.userId} className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-card">
-                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium text-xs">
-                                {member.userId.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium">User {member.userId.substring(0, 4)}...</p>
-                                <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
-                            </div>
-                        </div>
-                    ))}
-                    {(!node.members || node.members.length === 0) && (
-                        <p className="text-sm text-muted-foreground">No members yet.</p>
-                    )}
                 </div>
             </div>
 
@@ -208,6 +194,77 @@ export default function NodeDetail() {
                         ))}
                     </div>
                 )}
+            </div>
+
+            {/* Links / Resources Section */}
+            {(node.references && node.references.length > 0) && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Linked Resources</h2>
+                    <div className="space-y-1.5">
+                        {node.references.map((link) => (
+                            <div key={link.id} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all cursor-pointer group">
+                                <LinkIcon className="h-4 w-4 text-primary" />
+                                <Link to={`/nodes/${link.id}`} className="flex-1 text-sm text-foreground hover:underline">
+                                    {link.name}
+                                </Link>
+                                <span className="text-[10px] text-muted-foreground uppercase px-2 py-0.5 rounded bg-muted">
+                                    {link.linkType?.replace('_', ' ') || 'REFERENCE'}
+                                </span>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => handleUnlink(link.id)}
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Referenced By Section */}
+            {(node.referencedBy && node.referencedBy.length > 0) && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Referenced By</h2>
+                    <div className="space-y-1.5">
+                        {node.referencedBy.map((link) => (
+                            <div key={link.id} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all cursor-pointer group">
+                                <LinkIcon className="h-4 w-4 text-muted-foreground scale-x-[-1]" />
+                                <Link to={`/nodes/${link.id}`} className="flex-1 text-sm text-foreground hover:underline">
+                                    {link.name}
+                                </Link>
+                                <span className="text-[10px] text-muted-foreground uppercase px-2 py-0.5 rounded bg-muted">
+                                    {link.linkType?.replace('_', ' ') || 'REFERENCE'}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Stats / Overview could go here (e.g. progress bar) */}
+
+            {/* Members Section */}
+            <div>
+                <h2 className="text-xl font-semibold mb-4">Members ({node.members?.length || 0})</h2>
+                <div className="flex gap-4">
+                    {node.members?.map((member: any) => (
+                        <div key={member.userId} className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-card">
+                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium text-xs">
+                                {member.userId.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium">User {member.userId.substring(0, 13)}...</p>
+                                <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
+                            </div>
+                        </div>
+                    ))}
+                    {(!node.members || node.members.length === 0) && (
+                        <p className="text-sm text-muted-foreground">No members yet.</p>
+                    )}
+                </div>
             </div>
         </div>
     );

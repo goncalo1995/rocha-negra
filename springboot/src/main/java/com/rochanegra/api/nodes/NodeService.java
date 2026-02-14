@@ -63,9 +63,13 @@ public class NodeService {
         return getNodeById(newNodeId, userId);
     }
 
-    public List<NodeSummaryDto> getNodesForUser(UUID userId, NodeType type) {
+    public List<NodeSummaryDto> getNodesForUser(UUID userId, NodeType type, String query) {
         List<Node> nodes;
-        if (type != null) {
+        if (query != null && !query.isBlank() && type != null) {
+            nodes = nodeRepository.searchNodesByType(userId, type, query);
+        } else if (query != null && !query.isBlank()) {
+            nodes = nodeRepository.searchNodes(userId, query);
+        } else if (type != null) {
             nodes = nodeRepository.findNodesByMemberAndType(userId, type);
         } else {
             nodes = nodeRepository.findNodesByMember(userId);

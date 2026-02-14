@@ -23,6 +23,21 @@ public interface NodeRepository extends JpaRepository<Node, UUID> {
     @Query("SELECT n FROM Node n JOIN n.members m WHERE m.userId = :userId AND n.type = :type")
     List<Node> findNodesByMemberAndType(@Param("userId") UUID userId, @Param("type") NodeType type);
 
+    @Query("SELECT n FROM Node n JOIN n.members m WHERE m.userId = :userId AND (" +
+            "LOWER(n.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(n.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(n.content) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(n.url) LIKE LOWER(CONCAT('%', :query, '%')))")
+    List<Node> searchNodes(@Param("userId") UUID userId, @Param("query") String query);
+
+    @Query("SELECT n FROM Node n JOIN n.members m WHERE m.userId = :userId AND n.type = :type AND (" +
+            "LOWER(n.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(n.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(n.content) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(n.url) LIKE LOWER(CONCAT('%', :query, '%')))")
+    List<Node> searchNodesByType(@Param("userId") UUID userId, @Param("type") NodeType type,
+            @Param("query") String query);
+
     @Query("SELECT count(m) FROM NodeMember m WHERE m.node.id = :nodeId AND m.role = 'owner'")
     Long countOwners(@Param("nodeId") UUID nodeId);
 }

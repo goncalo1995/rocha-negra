@@ -7,10 +7,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record NodeLinkDto(
-                UUID nodeId,
-                String nodeName,
-                NodeType nodeType,
-                NodeLinkType type,
-                UUID createdBy,
-                Instant createdAt) {
+        UUID id,
+        String name,
+        NodeType type,
+        NodeLinkType linkType,
+        UUID createdBy,
+        Instant createdAt) {
 }

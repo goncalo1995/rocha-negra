@@ -27,7 +27,9 @@ public class SecurityConfig {
                         "http://localhost:8080", // Local development
                         "http://localhost:8081", // Local development
                         "https://rochanegra-dev.vercel.app", // Development environment
-                        "https://dev.rochanegra.com" // Development environment
+                        "https://rochanegra-finances.vercel.app", // Development environment
+                        "https://dev.rochanegra.com", // Development environment
+                        "https://rochanegra.com" // Production environment
         };
 
         // --- DEFINE THE PUBLIC URLS ---

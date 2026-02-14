@@ -172,10 +172,10 @@ class NodeLinkServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(targetId, result.nodeId());
-        assertEquals("Target", result.nodeName());
-        assertEquals(NodeType.AREA, result.nodeType());
-        assertEquals(type, result.type());
+        assertEquals(targetId, result.id());
+        assertEquals("Target", result.name());
+        assertEquals(NodeType.AREA, result.type());
+        assertEquals(type, result.linkType());
 
         verify(linkRepository, times(1))
                 .findBySourceNodeIdAndTargetNodeIdAndType(sourceId, targetId, type);
@@ -215,10 +215,10 @@ class NodeLinkServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(targetId, result.nodeId());
-        assertEquals("Target", result.nodeName());
-        assertEquals(NodeType.AREA, result.nodeType());
-        assertEquals(linkType, result.type());
+        assertEquals(targetId, result.id());
+        assertEquals("Target", result.name());
+        assertEquals(NodeType.AREA, result.type());
+        assertEquals(linkType, result.linkType());
 
         verify(linkRepository, times(1))
                 .findBySourceNodeIdAndTargetNodeIdAndType(sourceId, targetId, linkType);

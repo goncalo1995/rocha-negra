@@ -13,8 +13,6 @@ import { ItWidget } from "@/components/dashboard/widgets/ItWidget";
 import { VehiclesWidget } from "@/components/dashboard/widgets/VehiclesWidget";
 import { NetworkWidget } from "@/components/dashboard/widgets/NetworkWidget";
 import { DebtsWidget } from "@/components/dashboard/widgets/DebtsWidget";
-import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -26,6 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardResponseDto } from "@/types/dashboard";
@@ -38,9 +37,6 @@ export default function Dashboard() {
         queryKey: ['dashboard'],
         queryFn: () => api.get('/dashboard').then(r => r.data),
     });
-
-    console.log("widgets", widgets)
-
 
     const renderWidget = (widget: DashboardWidget) => {
         switch (widget.key) {
@@ -65,8 +61,8 @@ export default function Dashboard() {
         }
     };
 
-    console.log("widgets", widgets)
 
+    console.log("widgets", widgets.length);
     return (
         <div className="space-y-6">
             <div className="flex items-start justify-between">
@@ -128,18 +124,29 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         </ScrollArea>
-                        {/* <div className="p-6 pt-0 mt-auto">
-                            <Button variant="outline" size="sm" onClick={resetToDefault} className="w-full">
-                                Reset to Default
-                            </Button>
-                        </div> */}
                     </DialogContent>
                 </Dialog>
             </div>
 
             {/* Bento Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {enabledWidgets.map(renderWidget)}
+                {isLoading ? (
+                    // Skeletons
+                    Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="bento-card relative overflow-hidden rounded-xl border bg-card text-card-foreground shadow space-y-4 p-6">
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[150px]" />
+                                <Skeleton className="h-4 w-[100px]" />
+                            </div>
+                            <div className="space-y-2 pt-4">
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    enabledWidgets.map(renderWidget)
+                )}
             </div>
 
             {!isLoading && enabledWidgets.length === 0 && (

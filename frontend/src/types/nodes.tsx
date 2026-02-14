@@ -12,6 +12,18 @@ export type Node = FromDb<Database['public']['Tables']['nodes']['Row']>;
 export type NodeMember = FromDb<Database['public']['Tables']['node_members']['Row']>;
 export type NodeLink = FromDb<Database['public']['Tables']['node_links']['Row']>;
 
+export interface NodeSummary {
+    id: string;
+    name: string;
+    status: NodeStatus;
+    type: NodeType;
+    dueDate?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    memberCount: number;
+    taskCount: number;
+}
+
 // --- API CONTRACT (DTOs) ---
 export interface NodeCreate {
     name: string;
@@ -32,10 +44,19 @@ export interface NodeUpdate {
     parentId?: string | null;
 }
 
+export interface NodeLinkDto {
+    id: string; // Target Node ID (was targetNodeId)
+    name: string;
+    type: NodeType;
+    linkType: string; // NodeLinkType enum string
+    createdBy: string;
+    createdAt: string;
+}
+
 export type FullNode = Node & {
     members: { userId: string; role: NodeRole }[];
     tasks: Task[];
     subNodes: Node[];
-    referencedBy: NodeLink[];
-    references: NodeLink[];
+    referencedBy: NodeLinkDto[];
+    references: NodeLinkDto[];
 };
