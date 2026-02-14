@@ -2,6 +2,7 @@ package com.rochanegra.api.config;
 
 import com.rochanegra.api.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,6 +22,7 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
         private final JwtAuthFilter jwtAuthFilter;
@@ -51,6 +53,7 @@ public class SecurityConfig {
 
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                log.info(">>> Initializing SecurityFilterChain");
                 http
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
@@ -59,7 +62,8 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(PUBLIC_URLS).permitAll() // <-- PERMIT all public URLs
                                                 .requestMatchers("/api/v1/**").authenticated() // Secure our API
-                                                .anyRequest().denyAll() // Deny all other requests
+                                                .anyRequest().permitAll() // Temporary change for debugging: permit
+                                                                          // everything else too
                                 )
                                 .exceptionHandling(exceptions -> exceptions
                                                 .authenticationEntryPoint(unauthorizedEntryPoint()))
@@ -72,6 +76,7 @@ public class SecurityConfig {
 
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
+                log.info(">>> Configuring CORS");
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOrigins(Arrays.asList(CORS_URLS));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
@@ -95,9 +100,10 @@ public class SecurityConfig {
         @Bean
         public AuthenticationEntryPoint unauthorizedEntryPoint() {
                 return (request, response, authException) -> {
+                        log.error(">>> Unauthorized access attempt to {}: {}", request.getRequestURI(),
+                                        authException.getMessage());
                         response.setStatus(HttpStatus.UNAUTHORIZED.value());
                         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                        // Generic message for security. Details are logged on the server.
                         response.getWriter().write(
                                         "{\"error\": \"Unauthorized\", \"message\": \"Authentication required\"}");
                 };

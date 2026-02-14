@@ -27,13 +27,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         // --- DEBUG LOG 1: Check if the filter is running for the correct path ---
-        log.debug(">>> JwtAuthFilter running for URI: {}", request.getRequestURI());
+        log.info(">>> JwtAuthFilter running for URI: {} from Origin: {}", request.getRequestURI(),
+                request.getHeader("Origin"));
 
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+
             // --- DEBUG LOG 2: Log if the header is missing or incorrect ---
-            log.trace(">>> No valid Authorization header found. Passing to next filter.");
+            log.info(">>> No valid Authorization header found for URI: {}. Passing to next filter.",
+                    request.getRequestURI());
             filterChain.doFilter(request, response);
             return;
         }
@@ -45,6 +48,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String userId = decodedJWT.getSubject(); // "sub" claim is the user ID
 
             if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                log.info(">>> JWT validation successful for user: {}", userId);
                 // We don't have roles, so we use an empty list of authorities
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userId, null, Collections.emptyList());
