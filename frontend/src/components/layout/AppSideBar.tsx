@@ -1,9 +1,6 @@
 import {
     LayoutDashboard,
-    FolderKanban,
-    CheckSquare,
     Users,
-    Wallet,
     Receipt,
     CalendarClock,
     ChevronLeft,
@@ -11,15 +8,9 @@ import {
     LogOut,
     Settings,
     PieChart,
-    CreditCard,
-    Calendar as CalendarIcon,
     Archive,
-    Layers,
-    BookOpen,
-    Target,
-    CircleDot,
     Inbox,
-    Zap
+    Car
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
@@ -50,14 +41,14 @@ const executionItems = [
 
 const treasuryItems = [
     { title: "Ledger", url: "/ledger", icon: Receipt },
+    { title: "Portfolio", url: "/portfolio", icon: PieChart },
+    { title: "Vehicles", url: "/vehicles", icon: Car },
     { title: "Fixed Costs", url: "/fixed-costs", icon: CalendarClock },
     { title: "Categories", url: "/categories", icon: PieChart },
-    { title: "Assets", url: "/assets", icon: Wallet },
-    { title: "Liabilities", url: "/liabilities", icon: CreditCard },
 ];
 
 const otherItems = [
-    { title: "Agenda", url: "/agenda", icon: CalendarIcon },
+    // { title: "Agenda", url: "/agenda", icon: CalendarIcon },
     { title: "Network", url: "/contacts", icon: Users }
 ];
 
@@ -252,7 +243,7 @@ export function AppSidebar() {
                                 <DropdownMenuItem asChild>
                                     <Link to="/settings" className="flex items-center cursor-pointer w-full" onClick={() => setOpenMobile(false)}>
                                         <Settings className="mr-2 h-4 w-4" />
-                                        <span>Settings (Soon)</span>
+                                        <span>Settings</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">

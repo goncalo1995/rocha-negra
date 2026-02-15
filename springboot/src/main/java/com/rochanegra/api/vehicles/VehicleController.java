@@ -32,6 +32,15 @@ public class VehicleController {
         return ResponseEntity.ok(vehicles);
     }
 
+    @GetMapping("/{vehicleId}")
+    public ResponseEntity<VehicleDto> getVehicleById(
+            @PathVariable UUID vehicleId,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        VehicleDto vehicle = VehicleDto.fromVehicle(vehicleService.findVehicleByIdAndUser(vehicleId, userId));
+        return ResponseEntity.ok(vehicle);
+    }
+
     @PatchMapping("/{vehicleId}")
     public ResponseEntity<VehicleDto> updateVehicle(
             @PathVariable UUID vehicleId,

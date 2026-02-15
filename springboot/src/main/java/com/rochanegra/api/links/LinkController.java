@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/links")
+@RequestMapping("/api/v1/relations")
 @RequiredArgsConstructor
 public class LinkController {
 
@@ -30,12 +30,22 @@ public class LinkController {
     // e.g., GET /api/v1/links?targetId=...&targetType=project
     // to get all transactions, tasks, etc., linked to a project.
     @GetMapping
-    public ResponseEntity<List<LinkDto>> getLinks(
+    public ResponseEntity<List<LinkDto>> getLinksByTarget(
             @RequestParam UUID targetId,
             @RequestParam String targetType,
             Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         List<LinkDto> links = linkService.getLinksForTarget(targetId, targetType, userId);
+        return ResponseEntity.ok(links);
+    }
+
+    @GetMapping("/source/{sourceId}")
+    public ResponseEntity<List<LinkDto>> getLinksBySource(
+            @PathVariable UUID sourceId,
+            @RequestParam(required = false) String sourceType,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        List<LinkDto> links = linkService.getLinksForSource(sourceId, sourceType, userId);
         return ResponseEntity.ok(links);
     }
 

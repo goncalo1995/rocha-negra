@@ -5,7 +5,6 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../ui/button';
-import { Plus } from 'lucide-react';
 import { assetTypeConfig } from './AssetManager';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -93,12 +92,6 @@ const AddAssetDialog = ({ isOpen, onOpenChange, editingAsset, onAddAsset, onUpda
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogTrigger asChild>
-                <Button size="sm" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Asset
-                </Button>
-            </DialogTrigger>
             <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{editingAsset ? 'Edit Asset' : 'Add New Asset'}</DialogTitle>

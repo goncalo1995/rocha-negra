@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Plus, Car, Wrench, Fuel } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +9,6 @@ import { Switch } from '@/components/ui/switch';
 import { Vehicle, MaintenanceRecord, FuelRecord, FuelType } from '@/types/vehicles';
 import { format } from 'date-fns';
 import { useFinance } from '@/hooks/useFinance';
-import { VehicleCard } from './VehicleCard';
 
 interface VehicleManagerProps {
   vehicles: Vehicle[];
@@ -18,14 +16,10 @@ interface VehicleManagerProps {
   fuelRecords: FuelRecord[];
   onAddVehicle: (vehicle: Omit<Vehicle, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => void;
   onUpdateVehicle: (id: string, updates: Partial<Vehicle>) => void;
-  onDeleteVehicle: (id: string) => void;
   onAddMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'userId' | 'linkedTransactionId'>) => void;
   onUpdateMaintenanceRecord: (id: string, updates: Partial<MaintenanceRecord>) => void;
-  onDeleteMaintenanceRecord: (id: string) => void;
   onAddFuelRecord: (record: Omit<FuelRecord, 'id' | 'createdAt' | 'userId' | 'linkedTransactionId' | 'normalizedQuantityLiters' | 'normalizedMileageKm'>) => void;
   onUpdateFuelRecord: (id: string, updates: Partial<FuelRecord>) => void;
-  onDeleteFuelRecord: (id: string) => void;
-  getFuelEfficiency: (vehicleId: string) => number | null;
 }
 
 const fuelTypes: { value: FuelType; label: string }[] = [
@@ -47,24 +41,16 @@ const maintenanceTypes = [
 
 const VehicleManager: React.FC<VehicleManagerProps> = ({
   vehicles,
-  maintenanceRecords,
-  fuelRecords,
   onAddVehicle,
   onUpdateVehicle,
-  onDeleteVehicle,
   onAddMaintenanceRecord,
   onUpdateMaintenanceRecord,
-  onDeleteMaintenanceRecord,
   onAddFuelRecord,
   onUpdateFuelRecord,
-  onDeleteFuelRecord,
-  getFuelEfficiency,
 }) => {
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isFuelDialogOpen, setIsFuelDialogOpen] = useState(false);
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
 
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [editingMaintenanceLog, setEditingMaintenanceLog] = useState<MaintenanceRecord | null>(null);
@@ -274,49 +260,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
       notes: vehicle.notes || '',
     });
     setIsVehicleDialogOpen(true);
-  };
-
-  const handleEditMaintenance = (record: MaintenanceRecord) => {
-    setEditingMaintenanceLog(record);
-    setMaintenanceForm({
-      vehicleId: record.vehicleId,
-      date: record.date,
-      type: record.type,
-      description: record.description,
-      mileageAtService: record.mileageAtService.toString(),
-      cost: record.cost.toString(),
-      currency: record.currency,
-      serviceProvider: record.serviceProvider || '',
-      notes: record.notes || '',
-      assetId: record.assetId || '',
-      syncToFinance: record.syncToFinance ?? true,
-    });
-    setIsMaintenanceDialogOpen(true);
-  };
-
-  const handleEditFuel = (record: FuelRecord) => {
-    setEditingFuelLog(record);
-    setFuelForm({
-      vehicleId: record.vehicleId,
-      date: record.date,
-      quantity: record.quantity.toString(),
-      quantityUnit: record.quantityUnit,
-      pricePerUnit: "0", //record.pricePerUnit.toString(),
-      totalCost: record.totalCost.toString(),
-      mileageAtFill: record.mileageAtFill.toString(),
-      fullTank: record.fullTank,
-      station: record.station || '',
-      currency: record.currency,
-      notes: record.notes || '',
-      assetId: record.assetId || '',
-      syncToFinance: record.syncToFinance ?? true,
-    });
-    setIsFuelDialogOpen(true);
-  };
-
-  const openFuelDialogForVehicle = (vehicleId: string) => {
-    setSelectedVehicleId(vehicleId);
-    setIsFuelDialogOpen(true);
   };
 
   return (
@@ -799,41 +742,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({
         </div>
       </div>
 
-      {/* Vehicle List */}
-      {vehicles.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Car className="h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 text-lg font-medium">No vehicles yet</h3>
-            <p className="text-sm text-muted-foreground">Add your first vehicle to start tracking</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {vehicles.map((vehicle) => {
-            return <VehicleCard key={vehicle.id} vehicle={vehicle}
-              baseCurrency={"EUR"}
-              maintenanceRecords={maintenanceRecords.filter(m => m.vehicleId === vehicle.id)}
-              fuelRecords={fuelRecords.filter(f => f.vehicleId === vehicle.id)}
-              onDeleteVehicle={onDeleteVehicle}
-              onDeleteMaintenanceRecord={onDeleteMaintenanceRecord}
-              onDeleteFuelRecord={onDeleteFuelRecord}
-              handleEditVehicle={handleEditVehicle}
-              handleEditMaintenance={handleEditMaintenance}
-              handleEditFuel={handleEditFuel}
-            />
-          })}
-        </div>
-      )}
-
-      {/* <AddFuelDialog
-        isOpen={isFuelDialogOpen}
-        onOpenChange={setIsFuelDialogOpen}
-        vehicles={vehicles}
-        assets={assets}
-        defaultVehicleId={selectedVehicleId}
-        onAddFuelLog={addFuelLog}
-      /> */}
     </div>
   );
 };

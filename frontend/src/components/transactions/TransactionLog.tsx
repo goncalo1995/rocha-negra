@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -452,7 +453,9 @@ export function TransactionLog({
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium truncate">{transaction.description}</p>
+                        <Link to={`/finance/transactions/${transaction.id}`} className="font-medium truncate hover:text-primary transition-colors">
+                          {transaction.description}
+                        </Link>
                         {category && (
                           <Badge
                             variant={category.nature === 'fixed' ? 'default' : 'secondary'}

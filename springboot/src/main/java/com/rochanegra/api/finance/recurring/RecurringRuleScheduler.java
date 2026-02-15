@@ -5,7 +5,6 @@ import com.rochanegra.api.finance.transactions.TransactionService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +23,7 @@ public class RecurringRuleScheduler {
     private final TransactionService transactionService;
 
     // Cron expression for "run at 2 AM every day"
-    @Scheduled(cron = "0 0 2 * * ?")
+    // @Scheduled(cron = "0 0 2 * * ?")
     public void processDueRecurringRules() {
         log.info("Starting scheduled job: Processing due recurring generators...");
         LocalDate today = LocalDate.now();

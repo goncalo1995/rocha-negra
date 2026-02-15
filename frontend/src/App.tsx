@@ -13,6 +13,8 @@ const Index = lazy(() => import("./pages/Index"));
 const Finance = lazy(() => import("./pages/Finance"));
 const IT = lazy(() => import("./pages/IT"));
 const Vehicles = lazy(() => import("./pages/Vehicles"));
+const VehicleDetail = lazy(() => import("./pages/VehicleDetail"));
+const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CVPage = lazy(() => import("./pages/CVPage").then(module => ({ default: module.CVPage })));
@@ -25,20 +27,15 @@ const TaskDetail = lazy(() => import("./pages/TaskDetail"));
 const Contacts = lazy(() => import("./pages/Contacts"));
 const ContactDetail = lazy(() => import("./pages/ContactDetail"));
 const Home = lazy(() => import("./pages/Home"));
-const Assets = lazy(() => import("./pages/Assets"));
-const Inbox = lazy(() => import("./pages/gtd/Inbox"));
-const Today = lazy(() => import("./pages/gtd/Today"));
-const Upcoming = lazy(() => import("./pages/gtd/Upcoming"));
-const Waiting = lazy(() => import("./pages/gtd/Waiting"));
-const Someday = lazy(() => import("./pages/gtd/Someday"));
 const GTD = lazy(() => import("./pages/GTD"));
-const Liabilities = lazy(() => import("./pages/Liabilities"));
 const Ledger = lazy(() => import("./pages/Ledger"));
 const FixedCosts = lazy(() => import("./pages/FixedCosts"));
 const Categories = lazy(() => import("./pages/Categories"));
 const Agenda = lazy(() => import("./pages/Agenda"));
 const ParaDashboard = lazy(() => import("./pages/ParaDashboard"));
 const Landing = lazy(() => import("./pages/Landing"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const TransactionDetail = lazy(() => import("./pages/finance/TransactionDetail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -201,13 +198,17 @@ const App = () => {
                     <Route path="/old" element={<Home />} />
                     <Route path="/finance" element={<Finance />} />
                     <Route path="/finance/projections" element={<ProjectionsPage />} />
-                    <Route path="/assets" element={<Assets />} />
-                    <Route path="/liabilities" element={<Liabilities />} />
+                    <Route path="/finance/transactions/:id" element={<TransactionDetail />} />
+                    <Route path="/portfolio" element={<Portfolio />} />
+                    <Route path="/assets" element={<Navigate to="/portfolio?tab=assets" replace />} />
+                    <Route path="/liabilities" element={<Navigate to="/portfolio?tab=liabilities" replace />} />
                     <Route path="/ledger" element={<Ledger />} />
                     <Route path="/fixed-costs" element={<FixedCosts />} />
                     <Route path="/categories" element={<Categories />} />
                     <Route path="/agenda" element={<Agenda />} />
                     <Route path="/vehicles" element={<Vehicles />} />
+                    <Route path="/vehicles/:vehicleId" element={<VehicleDetail />} />
+                    <Route path="/settings" element={<Settings />} />
                     <Route path="/it" element={<IT />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/nodes" element={<ParaDashboard />} />

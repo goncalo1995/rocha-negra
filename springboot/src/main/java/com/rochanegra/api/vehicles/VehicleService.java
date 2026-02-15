@@ -54,7 +54,9 @@ public class VehicleService {
                 AssetType.vehicle,
                 createDto.currency() != null ? createDto.currency() : "EUR",
                 createDto.initialValue(),
-                null,
+                BigDecimal.ONE, // quantity
+                null, // balance
+                null, // institution
                 "Make: " + createDto.make() + ", Model: " + createDto.model(),
                 null);
         AssetDto savedAsset = assetService.createAsset(assetDto, userId);

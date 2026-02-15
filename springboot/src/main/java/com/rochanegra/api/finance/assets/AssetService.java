@@ -39,6 +39,12 @@ public class AssetService {
         if (updateDto.customFields() != null) {
             asset.setCustomFields(sanitizationService.sanitizeMap(updateDto.customFields()));
         }
+        if (updateDto.quantity() != null) {
+            asset.setQuantity(updateDto.quantity());
+        }
+        if (updateDto.balance() != null) {
+            asset.setBalance(updateDto.balance());
+        }
 
         assetRepository.save(asset);
     }
@@ -54,21 +60,22 @@ public class AssetService {
         asset.setType(createDto.type());
         asset.setCurrency(createDto.currency());
 
-        // Default the value to zero if the user provides null or doesn't send the
-        // field.
-        BigDecimal value = createDto.initialValue() != null ? createDto.initialValue() : BigDecimal.ZERO;
-
-        List<AssetType> balanceBasedTypes = List.of(AssetType.bank_account, AssetType.cash, AssetType.credit_card);
-
-        if (balanceBasedTypes.contains(createDto.type())) {
-            // It's a cash-like asset, so we set its balance.
-            asset.setBalance(value);
-            asset.setQuantity(null); // Ensure the other field is null
+        // Use explicit quantity/balance if provided, otherwise fallback to initialValue
+        // logic
+        if (createDto.quantity() != null || createDto.balance() != null) {
+            asset.setQuantity(createDto.quantity());
+            asset.setBalance(createDto.balance());
         } else {
-            // It's a unit-based asset (vehicle, property, stock, crypto). We set its
-            // quantity.
-            asset.setQuantity(value);
-            asset.setBalance(null); // Ensure the other field is null
+            BigDecimal value = createDto.initialValue() != null ? createDto.initialValue() : BigDecimal.ZERO;
+            List<AssetType> balanceBasedTypes = List.of(AssetType.bank_account, AssetType.cash, AssetType.credit_card);
+
+            if (balanceBasedTypes.contains(createDto.type())) {
+                asset.setBalance(value);
+                asset.setQuantity(null);
+            } else {
+                asset.setQuantity(value);
+                asset.setBalance(null);
+            }
         }
 
         Asset savedAsset = assetRepository.save(asset);
@@ -87,8 +94,12 @@ public class AssetService {
         return toDto(asset);
     }
 
-    public void deleteAsset(UUID assetId) {
-        assetRepository.deleteById(assetId);
+    public void deleteAsset(UUID assetId, UUID userId) {
+        Asset asset = assetRepository.findById(assetId)
+                .filter(a -> a.getUserId().equals(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Asset not found or access denied"));
+
+        assetRepository.delete(asset);
     }
 
     private AssetDto toDto(Asset asset) {

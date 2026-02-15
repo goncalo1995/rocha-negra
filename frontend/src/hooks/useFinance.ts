@@ -178,7 +178,7 @@ export function useFinance() {
   });
 
   const addTransactionsMutation = useMutation({
-    mutationFn: (transactions: Omit<Transaction, 'id' | 'createdAt'>[]) => api.post('/transactions/bulk', transactions),
+    mutationFn: (transactions: Omit<Transaction, 'id' | 'createdAt'>[]) => api.post('/transactions/bulk', transactions, { timeout: 30000 }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['assets'] });

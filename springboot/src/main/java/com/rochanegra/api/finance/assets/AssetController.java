@@ -45,7 +45,8 @@ public class AssetController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteAsset(@PathVariable UUID id) {
-        assetService.deleteAsset(id);
+    public void deleteAsset(@PathVariable UUID id, Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        assetService.deleteAsset(id, userId);
     }
 }

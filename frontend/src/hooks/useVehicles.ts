@@ -206,3 +206,44 @@ export function useVehicles() {
     importData,
   };
 }
+
+export function useVehicleDetails(vehicleId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  const { data: maintenanceRecords = [], isLoading: isLoadingMaintenance } = useQuery({
+    queryKey: ['maintenance-logs', vehicleId],
+    queryFn: async () => {
+      if (!vehicleId) return [];
+      const response = await api.get<MaintenanceRecord[]>(`/vehicles/${vehicleId}/maintenance`);
+      return response.data;
+    },
+    enabled: !!vehicleId,
+  });
+
+  const { data: fuelRecords = [], isLoading: isLoadingFuel } = useQuery({
+    queryKey: ['fuel-logs', vehicleId],
+    queryFn: async () => {
+      if (!vehicleId) return [];
+      const response = await api.get<FuelRecord[]>(`/vehicles/${vehicleId}/fuel`);
+      return response.data;
+    },
+    enabled: !!vehicleId,
+  });
+
+  const { data: vehicle } = useQuery({
+    queryKey: ['vehicles', vehicleId],
+    queryFn: async () => {
+      if (!vehicleId) return null;
+      const response = await api.get<Vehicle>(`/vehicles/${vehicleId}`);
+      return response.data;
+    },
+    enabled: !!vehicleId,
+  });
+
+  return {
+    vehicle,
+    maintenanceRecords,
+    fuelRecords,
+    isLoading: isLoadingMaintenance || isLoadingFuel,
+  };
+}

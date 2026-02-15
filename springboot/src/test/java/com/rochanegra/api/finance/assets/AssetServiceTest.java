@@ -52,7 +52,7 @@ class AssetServiceTest {
     @Test
     void createAsset_bankAccount_shouldSetBalance() {
         AssetCreateDto createDto = new AssetCreateDto("Test", AssetType.bank_account, "EUR", BigDecimal.valueOf(100),
-                "Bank", "Desc", null);
+                null, null, "Bank", "Desc", null);
 
         when(assetRepository.save(any(Asset.class))).thenAnswer(i -> {
             Asset a = i.getArgument(0);
@@ -71,7 +71,7 @@ class AssetServiceTest {
     @Test
     void createAsset_stock_shouldSetQuantity() {
         AssetCreateDto createDto = new AssetCreateDto("Stock", AssetType.stock, "USD", BigDecimal.valueOf(10), null,
-                null, null);
+                null, null, null, null);
 
         when(assetRepository.save(any(Asset.class))).thenAnswer(i -> {
             Asset a = i.getArgument(0);
@@ -87,7 +87,7 @@ class AssetServiceTest {
 
     @Test
     void updateAssetDetails_found_shouldSanitizeAndSave() {
-        AssetUpdateDto updateDto = new AssetUpdateDto("New Name", "New Bank", "New Desc", null);
+        AssetUpdateDto updateDto = new AssetUpdateDto("New Name", "New Bank", "New Desc", null, null, null);
         when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
 
         assetService.updateAssetDetails(assetId, updateDto, userId);
@@ -99,7 +99,7 @@ class AssetServiceTest {
 
     @Test
     void updateAssetDetails_wrongUser_shouldThrowResourceNotFoundException() {
-        AssetUpdateDto updateDto = new AssetUpdateDto("New Name", null, null, null);
+        AssetUpdateDto updateDto = new AssetUpdateDto("New Name", null, null, null, null, null);
         when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
 
         assertThrows(ResourceNotFoundException.class,

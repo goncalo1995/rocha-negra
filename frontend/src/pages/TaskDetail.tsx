@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MarkdownPreview } from "@/components/ui/markdown-editor";
+import { EntityRelations } from "@/components/relations/EntityRelations";
 
 export default function TaskDetail() {
     const { taskId } = useParams<{ taskId: string }>();
@@ -220,6 +221,15 @@ export default function TaskDetail() {
                             )}
                         </div>
                     </div>
+
+                    {/* Linking Section */}
+                    {taskId && (
+                        <EntityRelations
+                            sourceId={taskId}
+                            sourceType="task"
+                            title="Related Projects & Assets"
+                        />
+                    )}
                 </div>
             </div>
         </div>

@@ -42,6 +42,19 @@ public class LinkService {
                 .collect(Collectors.toList());
     }
 
+    public List<LinkDto> getLinksForSource(UUID sourceId, String sourceType, UUID userId) {
+        if (sourceType != null) {
+            return linkRepository.findByUserIdAndSourceEntityIdAndSourceEntityType(userId, sourceId, sourceType)
+                    .stream()
+                    .map(this::toDto)
+                    .collect(Collectors.toList());
+        }
+        return linkRepository.findByUserIdAndSourceEntityId(userId, sourceId)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public void deleteLink(UUID linkId, UUID userId) {
         EntityLink link = linkRepository.findById(linkId)

@@ -14,4 +14,6 @@ public interface EntityLinkRepository extends JpaRepository<EntityLink, UUID> {
 
     // Find all links where a given entity is the target
     List<EntityLink> findByUserIdAndTargetEntityIdAndTargetEntityType(UUID userId, UUID targetId, String targetType);
+
+    List<EntityLink> findByUserIdAndSourceEntityId(UUID userId, UUID sourceId);
 }

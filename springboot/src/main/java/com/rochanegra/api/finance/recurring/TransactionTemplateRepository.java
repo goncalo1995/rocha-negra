@@ -15,6 +15,10 @@ public interface TransactionTemplateRepository extends JpaRepository<Transaction
 
     List<TransactionTemplate> findAllByGeneratorIdIn(List<UUID> generatorIds);
 
+    List<TransactionTemplate> findByAssetId(UUID assetId);
+
+    List<TransactionTemplate> findByDestinationAssetId(UUID assetId);
+
     @Query(value = """
                 -- First, try to find the currently active template (most recent one in the past)
                 (SELECT * FROM transaction_templates
