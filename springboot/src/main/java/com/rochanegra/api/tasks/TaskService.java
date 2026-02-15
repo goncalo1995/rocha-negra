@@ -1,13 +1,19 @@
 package com.rochanegra.api.tasks;
 
 import java.time.Instant;
-import java.util.Comparator;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 
 import com.rochanegra.api.dashboard.dtos.TasksWidgetDto;
 import com.rochanegra.api.exception.ResourceNotFoundException;
@@ -54,6 +60,9 @@ public class TaskService {
         if (createDto.parentId() != null) {
             Task parentTask = taskRepository.findById(createDto.parentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Parent task not found"));
+            if (parentTask.getStatus() == TaskStatus.DONE) {
+                throw new IllegalArgumentException("Cannot add subtask to a completed task.");
+            }
             task.setParent(parentTask);
         }
 
@@ -62,6 +71,7 @@ public class TaskService {
         task.setAssignedTo(createDto.assignedTo());
         task.setDueDate(createDto.dueDate());
         task.setPriority(createDto.priority() != null ? createDto.priority() : 2); // Default priority
+        task.setPosition(createDto.position() != null ? createDto.position() : 0); // Default position
         task.setStatus(TaskStatus.TODO);
 
         Task savedTask = taskRepository.save(task);
@@ -76,17 +86,44 @@ public class TaskService {
     }
 
     public List<TaskDto> getInboxTasks(UUID userId) {
+        // GTD: Inbox is for UNPROCESSED items.
+        // Processed items are those with a due date, a project (node), or a non-TODO
+        // status.
         return taskRepository.findByNodeIdIsNullAndCreatedByOrderByCreatedAtDesc(userId).stream()
+                .filter(task -> task.getDueDate() == null && task.getStatus() == TaskStatus.TODO)
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
     public List<TaskDto> getActiveTasks(UUID userId) {
         List<TaskStatus> excluded = List.of(TaskStatus.DONE, TaskStatus.ARCHIVED);
-        List<Task> tasks = taskRepository.findByCreatedByAndStatusNotIn(userId, excluded);
-        // By due date is common for a dashboard.
-        tasks.sort(Comparator.comparing(Task::getDueDate, Comparator.nullsLast(Comparator.naturalOrder())));
-        return tasks.stream()
+        return taskRepository.findByCreatedByAndStatusNotIn(userId, excluded).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskDto> getTodayTasks(UUID userId) {
+        return taskRepository.findByCreatedByAndDueDateOrderByPriorityAsc(userId, LocalDate.now()).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskDto> getUpcomingTasks(UUID userId) {
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        LocalDate nextWeek = LocalDate.now().plusDays(7);
+        return taskRepository.findByCreatedByAndDueDateBetweenOrderByDueDateAsc(userId, tomorrow, nextWeek).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskDto> getWaitingTasks(UUID userId) {
+        return taskRepository.findByCreatedByAndStatusOrderByDueDateAsc(userId, TaskStatus.WAITING).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskDto> getSomedayTasks(UUID userId) {
+        return taskRepository.findByCreatedByAndStatusOrderByDueDateAsc(userId, TaskStatus.SOMEDAY).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
@@ -95,6 +132,28 @@ public class TaskService {
         return taskRepository.findAllByCreatedByOrderByCreatedAtDesc(userId).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
+    }
+
+    public Page<TaskDto> searchTasks(UUID userId, String query, TaskStatus status, Integer priority,
+            Pageable pageable) {
+        Specification<Task> spec = (root, q, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("createdBy"), userId));
+
+            if (query != null && !query.isBlank()) {
+                predicates.add(cb.like(cb.lower(root.get("title")), "%" + query.toLowerCase() + "%"));
+            }
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (priority != null) {
+                predicates.add(cb.equal(root.get("priority"), priority));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return taskRepository.findAll(spec, pageable).map(this::toDto);
     }
 
     public TaskDto getTaskById(UUID taskId, UUID userId) {
@@ -190,6 +249,7 @@ public class TaskService {
                 task.getCompletedAt(),
                 task.getPosition(),
                 task.getCustomFields(),
+                task.getNode() != null ? task.getNode().getName() : null,
                 task.getCreatedAt(),
                 task.getUpdatedAt(),
                 subtaskDtos);

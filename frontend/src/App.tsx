@@ -4,34 +4,41 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./components/auth/AuthContext";
-import Index from "./pages/Index";
-import Finance from "./pages/Finance";
-import IT from "./pages/IT";
-import Vehicles from "./pages/Vehicles";
-import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
-import { CVPage } from "./pages/CVPage";
-import { SkillsPage } from "./pages/SkillsPage";
-import { StrictMode } from "react";
-import { ProjectionsPage } from "./pages/finance/ProjectionsPage";
+import { StrictMode, lazy, Suspense, useEffect } from "react";
 import { MainLayout } from "./components/layout/MainLayout";
 import { Spinner } from "./components/ui/spinner";
-import Dashboard from "./pages/Dashboard";
-import Tasks from "./pages/Tasks";
-import Projects from "./pages/Nodes";
-import NodeDetail from "./pages/NodeDetail";
-import TaskDetail from "./pages/TaskDetail";
-import Contacts from "./pages/Contacts";
-import ContactDetail from "./pages/ContactDetail";
-import Home from "./pages/Home";
-import Assets from "./pages/Assets";
-import Liabilities from "./pages/Liabilities";
-import Ledger from "./pages/Ledger";
-import FixedCosts from "./pages/FixedCosts";
-import Categories from "./pages/Categories";
-import Agenda from "./pages/Agenda";
-import ParaDashboard from "./pages/ParaDashboard";
-import Landing from "./pages/Landing";
+
+// Lazy load all page components
+const Index = lazy(() => import("./pages/Index"));
+const Finance = lazy(() => import("./pages/Finance"));
+const IT = lazy(() => import("./pages/IT"));
+const Vehicles = lazy(() => import("./pages/Vehicles"));
+const Login = lazy(() => import("./pages/Login"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const CVPage = lazy(() => import("./pages/CVPage").then(module => ({ default: module.CVPage })));
+const SkillsPage = lazy(() => import("./pages/SkillsPage").then(module => ({ default: module.SkillsPage })));
+const ProjectionsPage = lazy(() => import("./pages/finance/ProjectionsPage").then(module => ({ default: module.ProjectionsPage })));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Nodes = lazy(() => import("./pages/Nodes"));
+const NodeDetail = lazy(() => import("./pages/NodeDetail"));
+const TaskDetail = lazy(() => import("./pages/TaskDetail"));
+const Contacts = lazy(() => import("./pages/Contacts"));
+const ContactDetail = lazy(() => import("./pages/ContactDetail"));
+const Home = lazy(() => import("./pages/Home"));
+const Assets = lazy(() => import("./pages/Assets"));
+const Inbox = lazy(() => import("./pages/gtd/Inbox"));
+const Today = lazy(() => import("./pages/gtd/Today"));
+const Upcoming = lazy(() => import("./pages/gtd/Upcoming"));
+const Waiting = lazy(() => import("./pages/gtd/Waiting"));
+const Someday = lazy(() => import("./pages/gtd/Someday"));
+const GTD = lazy(() => import("./pages/GTD"));
+const Liabilities = lazy(() => import("./pages/Liabilities"));
+const Ledger = lazy(() => import("./pages/Ledger"));
+const FixedCosts = lazy(() => import("./pages/FixedCosts"));
+const Categories = lazy(() => import("./pages/Categories"));
+const Agenda = lazy(() => import("./pages/Agenda"));
+const ParaDashboard = lazy(() => import("./pages/ParaDashboard"));
+const Landing = lazy(() => import("./pages/Landing"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,73 +74,168 @@ const AuthRedirect = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => (
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter future={{
-            v7_relativeSplatPath: true,
-            v7_startTransition: true,
-          }}>
-            <Routes>
-              <Route path="/" element={
-                <AuthRedirect>
-                  <Landing />
-                </AuthRedirect>
-              } />
-              <Route path="/login" element={
-                <AuthRedirect>
-                  <Login />
-                </AuthRedirect>
-              } />
-              <Route path="/cv" element={<CVPage />} />
-              <Route path="/cv/skills" element={<SkillsPage />} />
-
-              <Route
-                element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }
-              >
-                {/* These routes are now children of MainLayout */}
-                <Route path="/dashboard" element={<Index />} />
-                <Route path="/old" element={<Home />} />
-                <Route path="/finance" element={<Finance />} />
-                <Route path="/finance/projections" element={<ProjectionsPage />} />
-                <Route path="/assets" element={<Assets />} />
-                <Route path="/liabilities" element={<Liabilities />} />
-                <Route path="/ledger" element={<Ledger />} />
-                <Route path="/fixed-costs" element={<FixedCosts />} />
-                <Route path="/categories" element={<Categories />} />
-                <Route path="/agenda" element={<Agenda />} />
-                <Route path="/vehicles" element={<Vehicles />} />
-                <Route path="/it" element={<IT />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/nodes" element={<ParaDashboard />} />
-                <Route path="/projects" element={<Projects type="PROJECT" />} />
-                <Route path="/areas" element={<Projects type="AREA" />} />
-                <Route path="/resources" element={<Projects type="RESOURCE" />} />
-                <Route path="/goals" element={<Projects type="GOAL" />} />
-                <Route path="/archive" element={<Projects type="ARCHIVE" />} />
-                <Route path="/nodes/:nodeId" element={<NodeDetail />} />
-                <Route path="/tasks" element={<Tasks />} />
-                <Route path="/tasks/:taskId" element={<TaskDetail />} />
-                <Route path="/contacts" element={<Contacts />} />
-                <Route path="/contacts/:contactId" element={<ContactDetail />} />
-              </Route>
-
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </StrictMode>
+const LoadingBoundary = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <Spinner />
+  </div>
 );
+
+const App = () => {
+  // Add this to your App.tsx or root layout temporarily
+  useEffect(() => {
+    console.log('=== SCROLL MONITOR ACTIVATED ===');
+
+    // Track scroll position
+    let lastScrollY = window.scrollY;
+    let freezeDetected = false;
+
+    const checkScroll = () => {
+      const currentScroll = window.scrollY;
+      const canScroll = document.body.style.overflow !== 'hidden';
+      const bodyOverflow = document.body.style.overflow;
+      const htmlOverflow = document.documentElement.style.overflow;
+      const bodyHeight = document.body.style.height;
+      const htmlHeight = document.documentElement.style.height;
+      const overflowHiddenElements = document.querySelectorAll('[style*="overflow: hidden"]').length;
+
+      // Detect if scroll is frozen (position hasn't changed but user tried to scroll)
+      if (lastScrollY === currentScroll && !canScroll) {
+        if (!freezeDetected) {
+          console.warn('🚨 SCROLL FREEZE DETECTED', {
+            lastScrollY,
+            currentScroll,
+            bodyOverflow,
+            htmlOverflow,
+            bodyHeight,
+            htmlHeight,
+            overflowHiddenElements,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            // Try to capture what might have caused it
+            activeElement: document.activeElement?.tagName,
+            activeElementId: document.activeElement?.id,
+            modalElements: document.querySelectorAll('[role="dialog"], [class*="modal"]').length,
+          });
+
+          // Capture stack trace to see what caused the style change
+          console.trace('Style change origin:');
+
+          freezeDetected = true;
+        }
+      } else {
+        freezeDetected = false;
+      }
+
+      lastScrollY = currentScroll;
+    };
+
+    // Monitor scroll events
+    window.addEventListener('scroll', checkScroll, { passive: true });
+
+    // Monitor style changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'style') {
+          const newOverflow = document.body.style.overflow;
+          const oldOverflow = mutation.oldValue?.includes('overflow: hidden') ? 'hidden' : 'visible';
+
+          if (newOverflow !== oldOverflow) {
+            console.log('📋 Body style changed:', {
+              from: oldOverflow,
+              to: newOverflow,
+              timestamp: new Date().toISOString(),
+              stack: new Error().stack?.split('\n').slice(1, 4).join('\n')
+            });
+          }
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['style'],
+      attributeOldValue: true
+    });
+
+    return () => {
+      window.removeEventListener('scroll', checkScroll);
+      observer.disconnect();
+    };
+  }, []);
+
+  return (
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner richColors />
+            <BrowserRouter future={{
+              v7_relativeSplatPath: true,
+              v7_startTransition: true,
+            }}>
+              <Suspense fallback={<LoadingBoundary />}>
+                <Routes>
+                  <Route path="/" element={
+                    <AuthRedirect>
+                      <Landing />
+                    </AuthRedirect>
+                  } />
+                  <Route path="/login" element={
+                    <AuthRedirect>
+                      <Login />
+                    </AuthRedirect>
+                  } />
+                  <Route path="/cv" element={<CVPage />} />
+                  <Route path="/cv/skills" element={<SkillsPage />} />
+
+                  <Route
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    {/* These routes are now children of MainLayout */}
+                    <Route path="/dashboard" element={<Index />} />
+                    <Route path="/old" element={<Home />} />
+                    <Route path="/finance" element={<Finance />} />
+                    <Route path="/finance/projections" element={<ProjectionsPage />} />
+                    <Route path="/assets" element={<Assets />} />
+                    <Route path="/liabilities" element={<Liabilities />} />
+                    <Route path="/ledger" element={<Ledger />} />
+                    <Route path="/fixed-costs" element={<FixedCosts />} />
+                    <Route path="/categories" element={<Categories />} />
+                    <Route path="/agenda" element={<Agenda />} />
+                    <Route path="/vehicles" element={<Vehicles />} />
+                    <Route path="/it" element={<IT />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/nodes" element={<ParaDashboard />} />
+                    <Route path="/projects" element={<Nodes type="PROJECT" />} />
+                    <Route path="/areas" element={<Nodes type="AREA" />} />
+                    <Route path="/resources" element={<Nodes type="RESOURCE" />} />
+                    <Route path="/goals" element={<Nodes type="GOAL" />} />
+                    <Route path="/archive" element={<Nodes type="ARCHIVE" />} />
+                    <Route path="/nodes/:nodeId" element={<NodeDetail />} />
+                    <Route path="/tasks" element={<Navigate to="/gtd/all" replace />} />
+                    <Route path="/tasks/:taskId" element={<TaskDetail />} />
+                    <Route path="/contacts" element={<Contacts />} />
+                    <Route path="/contacts/:contactId" element={<ContactDetail />} />
+
+                    <Route path="/gtd" element={<Navigate to="/gtd/inbox" replace />} />
+                    <Route path="/gtd/:tab" element={<GTD />} />
+                  </Route>
+
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </StrictMode>
+  );
+};
 
 export default App;

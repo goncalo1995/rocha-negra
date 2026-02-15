@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronRight, Target, Layers, BookOpen, CircleDot, GripVertical, Check } from "lucide-react";
+import { ChevronRight, Target, Layers, BookOpen, CircleDot } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { NodeTreeItem, useNodesTree } from "@/hooks/useNodesTree";
@@ -27,7 +27,7 @@ interface SidebarTreeItemProps {
 
 export function SidebarTreeItem({ item, depth = 0 }: SidebarTreeItemProps) {
     const location = useLocation();
-    const { state: sidebarState } = useSidebar();
+    const { state: sidebarState, setOpenMobile } = useSidebar();
     const isCollapsed = sidebarState === "collapsed";
     const [isExpanded, setIsExpanded] = useState(false);
     const { moveNode } = useNodesTree();
@@ -88,7 +88,7 @@ export function SidebarTreeItem({ item, depth = 0 }: SidebarTreeItemProps) {
                             onClick={isVirtual && !isCollapsed ? (e) => {
                                 e.preventDefault();
                                 setIsExpanded(!isExpanded);
-                            } : undefined}
+                            } : () => setOpenMobile(false)}
                         >
                             {isVirtual ? (
                                 <Link

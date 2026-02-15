@@ -85,12 +85,12 @@ export function NodeDialog({ open, onOpenChange, node, defaultType, defaultParen
 
         try {
             if (isEditing) {
-                // TODO should handle more fields
                 const updates: NodeUpdate = {
                     name,
                     description,
                     status,
                     dueDate: dueDate || null,
+                    parentId: parentId,
                 };
                 updateNode.mutate({ id: node.id, updates });
             } else {

@@ -1055,7 +1055,13 @@ export type Database = {
         | "quarterly"
         | "yearly"
       recurringfrequency: "monthly" | "weekly" | "yearly"
-      task_status: "TODO" | "IN_PROGRESS" | "DONE" | "ARCHIVED"
+      task_status:
+        | "TODO"
+        | "IN_PROGRESS"
+        | "DONE"
+        | "ARCHIVED"
+        | "WAITING"
+        | "SOMEDAY"
       transaction_type: "income" | "expense" | "transfer"
       transactiontype: "expense" | "income" | "transfer"
     }
@@ -1236,7 +1242,14 @@ export const Constants = {
         "yearly",
       ],
       recurringfrequency: ["monthly", "weekly", "yearly"],
-      task_status: ["TODO", "IN_PROGRESS", "DONE", "ARCHIVED"],
+      task_status: [
+        "TODO",
+        "IN_PROGRESS",
+        "DONE",
+        "ARCHIVED",
+        "WAITING",
+        "SOMEDAY",
+      ],
       transaction_type: ["income", "expense", "transfer"],
       transactiontype: ["expense", "income", "transfer"],
     },

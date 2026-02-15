@@ -14,6 +14,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [usePassword, setUsePassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [otpSent, setOtpSent] = useState(false);
     const [emailFocused, setEmailFocused] = useState(false);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
@@ -54,6 +55,7 @@ const Login = () => {
 
                 if (error) throw error;
 
+                setOtpSent(true);
                 toast({
                     title: 'Magic link sent',
                     description: 'Check your email for the login link.',
@@ -254,144 +256,186 @@ const Login = () => {
                         <div className="absolute -inset-0.5 bg-gradient-to-r from-white/0 via-white/5 to-white/0 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-700" />
 
                         <div className="relative glass-card rounded-2xl p-8">
-                            <form onSubmit={handleAuth} className="space-y-6">
-                                {/* Email Field */}
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                        Email address
-                                    </Label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                        <Input
-                                            type="email"
-                                            placeholder="name@domain.com"
-                                            className="pl-10 h-12 bg-white/[0.02] border-white/10 focus:border-white/20 focus:ring-0 rounded-xl transition-all text-white placeholder:text-muted-foreground/50"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            onFocus={() => setEmailFocused(true)}
-                                            onBlur={() => setEmailFocused(false)}
-                                            required
-                                        />
+                            <AnimatePresence mode="wait">
+                                {!otpSent ? (
+                                    <motion.form
+                                        key="login-form"
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 10 }}
+                                        onSubmit={handleAuth}
+                                        className="space-y-6"
+                                    >
+                                        {/* Email Field */}
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                Email address
+                                            </Label>
+                                            <div className="relative">
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                                <Input
+                                                    type="email"
+                                                    placeholder="name@domain.com"
+                                                    className="pl-10 h-12 bg-white/[0.02] border-white/10 focus:border-white/20 focus:ring-0 rounded-xl transition-all text-white placeholder:text-muted-foreground/50"
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    onFocus={() => setEmailFocused(true)}
+                                                    onBlur={() => setEmailFocused(false)}
+                                                    required
+                                                />
+                                                <AnimatePresence>
+                                                    {emailFocused && email && (
+                                                        <motion.div
+                                                            initial={{ scale: 0, opacity: 0 }}
+                                                            animate={{ scale: 1, opacity: 1 }}
+                                                            exit={{ scale: 0, opacity: 0 }}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2"
+                                                        >
+                                                            <Sparkles className="w-4 h-4 text-muted-foreground/50" />
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        </div>
+
+                                        {/* Password Field (Conditional) */}
                                         <AnimatePresence>
-                                            {emailFocused && email && (
+                                            {usePassword && (
                                                 <motion.div
-                                                    initial={{ scale: 0, opacity: 0 }}
-                                                    animate={{ scale: 1, opacity: 1 }}
-                                                    exit={{ scale: 0, opacity: 0 }}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                                                    initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1, marginTop: 24 }}
+                                                    exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                                                    className="space-y-2 overflow-hidden"
                                                 >
-                                                    <Sparkles className="w-4 h-4 text-muted-foreground/50" />
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                        Password
+                                                    </Label>
+                                                    <div className="relative">
+                                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                                        <Input
+                                                            type={showPassword ? 'text' : 'password'}
+                                                            placeholder="••••••••"
+                                                            className="pl-10 pr-10 h-12 bg-white/[0.02] border-white/10 focus:border-white/20 focus:ring-0 rounded-xl transition-all text-white placeholder:text-muted-foreground/50"
+                                                            value={password}
+                                                            onChange={(e) => setPassword(e.target.value)}
+                                                            required={usePassword}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+                                                        >
+                                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                        </button>
+                                                    </div>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
-                                    </div>
-                                </div>
 
-                                {/* Password Field (Conditional) */}
-                                <AnimatePresence>
-                                    {usePassword && (
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                                            animate={{ height: 'auto', opacity: 1, marginTop: 24 }}
-                                            exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                                            className="space-y-2 overflow-hidden"
+                                        {/* Submit Button */}
+                                        <Button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="relative w-full h-12 bg-white text-background hover:bg-white/90 rounded-xl font-medium transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
                                         >
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                                Password
-                                            </Label>
-                                            <div className="relative">
-                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                                <Input
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    placeholder="••••••••"
-                                                    className="pl-10 pr-10 h-12 bg-white/[0.02] border-white/10 focus:border-white/20 focus:ring-0 rounded-xl transition-all text-white placeholder:text-muted-foreground/50"
-                                                    value={password}
-                                                    onChange={(e) => setPassword(e.target.value)}
-                                                    required={usePassword}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+                                            {loading ? (
+                                                <motion.div
+                                                    animate={{ rotate: 360 }}
+                                                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                                                 >
-                                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                                </button>
+                                                    <Loader2 className="w-5 h-5" />
+                                                </motion.div>
+                                            ) : (
+                                                <motion.div
+                                                    className="flex items-center justify-center gap-2"
+                                                    whileHover={{ gap: '12px' }}
+                                                >
+                                                    <span>{usePassword ? 'Continue' : 'Send Magic Link'}</span>
+                                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                                </motion.div>
+                                            )}
+                                        </Button>
+
+                                        {/* Toggle Password/Magic Link */}
+                                        <div className="text-center pt-2">
+                                            <motion.button
+                                                type="button"
+                                                className="text-sm text-muted-foreground hover:text-white transition-colors"
+                                                onClick={() => setUsePassword(!usePassword)}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                {usePassword ? 'Use magic link instead?' : 'Use password instead?'}
+                                            </motion.button>
+                                        </div>
+
+                                        {/* Divider */}
+                                        <div className="relative my-6">
+                                            <div className="absolute inset-0 flex items-center">
+                                                <div className="w-full border-t border-white/5" />
                                             </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                            <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
+                                                <span className="px-3 text-muted-foreground/50">Or continue with</span>
+                                            </div>
+                                        </div>
 
-                                {/* Submit Button */}
-                                <Button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="relative w-full h-12 bg-white text-background hover:bg-white/90 rounded-xl font-medium transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
-                                >
-                                    {loading ? (
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                                        >
-                                            <Loader2 className="w-5 h-5" />
-                                        </motion.div>
-                                    ) : (
-                                        <motion.div
-                                            className="flex items-center justify-center gap-2"
-                                            whileHover={{ gap: '12px' }}
-                                        >
-                                            <span>{usePassword ? 'Continue' : 'Send Magic Link'}</span>
-                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                        </motion.div>
-                                    )}
-                                </Button>
-
-                                {/* Toggle Password/Magic Link */}
-                                <div className="text-center pt-2">
-                                    <motion.button
-                                        type="button"
-                                        className="text-sm text-muted-foreground hover:text-white transition-colors"
-                                        onClick={() => setUsePassword(!usePassword)}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
+                                        {/* OAuth Buttons */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <motion.button
+                                                type="button"
+                                                className="flex items-center justify-center gap-2 h-11 bg-white/[0.02] hover:bg-white/[0.04] rounded-xl border border-white/5 transition-all text-muted-foreground hover:text-white"
+                                                onClick={() => handleOAuthSignIn('github')}
+                                                whileHover={{ y: -1 }}
+                                                whileTap={{ y: 0 }}
+                                            >
+                                                <Github className="w-4 h-4" />
+                                                <span className="text-sm">GitHub</span>
+                                            </motion.button>
+                                            <motion.button
+                                                type="button"
+                                                className="flex items-center justify-center gap-2 h-11 bg-white/[0.02] hover:bg-white/[0.04] rounded-xl border border-white/5 transition-all text-muted-foreground hover:text-white"
+                                                onClick={() => handleOAuthSignIn('google')}
+                                                whileHover={{ y: -1 }}
+                                                whileTap={{ y: 0 }}
+                                            >
+                                                <Chrome className="w-4 h-4" />
+                                                <span className="text-sm">Google</span>
+                                            </motion.button>
+                                        </div>
+                                    </motion.form>
+                                ) : (
+                                    <motion.div
+                                        key="otp-sent"
+                                        initial={{ opacity: 0, x: 10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -10 }}
+                                        className="text-center space-y-6 py-4"
                                     >
-                                        {usePassword ? 'Use magic link instead?' : 'Use password instead?'}
-                                    </motion.button>
-                                </div>
-
-                                {/* Divider */}
-                                <div className="relative my-6">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <div className="w-full border-t border-white/5" />
-                                    </div>
-                                    <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
-                                        <span className="px-3 text-muted-foreground/50">Or continue with</span>
-                                    </div>
-                                </div>
-
-                                {/* OAuth Buttons */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <motion.button
-                                        type="button"
-                                        className="flex items-center justify-center gap-2 h-11 bg-white/[0.02] hover:bg-white/[0.04] rounded-xl border border-white/5 transition-all text-muted-foreground hover:text-white"
-                                        onClick={() => handleOAuthSignIn('github')}
-                                        whileHover={{ y: -1 }}
-                                        whileTap={{ y: 0 }}
-                                    >
-                                        <Github className="w-4 h-4" />
-                                        <span className="text-sm">GitHub</span>
-                                    </motion.button>
-                                    <motion.button
-                                        type="button"
-                                        className="flex items-center justify-center gap-2 h-11 bg-white/[0.02] hover:bg-white/[0.04] rounded-xl border border-white/5 transition-all text-muted-foreground hover:text-white"
-                                        onClick={() => handleOAuthSignIn('google')}
-                                        whileHover={{ y: -1 }}
-                                        whileTap={{ y: 0 }}
-                                    >
-                                        <Chrome className="w-4 h-4" />
-                                        <span className="text-sm">Google</span>
-                                    </motion.button>
-                                </div>
-                            </form>
+                                        <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-2">
+                                            <Mail className="w-8 h-8 text-white" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h3 className="text-xl font-medium text-white">Check your email</h3>
+                                            <p className="text-muted-foreground text-sm leading-relaxed">
+                                                We've sent a magic link to <span className="text-white font-medium">{email}</span>. Click the link to log in instantly.
+                                            </p>
+                                        </div>
+                                        <div className="pt-4 space-y-4">
+                                            <p className="text-xs text-muted-foreground">
+                                                Didn't receive it? Check your spam folder.
+                                            </p>
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => setOtpSent(false)}
+                                                className="text-sm text-muted-foreground hover:text-white hover:bg-white/5 flex items-center gap-2 mx-auto"
+                                            >
+                                                <ArrowLeft className="w-4 h-4" />
+                                                Enter a different email
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </motion.div>
 

@@ -46,12 +46,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [queryClient]);
 
     // --- Step 2: Use React Query to fetch backend data WHEN the session is available ---
-    const { data: backendUserData, isLoading: isProfileLoading } = useQuery<BackendUserData>({
+    const { data: backendUserData, isLoading: isProfileLoading, isError: isProfileError, error: profileError } = useQuery<BackendUserData>({
         // The query key includes the user's ID, so it's unique per user
         queryKey: ['user', 'me', session?.user?.id],
-        queryFn: async () => (await api.get('/users/me')).data,
+        queryFn: async () => {
+            try {
+                const response = await api.get('/users/me');
+                return response.data;
+            } catch (err) {
+                throw err;
+            }
+        },
         // This query will only run if 'session' exists
         enabled: !!session,
+        retry: 1, // Only retry once to avoid long hangs
     });
 
     const signOut = async () => {
@@ -63,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         supabaseUser: session?.user ?? null,
         profile: backendUserData?.profile ?? null,
         preferences: backendUserData?.preferences ?? null,
-        isLoading: initialLoading || (!!session && isProfileLoading),
+        isLoading: initialLoading || (!!session && isProfileLoading && !isProfileError),
         signOut,
     };
 

@@ -159,7 +159,13 @@ export default function TaskDetail() {
                                 open={isSubtaskOpen}
                                 onOpenChange={setIsSubtaskOpen}
                                 trigger={
-                                    <Button variant="outline" size="sm" className="gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-2"
+                                        disabled={task.status === 'DONE'}
+                                        title={task.status === 'DONE' ? "Cannot add subtasks to a completed task" : ""}
+                                    >
                                         <Plus className="h-3.5 w-3.5" />
                                         Add Subtask
                                     </Button>

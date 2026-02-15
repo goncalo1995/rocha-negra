@@ -3,10 +3,10 @@ import { FromDb } from "./utils";
 
 export type TaskStatus = Database['public']['Enums']['task_status'];
 
-export type Task = FromDb<Database['public']['Tables']['tasks']['Row']>;
-
-export type TaskWithSubtasks = Task & {
-    subtasks: Task[];
+export type Task = FromDb<Database['public']['Tables']['tasks']['Row']> & {
+    nodeName?: string | null;
+    nodeColor?: string | null;
+    subtasks?: Task[];
 };
 
 export type TaskCreate = {
@@ -14,6 +14,7 @@ export type TaskCreate = {
     description?: string | null;
     status?: TaskStatus;
     priority?: number;
+    position?: number;
     dueDate?: string | null; // ISO Date String
     nodeId?: string | null; // Optional: Link to a project/node
     parentId?: string | null; // Optional: For subtasks

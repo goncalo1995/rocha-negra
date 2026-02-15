@@ -4,5 +4,7 @@ public enum TaskStatus {
     TODO,
     IN_PROGRESS,
     DONE,
-    ARCHIVED
+    ARCHIVED,
+    WAITING,
+    SOMEDAY
 }

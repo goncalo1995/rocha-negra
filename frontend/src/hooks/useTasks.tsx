@@ -1,11 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Task, TaskCreate, TaskUpdate, TaskWithSubtasks } from '@/types/tasks';
+import { Task, TaskCreate, TaskUpdate } from '@/types/tasks';
 import { toast } from 'sonner';
 
 interface UseTasksProps {
     nodeId?: string | null; // For fetching tasks of a specific project/node
-    scope?: 'inbox' | 'today' | 'upcoming' | 'active'; // For GTD views
+    scope?: 'inbox' | 'today' | 'upcoming' | 'active' | 'waiting' | 'someday' | 'all'; // For GTD views
 }
 
 /**
@@ -29,27 +29,61 @@ export function useTasks({ nodeId, scope }: UseTasksProps = {}) {
             // Fetch personal tasks not assigned to any node
             endpoint = '/tasks/active';
         } else if (scope === 'today') {
-            endpoint = '/tasks';
-            params.dueDate = new Date().toISOString().split('T')[0];
+            endpoint = '/tasks/today';
         } else if (scope === 'upcoming') {
-            const today = new Date();
-            const nextWeek = new Date(today.setDate(today.getDate() + 7));
+            endpoint = '/tasks/upcoming';
+        } else if (scope === 'waiting') {
+            endpoint = '/tasks/waiting';
+        } else if (scope === 'someday') {
+            endpoint = '/tasks/someday';
+        } else if (scope === 'all') {
             endpoint = '/tasks';
-            params.endDate = nextWeek.toISOString().split('T')[0];
         }
 
-        const res = await api.get<Task[]>(endpoint, { params });
-        return res.data;
+        const res = await api.get<any>(endpoint, { params });
+        // Handle both List and Page responses (Page has 'content' field)
+        return Array.isArray(res.data) ? res.data : res.data.content;
     };
 
     return useQuery<Task[]>({ queryKey, queryFn });
+}
+
+interface UseInfiniteTasksProps {
+    query?: string;
+    status?: string;
+    priority?: number;
+    size?: number;
+}
+
+export function useInfiniteTasks({ query, status, priority, size = 20 }: UseInfiniteTasksProps = {}) {
+    return useInfiniteQuery({
+        queryKey: ['tasks', 'infinite', { query, status, priority, size }],
+        initialPageParam: 0,
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get('/tasks', {
+                params: {
+                    q: query,
+                    status,
+                    priority,
+                    page: pageParam,
+                    size,
+                    sort: 'createdAt,desc'
+                }
+            });
+            return res.data;
+        },
+        getNextPageParam: (lastPage) => {
+            if (lastPage.last) return undefined;
+            return lastPage.number + 1;
+        },
+    });
 }
 
 /**
  * Hook for fetching a single, detailed task with its subtasks.
  */
 export function useTask(id?: string) {
-    return useQuery<TaskWithSubtasks>({
+    return useQuery<Task>({
         queryKey: ['tasks', id],
         enabled: !!id,
         queryFn: async () => (await api.get(`/tasks/${id}`)).data,

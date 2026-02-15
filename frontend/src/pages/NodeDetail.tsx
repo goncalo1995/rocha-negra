@@ -4,17 +4,15 @@ import { useTaskMutations } from "@/hooks/useTasks";
 import { Button } from "@/components/ui/button";
 import {
     ArrowLeft,
-    Calendar,
-    CheckCircle2,
-    Circle,
-    Clock,
-    MoreVertical,
     Plus,
     Link as LinkIcon,
     Trash2,
     Users,
-    Edit2
+    Edit2,
+    Calendar,
+    MoreVertical
 } from "lucide-react";
+import { TaskCard, TaskStatus } from "@/components/tasks/TaskCard";
 import { format } from "date-fns";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { cn } from "@/lib/utils";
@@ -49,6 +47,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { MarkdownPreview } from "@/components/ui/markdown-editor";
 import { LinkNodeDialog } from "@/components/nodes/LinkNodeDialog";
+import { NodeStatus } from "@/types/nodes";
 
 export default function NodeDetail() {
     const { nodeId } = useParams<{ nodeId: string }>();
@@ -78,13 +77,12 @@ export default function NodeDetail() {
         });
     };
 
-    const getStatusColor = (status: string) => {
-        const s = status?.toLowerCase();
-        switch (s) {
-            case 'active': return 'text-primary bg-primary/10 border-primary/20';
-            case 'completed': return 'text-success bg-success/10 border-success/20';
-            case 'on_hold': return 'text-warning bg-warning/10 border-warning/20';
-            case 'archived': return 'text-muted-foreground bg-muted border-border';
+    const getStatusColor = (status: NodeStatus) => {
+        switch (status) {
+            case 'ACTIVE': return 'text-primary bg-primary/10 border-primary/20';
+            case 'COMPLETED': return 'text-success bg-success/10 border-success/20';
+            case 'ON_HOLD': return 'text-warning bg-warning/10 border-warning/20';
+            case 'ARCHIVED': return 'text-muted-foreground bg-muted border-border';
             default: return 'text-muted-foreground bg-muted border-border';
         }
     };
@@ -94,14 +92,6 @@ export default function NodeDetail() {
             deleteNode.mutate(node!.id, {
                 onSuccess: () => navigate("/nodes"), // Navigate away on success
             });
-        }
-    };
-
-    const getPriorityColor = (priority: number) => {
-        switch (priority) {
-            case 1: return 'text-destructive';
-            case 2: return 'text-warning';
-            default: return 'text-muted-foreground';
         }
     };
 
@@ -219,20 +209,6 @@ export default function NodeDetail() {
                             </div>
                         )}
                         <div className="flex items-center gap-8 mt-6 text-sm text-muted-foreground border-t border-border/40 pt-6">
-                            <div className="flex flex-col gap-1">
-                                <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">Timeline</span>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-1 w-1 rounded-full bg-success/60" />
-                                        <span className="text-xs">Created {format(new Date(node.createdAt || new Date()), 'MMM d, yyyy')}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-1 w-1 rounded-full bg-primary/60" />
-                                        <span className="text-xs">Updated {format(new Date(node.updatedAt || node.createdAt || new Date()), 'MMM d, yyyy')}</span>
-                                    </div>
-                                </div>
-                            </div>
-
                             {node.dueDate && (
                                 <div className="flex flex-col gap-1">
                                     <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">Deadline</span>
@@ -242,17 +218,17 @@ export default function NodeDetail() {
                                     </div>
                                 </div>
                             )}
+
+                            <div className="flex flex-col gap-1">
+                                <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">Updated at</span>
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    <span className="text-xs font-semibold">{format(new Date(node.updatedAt || node.createdAt || new Date()), 'MMM d, yyyy')}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                        <Button
-                            variant="outline"
-                            className="gap-2 h-9 px-4 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-all"
-                            onClick={() => setShowShareDialog(true)}
-                        >
-                            <Users className="h-4 w-4" />
-                            Share
-                        </Button>
                         <LinkNodeDialog sourceNodeId={node.id} />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -264,6 +240,10 @@ export default function NodeDetail() {
                                 <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
                                     <Edit2 className="h-4 w-4 mr-2" />
                                     Edit {node.type.toLowerCase()}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setShowShareDialog(true)}>
+                                    <Users className="h-4 w-4 mr-2" />
+                                    Share {node.type.toLowerCase()}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
                                     <Trash2 className="h-4 w-4 mr-2" />
@@ -328,45 +308,17 @@ export default function NodeDetail() {
                     </div>
                 ) : (
                     <div className="grid gap-3">
-                        {node.tasks.map(task => (
-                            <div key={task.id} className="group flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card/50 hover:bg-accent/50 transition-all">
-                                <div className="flex items-center gap-4 flex-1">
-                                    <button
-                                        onClick={() => handleToggleTaskStatus(task)}
-                                        className="focus:outline-none"
-                                    >
-                                        {task.status === 'DONE' ? (
-                                            <CheckCircle2 className="h-5 w-5 text-success hover:opacity-80 transition-opacity" />
-                                        ) : task.status === 'IN_PROGRESS' ? (
-                                            <Clock className="h-5 w-5 text-warning hover:opacity-80 transition-opacity" />
-                                        ) : (
-                                            <Circle className="h-5 w-5 text-muted-foreground group-hover:text-primary hover:text-primary transition-colors" />
-                                        )}
-                                    </button>
-                                    <Link to={`/tasks/${task.id}`} className="flex-1 min-w-0">
-                                        <p className={cn(
-                                            "font-medium hover:text-primary transition-colors truncate",
-                                            task.status === 'DONE' && "text-muted-foreground line-through"
-                                        )}>
-                                            {task.title}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className={cn(
-                                                "text-xs font-medium px-1.5 py-0.5 rounded capitalize",
-                                                getPriorityColor(task.priority)
-                                            )}>
-                                                {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'} Priority
-                                            </span>
-                                            {task.dueDate && (
-                                                <span className="text-xs text-muted-foreground">
-                                                    Due {format(new Date(task.dueDate), 'MMM d')}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </Link>
-                                </div>
-                                {/* Actions could go here */}
-                            </div>
+                        {node.tasks.map((task, i) => (
+                            <TaskCard
+                                key={task.id}
+                                id={task.id}
+                                title={task.title}
+                                status={task.status as TaskStatus}
+                                priority={task.priority}
+                                dueDate={task.dueDate}
+                                onToggleStatus={() => handleToggleTaskStatus(task)}
+                                delay={i * 0.05}
+                            />
                         ))}
                     </div>
                 )}
@@ -390,7 +342,7 @@ export default function NodeDetail() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
                                         onClick={() => handleUnlink(link.id)}
                                     >
                                         <Trash2 className="h-3.5 w-3.5" />

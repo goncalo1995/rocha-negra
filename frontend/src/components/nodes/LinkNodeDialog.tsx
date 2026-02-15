@@ -80,14 +80,14 @@ export function LinkNodeDialog({ sourceNodeId, trigger }: LinkNodeDialogProps) {
                 {trigger || (
                     <Button variant="outline" size="sm" className="gap-2">
                         <LinkIcon className="h-4 w-4" />
-                        Link Resource
+                        Link
                     </Button>
                 )}
             </div>
 
             <CommandDialog open={open} onOpenChange={setOpen}>
                 <DialogHeader className="px-4 pt-4 pb-2">
-                    <DialogTitle>Link a Resource</DialogTitle>
+                    <DialogTitle>Link Node</DialogTitle>
                 </DialogHeader>
                 <div className="flex items-center gap-2 px-4 pb-2">
                     <Select value={linkType} onValueChange={setLinkType}>
@@ -103,7 +103,7 @@ export function LinkNodeDialog({ sourceNodeId, trigger }: LinkNodeDialogProps) {
                         </SelectContent>
                     </Select>
                     <CommandInput
-                        placeholder="Search resources..."
+                        placeholder="Search nodes..."
                         value={search}
                         onValueChange={setSearch}
                         className="flex-1 border-none focus:ring-0"
@@ -117,7 +117,7 @@ export function LinkNodeDialog({ sourceNodeId, trigger }: LinkNodeDialogProps) {
                             Searching...
                         </div>
                     ) : (
-                        <CommandGroup heading="Resources">
+                        <CommandGroup heading="Nodes">
                             {nodes
                                 .filter(node => node.id !== sourceNodeId) // Exclude self
                                 .map((node) => (

@@ -66,7 +66,7 @@ export default function ParaDashboard() {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {cards.map((card) => (
                     <Link key={card.title} to={card.href} className="group">
                         <Card className={cn(

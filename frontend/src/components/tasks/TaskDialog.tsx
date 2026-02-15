@@ -75,6 +75,7 @@ export function TaskDialog({ open, onOpenChange, task, defaultNodeId, defaultPar
                     title: formData.title,
                     description: formData.description || undefined,
                     priority: parseInt(formData.priority),
+                    position: parseInt(formData.position),
                     nodeId: formData.nodeId !== "inbox" ? formData.nodeId : undefined,
                     parentId: defaultParentId,
                     dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
@@ -86,6 +87,7 @@ export function TaskDialog({ open, onOpenChange, task, defaultNodeId, defaultPar
                     title: formData.title,
                     description: formData.description || undefined,
                     priority: parseInt(formData.priority),
+                    position: parseInt(formData.position),
                     nodeId: formData.nodeId !== "inbox" ? formData.nodeId : undefined,
                     parentId: defaultParentId,
                     dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
@@ -174,6 +176,15 @@ export function TaskDialog({ open, onOpenChange, task, defaultNodeId, defaultPar
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
+                                    <Label htmlFor="dueDate">Due Date</Label>
+                                    <Input
+                                        id="dueDate"
+                                        type="date"
+                                        value={formData.dueDate}
+                                        onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
                                     <Label htmlFor="position">Position (Order)</Label>
                                     <Input
                                         id="position"
@@ -182,16 +193,6 @@ export function TaskDialog({ open, onOpenChange, task, defaultNodeId, defaultPar
                                         onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                                     />
                                 </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="dueDate">Due Date</Label>
-                                <Input
-                                    id="dueDate"
-                                    type="date"
-                                    value={formData.dueDate}
-                                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                />
                             </div>
 
                             <div className="space-y-2">

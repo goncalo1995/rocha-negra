@@ -23,6 +23,7 @@ public record TaskDto(
         Instant completedAt,
         Integer position,
         Map<String, Object> customFields,
+        String nodeName,
         Instant createdAt,
         Instant updatedAt,
         List<TaskDto> subtasks) {

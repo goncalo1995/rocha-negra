@@ -362,7 +362,8 @@ public class NodeService {
         // Filter the stream to only include tasks where the parent is null.
         List<TaskSummaryDto> tasks = node.getTasks().stream()
                 .filter(t -> t.getParent() == null)
-                .map(t -> new TaskSummaryDto(t.getId(), t.getTitle(), t.getStatus().toString(), t.getDueDate()))
+                .map(t -> new TaskSummaryDto(t.getId(), t.getTitle(), t.getStatus().toString(), t.getPriority(),
+                        t.getDueDate()))
                 .collect(Collectors.toList());
 
         List<NodeSummaryDto> children = node.getChildren().stream()

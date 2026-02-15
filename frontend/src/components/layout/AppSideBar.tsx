@@ -17,7 +17,9 @@ import {
     Layers,
     BookOpen,
     Target,
-    CircleDot
+    CircleDot,
+    Inbox,
+    Zap
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
@@ -40,32 +42,22 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
 
 const executionItems = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Tasks", url: "/tasks", icon: CheckSquare },
-    { title: "Agenda", url: "/agenda", icon: CalendarIcon },
+    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+    { title: "Tasks", url: "/gtd/all", icon: Inbox },
 ];
-
-const paraItems = [
-    { title: "Projects", url: "/projects", icon: FolderKanban },
-    { title: "Areas", url: "/areas", icon: Layers },
-    { title: "Resources", url: "/resources", icon: BookOpen },
-    { title: "Goals", url: "/goals", icon: Target },
-    { title: "Archive", url: "/archive", icon: Archive },
-];
-
 
 const treasuryItems = [
-    { title: "Assets", url: "/assets", icon: Wallet },
-    { title: "Liabilities", url: "/liabilities", icon: CreditCard },
     { title: "Ledger", url: "/ledger", icon: Receipt },
     { title: "Fixed Costs", url: "/fixed-costs", icon: CalendarClock },
     { title: "Categories", url: "/categories", icon: PieChart },
+    { title: "Assets", url: "/assets", icon: Wallet },
+    { title: "Liabilities", url: "/liabilities", icon: CreditCard },
 ];
 
 const otherItems = [
+    { title: "Agenda", url: "/agenda", icon: CalendarIcon },
     { title: "Network", url: "/contacts", icon: Users }
 ];
 
@@ -191,7 +183,7 @@ export function AppSidebar() {
 
                 {/* Other Groups */}
                 {navigationGroups.map((group) => (
-                    <SidebarGroup key={group.label} className="mt-6">
+                    <SidebarGroup key={group.label} className="mt-2">
                         <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-2">
                             {!collapsed && group.label}
                         </SidebarGroupLabel>
@@ -223,14 +215,14 @@ export function AppSidebar() {
                 ))}
             </SidebarContent>
 
-            <SidebarFooter className="p-2">
+            <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton
                                     size="lg"
-                                    className="data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
+                                    className="data-[state=open]:bg-accent data-[state=open]:text-accent-foreground ml-2"
                                 >
                                     <Avatar className="h-8 w-8 rounded-lg">
                                         <AvatarImage src={supabaseUser?.user_metadata.avatar_url} alt={supabaseUser?.user_metadata.full_name} />
@@ -260,7 +252,7 @@ export function AppSidebar() {
                                 <DropdownMenuItem asChild>
                                     <Link to="/settings" className="flex items-center cursor-pointer w-full" onClick={() => setOpenMobile(false)}>
                                         <Settings className="mr-2 h-4 w-4" />
-                                        <span>Settings</span>
+                                        <span>Settings (Soon)</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
@@ -272,7 +264,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                 </SidebarMenu>
 
-                <SidebarTrigger className="mt-2 w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-accent/50 hover:bg-accent transition-colors">
+                <SidebarTrigger className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-accent/50 hover:bg-accent transition-colors">
                     <ChevronLeft className={`h-4 w-4 transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`} />
                     {!collapsed && <span className="text-sm">Collapse Sidebar</span>}
                 </SidebarTrigger>

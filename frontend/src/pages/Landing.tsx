@@ -31,7 +31,7 @@ export default function Landing() {
                         <span className="font-semibold text-xl tracking-tight">Rocha Negra</span>
                     </div>
                     <div className="flex items-center gap-4 text-sm font-medium">
-                        <Button variant="ghost" onClick={() => navigate("/login")}>Login</Button>
+                        {/* <Button variant="ghost" onClick={() => navigate("/login")}>Login</Button> */}
                         <Button className="bg-white text-background hover:bg-white/90" onClick={() => navigate("/login")}>
                             Get Started
                         </Button>
@@ -45,7 +45,7 @@ export default function Landing() {
                     <div className="max-w-3xl">
                         <h1 className="text-6xl md:text-8xl font-bold tracking-tight mb-8 text-gradient">
                             Your life doesn't live in one app. <br />
-                            <span className="opacity-40">Neither should your second brain.</span>
+                            <span className="opacity-40 text-white">Neither should your second brain.</span>
                         </h1>
                         <p className="text-xl md:text-2xl text-muted-foreground mb-12 leading-relaxed max-w-2xl">
                             Notes in one place. Tasks in another. Finances somewhere else.
