@@ -1,7 +1,7 @@
 package com.rochanegra.api.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rochanegra.api.exception.ErrorResponse;
+import com.rochanegra.api.common.exception.ErrorResponse;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

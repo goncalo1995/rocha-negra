@@ -66,7 +66,7 @@ export function SidebarTreeItem({ item, depth = 0 }: SidebarTreeItemProps) {
                     )}
                 >
                     {/* Expand/Collapse Toggle - Hidden when collapsed */}
-                    {!isCollapsed && (
+                    {!isCollapsed && item.count > 0 && (
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
                             className={cn(
@@ -85,14 +85,14 @@ export function SidebarTreeItem({ item, depth = 0 }: SidebarTreeItemProps) {
                             isActive={isActive(`/nodes/${item.id}`)}
                             tooltip={item.name}
                             className="flex-1"
-                            onClick={isVirtual && !isCollapsed ? (e) => {
+                            onClick={isVirtual && !isCollapsed && item.count > 0 ? (e) => {
                                 e.preventDefault();
                                 setIsExpanded(!isExpanded);
                             } : () => setOpenMobile(false)}
                         >
                             {isVirtual ? (
                                 <Link
-                                    to={isCollapsed ? "/nodes" : "#"}
+                                    to={isCollapsed || item.count === 0 ? `${item.href || '/nodes'}` : "#"}
                                     className="flex items-center gap-2 cursor-pointer w-full"
                                 >
                                     {getIcon(item.type)}

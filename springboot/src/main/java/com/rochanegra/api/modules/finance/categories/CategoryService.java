@@ -1,0 +1,85 @@
+package com.rochanegra.api.modules.finance.categories;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import com.rochanegra.api.common.exception.ResourceNotFoundException;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class CategoryService {
+
+    private final CategoryRepository categoryRepository;
+
+    public CategoryDto getCategory(UUID categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+        return toDto(category);
+    }
+
+    public CategoryDto updateCategory(UUID categoryId, CategoryUpdateDto updateDto, UUID userId) {
+        Category category = categoryRepository.findById(categoryId)
+                .filter(c -> c.getUserId().equals(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+
+        if (updateDto.name() != null)
+            category.setName(updateDto.name());
+        if (updateDto.iconSlug() != null)
+            category.setIconSlug(updateDto.iconSlug());
+        if (updateDto.color() != null)
+            category.setColor(updateDto.color());
+
+        Category savedCategory = categoryRepository.save(category);
+        return toDto(savedCategory);
+    }
+
+    public List<CategoryDto> getAllCategories(UUID userId) {
+        return categoryRepository.findByUserId(userId)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public CategoryDto createCategory(CategoryCreateDto createDto, UUID userId) {
+        Category category = new Category();
+        category.setName(createDto.name());
+        category.setType(createDto.type());
+        category.setNature(createDto.nature());
+        category.setIconSlug(createDto.iconSlug());
+        category.setColor(createDto.color());
+        category.setUserId(userId);
+
+        Category savedCategory = categoryRepository.save(category);
+        return toDto(savedCategory);
+    }
+
+    public void deleteCategory(UUID categoryId, UUID userId) {
+        // Ensure the category belongs to the user before deleting
+        // In a real app, you'd use a findByIdAndUserId method or check ownership
+        categoryRepository.findByIdAndUserId(categoryId, userId).ifPresent(category -> {
+            if (category.getSystemKey() != null) {
+                throw new IllegalArgumentException("System categories cannot be deleted");
+            }
+            categoryRepository.delete(category);
+        });
+    }
+
+    public Optional<Category> findCategoryBySystemKey(UUID userId, String systemKey) {
+        return categoryRepository.findByUserIdAndSystemKey(userId, systemKey);
+    }
+
+    private CategoryDto toDto(Category category) {
+        return new CategoryDto(
+                category.getId(),
+                category.getName(),
+                category.getType(),
+                category.getNature(),
+                category.getIconSlug(),
+                category.getColor());
+    }
+}

@@ -7,6 +7,7 @@ export interface NodeTreeItem {
     id: string;
     name: string;
     type: NodeType;
+    href?: string;
     children: NodeTreeItem[];
     count: number;
 }

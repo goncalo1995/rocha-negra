@@ -78,6 +78,7 @@ export function AppSidebar() {
             id: 'root-projects',
             name: 'Projects',
             type: 'PROJECT' as any,
+            href: '/projects',
             children: tree.filter(n => n.type === 'PROJECT'),
             count: tree.filter(n => n.type === 'PROJECT').length,
             isVirtual: true
@@ -86,6 +87,7 @@ export function AppSidebar() {
             id: 'root-areas',
             name: 'Areas',
             type: 'AREA' as any,
+            href: '/areas',
             children: tree.filter(n => n.type === 'AREA'),
             count: tree.filter(n => n.type === 'AREA').length,
             isVirtual: true
@@ -94,6 +96,7 @@ export function AppSidebar() {
             id: 'root-resources',
             name: 'Resources',
             type: 'RESOURCE' as any,
+            href: '/resources',
             children: tree.filter(n => n.type === 'RESOURCE'),
             count: tree.filter(n => n.type === 'RESOURCE').length,
             isVirtual: true
@@ -102,6 +105,7 @@ export function AppSidebar() {
             id: 'root-goals',
             name: 'Goals',
             type: 'GOAL' as any,
+            href: '/goals',
             children: tree.filter(n => n.type === 'GOAL'),
             count: tree.filter(n => n.type === 'GOAL').length,
             isVirtual: true
