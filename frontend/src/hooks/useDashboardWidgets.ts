@@ -21,6 +21,8 @@ export function useDashboardWidgets() {
         queryFn: () => api.get('/dashboard/widgets').then(r => r.data),
     });
 
+    const safeWidgets = Array.isArray(widgets) ? widgets : [];
+
     const mutation = useMutation({
         mutationFn: (updated: DashboardWidget[]) =>
             api.put('/dashboard/widgets', updated),
@@ -31,14 +33,14 @@ export function useDashboardWidgets() {
     });
 
     const toggleWidget = (key: string) => {
-        const updated = widgets.map(w =>
+        const updated = safeWidgets.map(w =>
             w.key === key ? { ...w, enabled: !w.enabled } : w
         );
         mutation.mutate(updated);
     };
 
     const moveWidget = (key: string, direction: 'up' | 'down') => {
-        const sorted = [...widgets].sort((a, b) => a.order - b.order);
+        const sorted = [...safeWidgets].sort((a, b) => a.order - b.order);
         const index = sorted.findIndex(w => w.key === key);
 
         if (direction === 'up' && index > 0) {
@@ -55,10 +57,10 @@ export function useDashboardWidgets() {
     };
 
     return {
-        widgets,
-        enabledWidgets: widgets
-            ?.filter(w => w.enabled)
-            .sort((a, b) => a.order - b.order) || [],
+        widgets: safeWidgets,
+        enabledWidgets: safeWidgets
+            .filter(w => w.enabled)
+            .sort((a, b) => a.order - b.order),
         toggleWidget,
         moveWidget
     };

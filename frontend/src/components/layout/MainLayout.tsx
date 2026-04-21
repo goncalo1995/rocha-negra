@@ -2,11 +2,13 @@ import { Link, Outlet } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '../ui/sidebar';
 import { AppSidebar } from './AppSideBar';
 import { PanelLeft } from 'lucide-react';
+import { OfflineBanner } from './OfflineBanner';
 
 export function MainLayout() {
     return (
         <SidebarProvider>
-            <div className="min-h-screen flex flex-col md:flex-row w-full bg-background">
+            <div className="min-h-screen flex flex-col md:flex-row w-full bg-background relative">
+                <OfflineBanner />
                 <AppSidebar />
                 <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                     {/* Mobile Header */}
