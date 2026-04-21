@@ -174,9 +174,7 @@ const App = () => {
               <Suspense fallback={<LoadingBoundary />}>
                 <Routes>
                   <Route path="/" element={
-                    <AuthRedirect>
-                      <Landing />
-                    </AuthRedirect>
+                    <Landing />
                   } />
                   <Route path="/login" element={
                     <AuthRedirect>

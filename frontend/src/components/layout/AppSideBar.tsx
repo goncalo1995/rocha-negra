@@ -79,8 +79,8 @@ export function AppSidebar() {
             name: 'Projects',
             type: 'PROJECT' as any,
             href: '/projects',
-            children: tree.filter(n => n.type === 'PROJECT'),
-            count: tree.filter(n => n.type === 'PROJECT').length,
+            children: tree?.filter(n => n.type === 'PROJECT'),
+            count: tree?.filter(n => n.type === 'PROJECT').length || 0,
             isVirtual: true
         },
         {
@@ -88,8 +88,8 @@ export function AppSidebar() {
             name: 'Areas',
             type: 'AREA' as any,
             href: '/areas',
-            children: tree.filter(n => n.type === 'AREA'),
-            count: tree.filter(n => n.type === 'AREA').length,
+            children: tree?.filter(n => n.type === 'AREA'),
+            count: tree?.filter(n => n.type === 'AREA').length || 0,
             isVirtual: true
         },
         {
@@ -97,8 +97,8 @@ export function AppSidebar() {
             name: 'Resources',
             type: 'RESOURCE' as any,
             href: '/resources',
-            children: tree.filter(n => n.type === 'RESOURCE'),
-            count: tree.filter(n => n.type === 'RESOURCE').length,
+            children: tree?.filter(n => n.type === 'RESOURCE'),
+            count: tree?.filter(n => n.type === 'RESOURCE').length || 0,
             isVirtual: true
         },
         {
@@ -106,8 +106,8 @@ export function AppSidebar() {
             name: 'Goals',
             type: 'GOAL' as any,
             href: '/goals',
-            children: tree.filter(n => n.type === 'GOAL'),
-            count: tree.filter(n => n.type === 'GOAL').length,
+            children: tree?.filter(n => n.type === 'GOAL'),
+            count: tree?.filter(n => n.type === 'GOAL').length || 0,
             isVirtual: true
         }
     ];

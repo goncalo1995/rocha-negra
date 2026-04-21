@@ -57,8 +57,8 @@ export function useDashboardWidgets() {
     return {
         widgets,
         enabledWidgets: widgets
-            .filter(w => w.enabled)
-            .sort((a, b) => a.order - b.order),
+            ?.filter(w => w.enabled)
+            .sort((a, b) => a.order - b.order) || [],
         toggleWidget,
         moveWidget
     };

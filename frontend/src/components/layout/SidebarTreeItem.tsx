@@ -85,14 +85,11 @@ export function SidebarTreeItem({ item, depth = 0 }: SidebarTreeItemProps) {
                             isActive={isActive(`/nodes/${item.id}`)}
                             tooltip={item.name}
                             className="flex-1"
-                            onClick={isVirtual && !isCollapsed && item.count > 0 ? (e) => {
-                                e.preventDefault();
-                                setIsExpanded(!isExpanded);
-                            } : () => setOpenMobile(false)}
+                            onClick={() => setOpenMobile(false)}
                         >
                             {isVirtual ? (
                                 <Link
-                                    to={isCollapsed || item.count === 0 ? `${item.href || '/nodes'}` : "#"}
+                                    to={`${item.href || '/nodes'}`}
                                     className="flex items-center gap-2 cursor-pointer w-full"
                                 >
                                     {getIcon(item.type)}
