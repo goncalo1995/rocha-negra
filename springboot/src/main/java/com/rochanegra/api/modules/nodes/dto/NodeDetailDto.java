@@ -33,5 +33,6 @@ public record NodeDetailDto(
                 List<NodeSummaryDto> children,
                 List<NodeLinkDto> referencedBy,
                 List<NodeLinkDto> references,
-                List<NodeSummaryDto> ancestors) {
+                List<NodeSummaryDto> ancestors,
+                com.rochanegra.api.modules.roadmap.dto.ProjectDetailsDto projectDetails) {
 }

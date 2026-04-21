@@ -606,6 +606,44 @@ export type Database = {
         }
         Relationships: []
       }
+      project_details: {
+        Row: {
+          created_at: string | null
+          desired_outcome: string | null
+          is_ai_enabled: boolean | null
+          main_risk: string | null
+          node_id: string
+          progress: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          desired_outcome?: string | null
+          is_ai_enabled?: boolean | null
+          main_risk?: string | null
+          node_id: string
+          progress?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          desired_outcome?: string | null
+          is_ai_enabled?: boolean | null
+          main_risk?: string | null
+          node_id?: string
+          progress?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_details_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: true
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_generators: {
         Row: {
           created_at: string | null
@@ -647,6 +685,90 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      roadmap_step_context: {
+        Row: {
+          node_id: string
+          step_id: string
+        }
+        Insert: {
+          node_id: string
+          step_id: string
+        }
+        Update: {
+          node_id?: string
+          step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_step_context_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_step_context_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_steps: {
+        Row: {
+          created_at: string | null
+          definition_of_done: string | null
+          id: string
+          node_id: string
+          parent_step_id: string | null
+          position: number
+          prompt_template: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          definition_of_done?: string | null
+          id?: string
+          node_id: string
+          parent_step_id?: string | null
+          position: number
+          prompt_template?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          definition_of_done?: string | null
+          id?: string
+          node_id?: string
+          parent_step_id?: string | null
+          position?: number
+          prompt_template?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_steps_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_steps_parent_step_id_fkey"
+            columns: ["parent_step_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_steps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {

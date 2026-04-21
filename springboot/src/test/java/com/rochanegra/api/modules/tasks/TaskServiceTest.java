@@ -45,13 +45,13 @@ class TaskServiceTest {
     @InjectMocks
     private TaskService taskService;
 
-    private UUID creatorId;
+    private UUID userId;
     private UUID nodeId;
     private Node node;
 
     @BeforeEach
     void setUp() {
-        creatorId = UUID.randomUUID();
+        userId = UUID.randomUUID();
         nodeId = UUID.randomUUID();
         node = new Node();
         node.setId(nodeId);
@@ -69,14 +69,14 @@ class TaskServiceTest {
         when(nodeRepository.findById(nodeId)).thenReturn(Optional.of(node));
         mockSavedTask(UUID.randomUUID());
 
-        taskService.createTask(createDto, creatorId);
+        taskService.createTask(createDto, userId);
 
         ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
         verify(taskRepository).save(taskCaptor.capture());
 
         Task savedTask = taskCaptor.getValue();
         assertEquals("New Task", savedTask.getTitle());
-        assertEquals(creatorId, savedTask.getCreatedBy());
+        assertEquals(userId, savedTask.getCreatedBy());
         assertNotNull(savedTask.getNode());
     }
 
@@ -92,7 +92,7 @@ class TaskServiceTest {
         when(nodeRepository.findById(nodeId)).thenReturn(Optional.of(node));
         mockSavedTask(UUID.randomUUID());
 
-        TaskDto resultDto = taskService.createTask(createDto, creatorId);
+        TaskDto resultDto = taskService.createTask(createDto, userId);
 
         assertNotNull(resultDto);
         assertEquals("Subtask", resultDto.title());
@@ -105,7 +105,7 @@ class TaskServiceTest {
         TaskCreateDto createDto = new TaskCreateDto("New Task", "Description", nodeId, null, null, 1, 1, null);
         when(nodeRepository.findById(nodeId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> taskService.createTask(createDto, creatorId));
+        assertThrows(ResourceNotFoundException.class, () -> taskService.createTask(createDto, userId));
     }
 
     // =================================================================
@@ -125,7 +125,7 @@ class TaskServiceTest {
 
         TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, null, null, TaskStatus.DONE, null, null, null);
 
-        TaskDto resultDto = taskService.updateTask(taskId, updateDto, creatorId);
+        TaskDto resultDto = taskService.updateTask(taskId, updateDto, userId);
 
         assertEquals(TaskStatus.DONE, resultDto.status());
         assertNotNull(resultDto.completedAt());
@@ -143,7 +143,7 @@ class TaskServiceTest {
 
         TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, null, null, TaskStatus.DONE, null, null, null);
 
-        assertThrows(IllegalArgumentException.class, () -> taskService.updateTask(taskId, updateDto, creatorId));
+        assertThrows(IllegalArgumentException.class, () -> taskService.updateTask(taskId, updateDto, userId));
     }
 
     @Test
@@ -157,7 +157,7 @@ class TaskServiceTest {
         when(taskRepository.findById(parentId)).thenReturn(Optional.of(parentTask));
         TaskCreateDto createDto = new TaskCreateDto("Subtask", "Description", nodeId, parentId, null, 1, 1, null);
 
-        assertThrows(IllegalArgumentException.class, () -> taskService.createTask(createDto, creatorId));
+        assertThrows(IllegalArgumentException.class, () -> taskService.createTask(createDto, userId));
     }
 
     @Test
@@ -172,7 +172,7 @@ class TaskServiceTest {
 
         TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, null, null, TaskStatus.WAITING, null, null, null);
 
-        TaskDto result = taskService.updateTask(taskId, updateDto, creatorId);
+        TaskDto result = taskService.updateTask(taskId, updateDto, userId);
 
         assertEquals(TaskStatus.WAITING, result.status());
     }
@@ -183,7 +183,7 @@ class TaskServiceTest {
         TaskUpdateDto updateDto = new TaskUpdateDto(null, null, null, null, null, TaskStatus.DONE, null, null, null);
         when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> taskService.updateTask(taskId, updateDto, creatorId));
+        assertThrows(ResourceNotFoundException.class, () -> taskService.updateTask(taskId, updateDto, userId));
     }
 
     @Test
@@ -191,7 +191,7 @@ class TaskServiceTest {
         UUID taskId = UUID.randomUUID();
         when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> taskService.getTaskById(taskId, creatorId));
+        assertThrows(ResourceNotFoundException.class, () -> taskService.getTaskById(taskId, userId));
     }
 
     @Test
@@ -210,7 +210,7 @@ class TaskServiceTest {
                 null);
 
         // Act
-        TaskDto resultDto = taskService.updateTask(taskId, updateDto, creatorId);
+        TaskDto resultDto = taskService.updateTask(taskId, updateDto, userId);
 
         // Assert
         assertEquals(TaskStatus.IN_PROGRESS, resultDto.status());
@@ -226,23 +226,23 @@ class TaskServiceTest {
         Task unprocessed = new Task();
         unprocessed.setTitle("Unprocessed");
         unprocessed.setStatus(TaskStatus.TODO);
-        unprocessed.setCreatedBy(creatorId);
+        unprocessed.setCreatedBy(userId);
 
         Task withDueDate = new Task();
         withDueDate.setTitle("With Due Date");
         withDueDate.setDueDate(LocalDate.now());
         withDueDate.setStatus(TaskStatus.TODO);
-        withDueDate.setCreatedBy(creatorId);
+        withDueDate.setCreatedBy(userId);
 
         Task done = new Task();
         done.setTitle("Done");
         done.setStatus(TaskStatus.DONE);
-        done.setCreatedBy(creatorId);
+        done.setCreatedBy(userId);
 
-        when(taskRepository.findByNodeIdIsNullAndCreatedByOrderByCreatedAtDesc(creatorId))
+        when(taskRepository.findByNodeIdIsNullAndCreatedByOrderByCreatedAtDesc(userId))
                 .thenReturn(Arrays.asList(unprocessed, withDueDate, done));
 
-        List<TaskDto> result = taskService.getInboxTasks(creatorId);
+        List<TaskDto> result = taskService.getInboxTasks(userId);
 
         assertEquals(1, result.size());
         assertEquals("Unprocessed", result.get(0).title());
@@ -258,7 +258,7 @@ class TaskServiceTest {
 
         when(taskRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
-        Page<TaskDto> result = taskService.searchTasks(creatorId, "Search", TaskStatus.TODO, 1, pageable);
+        Page<TaskDto> result = taskService.searchTasks(userId, "Search", TaskStatus.TODO, 1, pageable);
 
         assertEquals(1, result.getTotalElements());
         assertEquals("Search Result", result.getContent().get(0).title());

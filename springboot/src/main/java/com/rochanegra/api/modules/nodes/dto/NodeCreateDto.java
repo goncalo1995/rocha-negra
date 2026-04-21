@@ -16,5 +16,8 @@ public record NodeCreateDto(
         @NotNull NodeType type,
         NodeStatus status,
         UUID parentId,
-        LocalDate dueDate) {
+        LocalDate dueDate,
+        // Capability Fields (Optional)
+        String desiredOutcome,
+        String mainRisk) {
 }

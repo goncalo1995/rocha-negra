@@ -22,6 +22,7 @@ import com.rochanegra.api.modules.nodes.service.NodeService;
 import com.rochanegra.api.modules.nodes.types.NodeRole;
 import com.rochanegra.api.modules.nodes.types.NodeStatus;
 import com.rochanegra.api.modules.nodes.types.NodeType;
+import com.rochanegra.api.modules.roadmap.repository.ProjectDetailsRepository;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -47,6 +48,8 @@ class NodeServiceTest {
     private NodeLinkRepository linkRepository;
     @Mock
     private JdbcTemplate jdbcTemplate;
+    @Mock
+    private ProjectDetailsRepository projectDetailsRepository;
 
     // --- CLASS UNDER TEST ---
     // This creates an instance of NodeService and automatically injects the
@@ -54,14 +57,15 @@ class NodeServiceTest {
     @InjectMocks
     private NodeService nodeService;
 
-    private UUID mockUserId;
+    private UUID userId;
     private NodeCreateDto createDto;
 
     @BeforeEach
     void setUp() {
         // Set up common variables before each test
-        mockUserId = UUID.randomUUID();
-        createDto = new NodeCreateDto("Test Project", "A description", NodeType.PROJECT, NodeStatus.ACTIVE, null, null);
+        userId = UUID.randomUUID();
+        createDto = new NodeCreateDto("Test Project", "A description", NodeType.PROJECT, NodeStatus.ACTIVE, null, null,
+                null, null);
     }
 
     // --- CREATE TESTS ---
@@ -76,7 +80,7 @@ class NodeServiceTest {
         when(jdbcTemplate.queryForObject(
                 eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class), // Expect this exact class
-                eq(mockUserId), // Expect the mock user's ID
+                eq(userId), // Expect the mock user's ID
                 eq("PROJECT"), // Expect the string "PROJECT"
                 eq(createDto.name()), // Expect the name from the DTO
                 eq(createDto.description()), // Expect the description from the DTO
@@ -92,11 +96,11 @@ class NodeServiceTest {
         mockNode.setDescription("A description");
         mockNode.setType(NodeType.PROJECT);
         mockNode.setDueDate(createDto.dueDate());
-        mockNode.setUserId(mockUserId); // Important for RLS check tests
+        mockNode.setUserId(userId); // Important for RLS check tests
 
         // Mock the relationships that the DTO mapper needs
         NodeMember mockMember = new NodeMember();
-        mockMember.setUserId(mockUserId);
+        mockMember.setUserId(userId);
         mockMember.setRole(NodeRole.OWNER);
         mockNode.setMembers(List.of(mockMember));
         mockNode.setTasks(new ArrayList<>());
@@ -105,7 +109,8 @@ class NodeServiceTest {
         when(nodeRepository.findById(newNodeId)).thenReturn(Optional.of(mockNode));
 
         // Act
-        NodeDetailDto resultDto = nodeService.createNode(createDto, mockUserId);
+        when(projectDetailsRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        NodeDetailDto resultDto = nodeService.createNode(createDto, userId);
 
         // Assert
         assertNotNull(resultDto);
@@ -116,13 +121,13 @@ class NodeServiceTest {
         assertEquals(createDto.parentId(), resultDto.parentId());
         assertEquals(createDto.dueDate(), resultDto.dueDate());
         assertEquals(1, resultDto.members().size());
-        assertEquals(mockUserId, resultDto.members().get(0).userId());
+        assertEquals(userId, resultDto.members().get(0).userId());
 
         // Verify the DB function was called correctly
         verify(jdbcTemplate).queryForObject(
                 eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class),
-                eq(mockUserId),
+                eq(userId),
                 eq("PROJECT"),
                 eq("Test Project"),
                 eq("A description"),
@@ -138,7 +143,7 @@ class NodeServiceTest {
         when(jdbcTemplate.queryForObject(
                 eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class),
-                eq(mockUserId), // 1. p_user_id UUID
+                eq(userId), // 1. p_user_id UUID
                 eq("PROJECT"), // 2. p_type ← string
                 eq("Test Project"), // 3. p_name
                 eq("A description"), // 4. p_description
@@ -156,7 +161,7 @@ class NodeServiceTest {
 
         when(nodeRepository.findById(newProjectId)).thenReturn(Optional.of(mockProject));
 
-        NodeDetailDto resultDto = nodeService.createNode(createDto, mockUserId);
+        NodeDetailDto resultDto = nodeService.createNode(createDto, userId);
 
         assertNotNull(resultDto);
         assertEquals("Test Project", resultDto.name());
@@ -165,7 +170,7 @@ class NodeServiceTest {
         verify(jdbcTemplate, times(1)).queryForObject(
                 eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class),
-                eq(mockUserId),
+                eq(userId),
                 eq("PROJECT"), // ← must match stub
                 eq("Test Project"),
                 eq("A description"),
@@ -182,7 +187,7 @@ class NodeServiceTest {
         when(jdbcTemplate.queryForObject(
                 eq("SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)"),
                 eq(UUID.class),
-                eq(mockUserId), // 1
+                eq(userId), // 1
                 eq("PROJECT"), // 2 – string representation of NodeType.PROJECT
                 eq("Test Project"), // 3
                 eq("A description"), // 4
@@ -199,7 +204,7 @@ class NodeServiceTest {
 
         // Create a mock member
         NodeMember mockMember = new NodeMember();
-        mockMember.setUserId(mockUserId);
+        mockMember.setUserId(userId);
         mockMember.setRole(NodeRole.OWNER);
 
         // Add the member to the node's list
@@ -210,13 +215,14 @@ class NodeServiceTest {
         when(nodeRepository.findById(newProjectId)).thenReturn(Optional.of(mockProject));
 
         // --- ACT ---
-        NodeDetailDto resultDto = nodeService.createNode(createDto, mockUserId);
+        when(projectDetailsRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        NodeDetailDto resultDto = nodeService.createNode(createDto, userId);
 
         // --- ASSERT ---
         assertNotNull(resultDto);
         assertEquals("Test Project", resultDto.name());
         assertFalse(resultDto.members().isEmpty()); // Verify the member is in the DTO
-        assertEquals(mockUserId, resultDto.members().get(0).userId());
+        assertEquals(userId, resultDto.members().get(0).userId());
         assertEquals("OWNER", resultDto.members().get(0).role());
     }
 
@@ -227,7 +233,7 @@ class NodeServiceTest {
         UUID nodeId = UUID.randomUUID();
         Node parentNode = new Node();
         parentNode.setId(nodeId);
-        parentNode.setUserId(mockUserId);
+        parentNode.setUserId(userId);
         parentNode.setTasks(new ArrayList<>());
         parentNode.setMembers(new ArrayList<>());
 
@@ -242,7 +248,7 @@ class NodeServiceTest {
         when(nodeRepository.findById(nodeId)).thenReturn(Optional.of(parentNode));
 
         // Act
-        NodeDetailDto result = nodeService.getNodeById(nodeId, mockUserId);
+        NodeDetailDto result = nodeService.getNodeById(nodeId, userId);
 
         // Assert
         assertNotNull(result);
@@ -258,7 +264,7 @@ class NodeServiceTest {
         when(nodeRepository.findById(nodeId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> {
-            nodeService.getNodeById(nodeId, mockUserId);
+            nodeService.getNodeById(nodeId, userId);
         });
     }
 
@@ -273,7 +279,7 @@ class NodeServiceTest {
 
         when(nodeRepository.findById(projectId)).thenReturn(Optional.of(project));
 
-        NodeDetailDto result = nodeService.getNodeById(projectId, mockUserId);
+        NodeDetailDto result = nodeService.getNodeById(projectId, userId);
 
         assertNotNull(result);
         assertEquals("Existing Project", result.name());
@@ -284,7 +290,7 @@ class NodeServiceTest {
         UUID projectId = UUID.randomUUID();
         when(nodeRepository.findById(projectId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> nodeService.getNodeById(projectId, mockUserId));
+        assertThrows(ResourceNotFoundException.class, () -> nodeService.getNodeById(projectId, userId));
     }
 
     // --- UPDATE TESTS (EDGE CASES) ---
@@ -295,20 +301,21 @@ class NodeServiceTest {
         UUID newParentId = UUID.randomUUID();
         Node childNode = new Node();
         childNode.setId(childId);
-        childNode.setUserId(mockUserId);
+        childNode.setUserId(userId);
 
         Node parentNode = new Node();
         parentNode.setId(newParentId);
-        parentNode.setUserId(mockUserId);
+        parentNode.setUserId(userId);
 
         when(nodeRepository.findById(childId)).thenReturn(Optional.of(childNode));
         when(nodeRepository.findById(newParentId)).thenReturn(Optional.of(parentNode));
         when(nodeRepository.save(any(Node.class))).thenReturn(childNode); // Return the modified node
 
-        NodeUpdateDto updateDto = new NodeUpdateDto(null, null, null, null, null, null, null, newParentId);
+        NodeUpdateDto updateDto = new NodeUpdateDto(null, null, null, null, null, null, null, newParentId, null, null,
+                true);
 
         // Act
-        nodeService.updateNode(childId, updateDto, mockUserId);
+        nodeService.updateNode(childId, updateDto, userId);
 
         // Assert
         ArgumentCaptor<Node> nodeCaptor = ArgumentCaptor.forClass(Node.class);
@@ -325,15 +332,17 @@ class NodeServiceTest {
         UUID nodeId = UUID.randomUUID();
         Node node = new Node();
         node.setId(nodeId);
-        node.setUserId(mockUserId);
+        node.setUserId(userId);
 
         when(nodeRepository.findById(nodeId)).thenReturn(Optional.of(node));
 
-        NodeUpdateDto updateDto = new NodeUpdateDto(null, null, null, null, null, null, null, nodeId); // Trying to set
-                                                                                                       // self as parent
+        NodeUpdateDto updateDto = new NodeUpdateDto(null, null, null, null, null, null, null, nodeId, null, null, true); // Trying
+                                                                                                                         // to
+                                                                                                                         // set
+        // self as parent
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            nodeService.updateNode(nodeId, updateDto, mockUserId);
+            nodeService.updateNode(nodeId, updateDto, userId);
         });
         verify(nodeRepository, never()).save(any());
     }
@@ -350,8 +359,9 @@ class NodeServiceTest {
         when(nodeRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
         when(nodeRepository.save(any(Node.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        NodeUpdateDto updateDto = new NodeUpdateDto("New Name", "New Desc", null, null, null, null, null, null);
-        NodeDetailDto resultDto = nodeService.updateNode(projectId, updateDto, mockUserId);
+        NodeUpdateDto updateDto = new NodeUpdateDto("New Name", "New Desc", null, null, null, null, null, null, null,
+                null, true);
+        NodeDetailDto resultDto = nodeService.updateNode(projectId, updateDto, userId);
 
         assertEquals("New Name", resultDto.name());
         assertEquals("New Desc", resultDto.description());
@@ -361,11 +371,12 @@ class NodeServiceTest {
     @Test
     void updateProject_notFound_shouldThrowResourceNotFoundException() {
         UUID projectId = UUID.randomUUID();
-        NodeUpdateDto updateDto = new NodeUpdateDto("New Name", "New Desc", null, null, null, null, null, null);
+        NodeUpdateDto updateDto = new NodeUpdateDto("New Name", "New Desc", null, null, null, null, null, null, null,
+                null, true);
         when(nodeRepository.findById(projectId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> nodeService.updateNode(projectId, updateDto, mockUserId));
+                () -> nodeService.updateNode(projectId, updateDto, userId));
     }
 
     @Test
@@ -374,21 +385,21 @@ class NodeServiceTest {
 
         Node existingProject = new Node();
         existingProject.setId(projectId);
-        existingProject.setUserId(mockUserId);
+        existingProject.setUserId(userId);
         existingProject.setMembers(new ArrayList<>());
 
         NodeMember member = new NodeMember();
-        member.setUserId(mockUserId);
+        member.setUserId(userId);
         member.setNode(existingProject);
         member.setRole(NodeRole.OWNER);
 
         existingProject.getMembers().add(member);
 
         when(nodeRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
-        when(memberRepository.findByNodeIdAndUserId(projectId, mockUserId))
+        when(memberRepository.findByNodeIdAndUserId(projectId, userId))
                 .thenReturn(Optional.of(member));
 
-        nodeService.deleteNode(projectId, mockUserId);
+        nodeService.deleteNode(projectId, userId);
 
         verify(nodeRepository).delete(existingProject);
     }
@@ -398,6 +409,6 @@ class NodeServiceTest {
         UUID projectId = UUID.randomUUID();
         when(nodeRepository.findById(projectId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> nodeService.deleteNode(projectId, mockUserId));
+        assertThrows(ResourceNotFoundException.class, () -> nodeService.deleteNode(projectId, userId));
     }
 }

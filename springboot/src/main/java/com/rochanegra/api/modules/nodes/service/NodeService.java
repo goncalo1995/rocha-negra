@@ -30,6 +30,9 @@ import com.rochanegra.api.modules.nodes.types.NodeLinkType;
 import com.rochanegra.api.modules.nodes.types.NodeRole;
 import com.rochanegra.api.modules.nodes.types.NodeStatus;
 import com.rochanegra.api.modules.nodes.types.NodeType;
+import com.rochanegra.api.modules.roadmap.domain.ProjectDetails;
+import com.rochanegra.api.modules.roadmap.dto.ProjectDetailsDto;
+import com.rochanegra.api.modules.roadmap.repository.ProjectDetailsRepository;
 import com.rochanegra.api.modules.tasks.dtos.TaskSummaryDto;
 
 import java.util.ArrayList;
@@ -47,6 +50,7 @@ public class NodeService {
     private final NodeRepository nodeRepository;
     private final NodeMemberRepository memberRepository;
     private final NodeLinkRepository linkRepository;
+    private final ProjectDetailsRepository projectDetailsRepository;
     private final JdbcTemplate jdbcTemplate;
 
     public ProjectsWidgetDto getNodesWidget(UUID userId) {
@@ -64,10 +68,22 @@ public class NodeService {
     @Transactional
     public NodeDetailDto createNode(NodeCreateDto createDto, UUID userId) {
         String sql = "SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)";
-        UUID newNodeId = jdbcTemplate.queryForObject(sql, UUID.class, userId, createDto.type().name(), createDto.name(),
+        UUID newNodeId = jdbcTemplate.queryForObject(sql, UUID.class, userId, createDto.type().name(),
+                createDto.name(),
                 createDto.description(), createDto.parentId(), createDto.dueDate(), createDto.status().name());
 
-        return getNodeById(newNodeId, userId);
+        Node node = nodeRepository.findById(newNodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Node not found after creation"));
+
+        // Explicitly manage ProjectDetails (No JPA Cascade for safety in V1)
+        if (createDto.type() == NodeType.PROJECT) {
+            ProjectDetails details = new ProjectDetails(node);
+            details.setDesiredOutcome(createDto.desiredOutcome());
+            details.setMainRisk(createDto.mainRisk());
+            projectDetailsRepository.save(details);
+        }
+
+        return toDetailDto(node);
     }
 
     public List<NodeSummaryDto> getNodesForUser(UUID userId, NodeType type, String query) {
@@ -91,6 +107,26 @@ public class NodeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Node not found"));
 
         return toDetailDto(node);
+    }
+
+    public Node validateCanEdit(UUID nodeId, UUID userId) {
+        Node node = nodeRepository.findById(nodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Node not found"));
+
+        NodeMember member = memberRepository.findByNodeIdAndUserId(nodeId, userId)
+                .orElseThrow(() -> new ForbiddenException("You do not have access to this node."));
+
+        if (member.getRole() == NodeRole.VIEWER) {
+            throw new ForbiddenException("You do not have permission to edit this node.");
+        }
+
+        return node;
+    }
+
+    public void validateIsProject(Node node) {
+        if (node.getType() != NodeType.PROJECT) {
+            throw new IllegalArgumentException("This operation is only allowed for PROJECT nodes.");
+        }
     }
 
     @Transactional
@@ -129,8 +165,17 @@ public class NodeService {
             node.setParent(parent);
         }
 
-        Node savedNode = nodeRepository.save(node);
-        return toDetailDto(savedNode); // Return the full, updated object
+        // Project details update logic
+        if (node.getType() == NodeType.PROJECT && node.getProjectDetails() != null) {
+            ProjectDetails details = node.getProjectDetails();
+            if (updateDto.desiredOutcome() != null) details.setDesiredOutcome(updateDto.desiredOutcome());
+            if (updateDto.mainRisk() != null) details.setMainRisk(updateDto.mainRisk());
+            if (updateDto.isAiEnabled() != null) details.setIsAiEnabled(updateDto.isAiEnabled());
+            projectDetailsRepository.save(details);
+        }
+
+        node = nodeRepository.save(node);
+        return toDetailDto(node); // Return the full, updated object
     }
 
     @Transactional
@@ -271,7 +316,7 @@ public class NodeService {
     // --- Tree & Move Logic ---
 
     public List<NodeTreeDto> getNodesTree(UUID userId) {
-        // Fetch all non-archived nodes for the user to build tree in memory
+        // Fetch all non-archived nodes for the creator to build tree in memory
         // We exclude ARCHIVED nodes from the sidebar tree usually.
         List<Node> allNodes = nodeRepository.findAllByUserIdAndStatusNot(userId, NodeStatus.ARCHIVED);
 
@@ -400,6 +445,16 @@ public class NodeService {
                 .map(this::toSummaryDto)
                 .collect(Collectors.toList());
 
+        ProjectDetailsDto projectDetails = null;
+        if (node.getProjectDetails() != null) {
+            projectDetails = new ProjectDetailsDto(
+                    node.getProjectDetails().getNodeId(),
+                    node.getProjectDetails().getDesiredOutcome(),
+                    node.getProjectDetails().getMainRisk(),
+                    node.getProjectDetails().getProgress(),
+                    node.getProjectDetails().getIsAiEnabled());
+        }
+
         return new NodeDetailDto(
                 node.getId(),
                 node.getParent() != null ? node.getParent().getId() : null,
@@ -422,6 +477,7 @@ public class NodeService {
                 children,
                 referencedBy,
                 references,
-                ancestors);
+                ancestors,
+                projectDetails);
     }
 }

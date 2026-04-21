@@ -47,9 +47,9 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskDto createTask(TaskCreateDto createDto, UUID creatorId) {
+    public TaskDto createTask(TaskCreateDto createDto, UUID userId) {
         Task task = new Task();
-        task.setCreatedBy(creatorId);
+        task.setCreatedBy(userId);
 
         if (createDto.nodeId() != null) {
             Node node = projectRepository.findById(createDto.nodeId())

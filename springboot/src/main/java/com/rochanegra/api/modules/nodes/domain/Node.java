@@ -39,6 +39,9 @@ public class Node {
     @JdbcType(PostgreSQLEnumJdbcType.class)
     private NodeType type;
 
+    @OneToOne(mappedBy = "node", fetch = FetchType.LAZY)
+    private com.rochanegra.api.modules.roadmap.domain.ProjectDetails projectDetails;
+
     // --- PARENT RELATIONSHIP (Child-to-Parent) ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")

@@ -1,81 +1,96 @@
-import { Node as AppNode } from "@/types/nodes";
-import { format } from "date-fns";
-import { Calendar, CheckCircle2, Circle, Clock } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTasks } from "@/hooks/useTasks";
-import { NodeContentEditor } from "@/components/nodes/NodeContentEditor";
-// If useTasks doesn't exist or is different, we might need to adjust.
-// For now, let's assume we can pass tasks or fetch them.
-// Actually, NodeDetail.tsx fetches the node, which might include tasks or we fetch them there.
-// Let's assume NodeDetail passes the node and we might fetch tasks if not in node.
+import { Node as AppNode, FullNode } from "@/types/nodes";
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Plus, LayoutDashboard, Map as RoadmapIcon, Sparkles, Loader2 } from "lucide-react";
+import { RoadmapEditor } from "@/components/projects/RoadmapEditor";
+import { ProjectDashboardView } from "@/components/projects/ProjectDashboardView";
+import { ProjectIntakeModal, ProjectIntakeData } from "@/components/projects/ProjectIntakeModal";
+import { toast } from "sonner";
+import { useNode } from "@/hooks/useNodes";
 
 interface ProjectDetailViewProps {
     node: AppNode;
 }
 
-export function ProjectDetailView({ node }: ProjectDetailViewProps) {
-    const { data: tasks, isLoading: isLoadingTasks } = useTasks({ nodeId: node.id });
+export function ProjectDetailView({ node: initialNode }: ProjectDetailViewProps) {
+    const { data: fullNode, isLoading } = useNode(initialNode.id);
+    const [isIntakeOpen, setIsIntakeOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("roadmap");
 
-    const completedTasks = tasks?.filter(t => t.status === 'DONE').length || 0;
-    const totalTasks = tasks?.length || 0;
-    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+    const handleIntakeComplete = (data: ProjectIntakeData) => {
+        setIsIntakeOpen(false);
+        // useNode will be invalidated by the mutation in the modal
+        toast.success("Project updated!");
+    };
 
+    if (isLoading || !fullNode) {
+        return (
+            <div className="h-64 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-white/20" />
+            </div>
+        );
+    }
+
+    const isAiEnabled = fullNode.projectDetails?.isAiEnabled ?? true;
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Progress</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{Math.round(progress)}%</div>
-                        <Progress value={progress} className="mt-2" />
-                        <p className="text-xs text-muted-foreground mt-2">
-                            {completedTasks} of {totalTasks} tasks completed
-                        </p>
-                    </CardContent>
-                </Card>
+            <div className="flex items-center justify-between pb-4 border-b border-white/5">
+                <div className="flex items-center gap-4">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="bg-white/5 p-1 rounded-full border border-white/10">
+                        <TabsList className="bg-transparent border-none">
+                            <TabsTrigger 
+                                value="roadmap" 
+                                className="rounded-full data-[state=active]:bg-white data-[state=active]:text-black transition-all gap-2 px-4 py-1.5"
+                            >
+                                <RoadmapIcon className="h-3.5 w-3.5" />
+                                <span className="text-xs font-bold uppercase tracking-widest">Roadmap</span>
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="dashboard" 
+                                className="rounded-full data-[state=active]:bg-white data-[state=active]:text-black transition-all gap-2 px-4 py-1.5"
+                            >
+                                <LayoutDashboard className="h-3.5 w-3.5" />
+                                <span className="text-xs font-bold uppercase tracking-widest">Dashboard</span>
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                </div>
 
-                {/* <Card className="relative overflow-hidden group/card">
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Status & Deadline</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary capitalize">
-                                {node.status?.replace('_', ' ').toLowerCase()}
-                            </div>
-                            {node.dueDate && (
-                                <div className="flex items-center gap-1.5 text-sm font-semibold">
-                                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <span>{format(new Date(node.dueDate), 'MMM d, yyyy')}</span>
-                                </div>
-                            )}
+                <div className="flex items-center gap-3">
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setIsIntakeOpen(true)}
+                        className="rounded-full border border-white/10 hover:bg-white/5 text-[10px] font-bold uppercase tracking-widest gap-2"
+                    >
+                        <Plus className="h-3 w-3" />
+                        Re-run Intake
+                    </Button>
+                    {isAiEnabled && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
+                            <Sparkles className="h-3 w-3" />
+                            AI Opt-in
                         </div>
-                        <div className="space-y-1.5">
-                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">Timeline</p>
-                            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <Clock className="h-3 w-3" />
-                                    <span>Updated {format(new Date(node.updatedAt || node.createdAt), 'MMM d, yyyy')}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card> */}
+                    )}
+                </div>
             </div>
 
-            {/* Project Notes Editor */}
-            <div className="prose dark:prose-invert max-w-none">
-                <h3>Project Notes</h3>
-                <NodeContentEditor
-                    nodeId={node.id}
-                    initialContent={node.content || ''}
-                    placeholder="Add project notes, goals, and details here..."
-                />
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                {activeTab === "roadmap" ? (
+                    <RoadmapEditor nodeId={fullNode.id} isAiEnabled={isAiEnabled} />
+                ) : (
+                    <ProjectDashboardView node={fullNode} />
+                )}
             </div>
+
+            <ProjectIntakeModal 
+                isOpen={isIntakeOpen} 
+                onClose={() => setIsIntakeOpen(false)} 
+                onComplete={handleIntakeComplete} 
+                nodeId={fullNode.id}
+            />
         </div>
     );
 }

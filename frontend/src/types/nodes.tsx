@@ -24,6 +24,14 @@ export interface NodeSummary {
     taskCount: number;
 }
 
+export interface ProjectDetails {
+    nodeId: string;
+    desiredOutcome?: string | null;
+    mainRisk?: string | null;
+    progress?: number | null;
+    isAiEnabled?: boolean | null;
+}
+
 // --- API CONTRACT (DTOs) ---
 export interface NodeCreate {
     name: string;
@@ -32,6 +40,9 @@ export interface NodeCreate {
     status?: NodeStatus;
     parentId?: string | null;
     dueDate?: string | null;
+    // Capability fields
+    desiredOutcome?: string | null;
+    mainRisk?: string | null;
 }
 
 export interface NodeUpdate {
@@ -61,4 +72,5 @@ export type FullNode = Node & {
     referencedBy: NodeLinkDto[];
     references: NodeLinkDto[];
     ancestors: NodeSummary[];
+    projectDetails?: ProjectDetails | null;
 };
