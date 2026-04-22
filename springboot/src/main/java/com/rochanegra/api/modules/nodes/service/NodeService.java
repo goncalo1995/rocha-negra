@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.rochanegra.api.common.exception.ForbiddenException;
 import com.rochanegra.api.common.exception.ResourceNotFoundException;
+import com.rochanegra.api.modules.blueprint.dto.BlueprintStepDto;
+import com.rochanegra.api.modules.blueprint.service.BlueprintService;
 import com.rochanegra.api.modules.dashboard.dtos.ProjectsWidgetDto;
 import com.rochanegra.api.modules.nodes.domain.Node;
 import com.rochanegra.api.modules.nodes.domain.NodeLink;
@@ -47,6 +49,7 @@ public class NodeService {
     private final NodeRepository nodeRepository;
     private final NodeMemberRepository memberRepository;
     private final NodeLinkRepository linkRepository;
+    private final BlueprintService blueprintService;
     private final JdbcTemplate jdbcTemplate;
 
     public ProjectsWidgetDto getNodesWidget(UUID userId) {
@@ -64,10 +67,16 @@ public class NodeService {
     @Transactional
     public NodeDetailDto createNode(NodeCreateDto createDto, UUID userId) {
         String sql = "SELECT create_node_and_add_owner(?, ?::node_type, ?, ?, ?, ?, ?::node_status)";
-        UUID newNodeId = jdbcTemplate.queryForObject(sql, UUID.class, userId, createDto.type().name(), createDto.name(),
+        UUID newNodeId = jdbcTemplate.queryForObject(sql, UUID.class, userId, createDto.type().name(),
+                createDto.name(),
                 createDto.description(), createDto.parentId(), createDto.dueDate(), createDto.status().name());
 
-        return getNodeById(newNodeId, userId);
+        Node node = nodeRepository.findById(newNodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Node not found after creation"));
+
+        // Roadmap details logic removed in favor of Blueprint Studio
+
+        return toDetailDto(node);
     }
 
     public List<NodeSummaryDto> getNodesForUser(UUID userId, NodeType type, String query) {
@@ -91,6 +100,26 @@ public class NodeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Node not found"));
 
         return toDetailDto(node);
+    }
+
+    public Node validateCanEdit(UUID nodeId, UUID userId) {
+        Node node = nodeRepository.findById(nodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Node not found"));
+
+        NodeMember member = memberRepository.findByNodeIdAndUserId(nodeId, userId)
+                .orElseThrow(() -> new ForbiddenException("You do not have access to this node."));
+
+        if (member.getRole() == NodeRole.VIEWER) {
+            throw new ForbiddenException("You do not have permission to edit this node.");
+        }
+
+        return node;
+    }
+
+    public void validateIsProject(Node node) {
+        if (node.getType() != NodeType.PROJECT) {
+            throw new IllegalArgumentException("This operation is only allowed for PROJECT nodes.");
+        }
     }
 
     @Transactional
@@ -129,8 +158,10 @@ public class NodeService {
             node.setParent(parent);
         }
 
-        Node savedNode = nodeRepository.save(node);
-        return toDetailDto(savedNode); // Return the full, updated object
+        // Project details update logic removed in favor of Blueprint Studio
+
+        node = nodeRepository.save(node);
+        return toDetailDto(node); // Return the full, updated object
     }
 
     @Transactional
@@ -271,7 +302,7 @@ public class NodeService {
     // --- Tree & Move Logic ---
 
     public List<NodeTreeDto> getNodesTree(UUID userId) {
-        // Fetch all non-archived nodes for the user to build tree in memory
+        // Fetch all non-archived nodes for the creator to build tree in memory
         // We exclude ARCHIVED nodes from the sidebar tree usually.
         List<Node> allNodes = nodeRepository.findAllByUserIdAndStatusNot(userId, NodeStatus.ARCHIVED);
 

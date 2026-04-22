@@ -5,5 +5,6 @@ public enum NodeLinkType {
     DEPENDS_ON,
     BELONGS_TO,
     SUPPORTS,
-    RELATED_TO
+    RELATED_TO,
+    ASSOCIATED
 }

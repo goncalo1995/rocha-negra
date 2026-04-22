@@ -1,3 +1,4 @@
+import { BlueprintStep } from "./blueprint";
 import { Database } from "./database.types";
 import { Task } from "./tasks";
 import { FromDb } from "./utils";
@@ -32,6 +33,9 @@ export interface NodeCreate {
     status?: NodeStatus;
     parentId?: string | null;
     dueDate?: string | null;
+    // Capability fields
+    desiredOutcome?: string | null;
+    mainRisk?: string | null;
 }
 
 export interface NodeUpdate {

@@ -98,7 +98,7 @@ export function ShareNodeDialog({ open, onOpenChange, node }: ShareNodeDialogPro
                             <span className="text-[10px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase">Coming Soon</span>
                         </div>
                         <div className="flex gap-2 opacity-50 pointer-events-none">
-                            <Input value="https://rochanegra.app/share/..." readOnly className="h-9 text-xs" />
+                            <Input value="https://rochanegra.com/share/..." readOnly className="h-9 text-xs" />
                             <Button variant="outline" size="sm" className="h-9">Copy</Button>
                         </div>
                         <div className="flex items-start gap-2 text-[10px] text-muted-foreground bg-muted/50 p-2 rounded-lg">

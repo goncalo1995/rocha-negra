@@ -13,5 +13,8 @@ public record NodeUpdateDto(
         String storagePath,
         NodeStatus status,
         LocalDate dueDate,
-        UUID parentId) {
+        UUID parentId,
+        String desiredOutcome,
+        String mainRisk,
+        Boolean isAiEnabled) {
 }

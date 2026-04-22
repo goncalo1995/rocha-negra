@@ -1,80 +1,58 @@
 import { Node as AppNode } from "@/types/nodes";
-import { format } from "date-fns";
-import { Calendar, CheckCircle2, Circle, Clock } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTasks } from "@/hooks/useTasks";
-import { NodeContentEditor } from "@/components/nodes/NodeContentEditor";
-// If useTasks doesn't exist or is different, we might need to adjust.
-// For now, let's assume we can pass tasks or fetch them.
-// Actually, NodeDetail.tsx fetches the node, which might include tasks or we fetch them there.
-// Let's assume NodeDetail passes the node and we might fetch tasks if not in node.
+import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LayoutDashboard, Layers, Loader2 } from "lucide-react";
+import { BlueprintEditor } from "@/components/blueprint/BlueprintEditor";
+import { ProjectDashboardView } from "@/components/projects/ProjectDashboardView";
+import { useNode } from "@/hooks/useNodes";
 
 interface ProjectDetailViewProps {
     node: AppNode;
 }
 
-export function ProjectDetailView({ node }: ProjectDetailViewProps) {
-    const { data: tasks, isLoading: isLoadingTasks } = useTasks({ nodeId: node.id });
+export function ProjectDetailView({ node: initialNode }: ProjectDetailViewProps) {
+    const { data: fullNode, isLoading } = useNode(initialNode.id);
+    const [activeTab, setActiveTab] = useState("blueprint");
 
-    const completedTasks = tasks?.filter(t => t.status === 'DONE').length || 0;
-    const totalTasks = tasks?.length || 0;
-    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-
+    if (isLoading || !fullNode) {
+        return (
+            <div className="h-64 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-white/20" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Progress</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{Math.round(progress)}%</div>
-                        <Progress value={progress} className="mt-2" />
-                        <p className="text-xs text-muted-foreground mt-2">
-                            {completedTasks} of {totalTasks} tasks completed
-                        </p>
-                    </CardContent>
-                </Card>
-
-                {/* <Card className="relative overflow-hidden group/card">
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Status & Deadline</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary capitalize">
-                                {node.status?.replace('_', ' ').toLowerCase()}
-                            </div>
-                            {node.dueDate && (
-                                <div className="flex items-center gap-1.5 text-sm font-semibold">
-                                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <span>{format(new Date(node.dueDate), 'MMM d, yyyy')}</span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="space-y-1.5">
-                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">Timeline</p>
-                            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <Clock className="h-3 w-3" />
-                                    <span>Updated {format(new Date(node.updatedAt || node.createdAt), 'MMM d, yyyy')}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card> */}
+            <div className="flex items-center justify-between pb-4 border-b border-white/5">
+                <div className="flex items-center gap-4">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="bg-white/5 p-1 rounded-full border border-white/10">
+                        <TabsList className="bg-transparent border-none">
+                            <TabsTrigger 
+                                value="blueprint" 
+                                className="rounded-full data-[state=active]:bg-white data-[state=active]:text-black transition-all gap-2 px-4 py-1.5"
+                            >
+                                <Layers className="h-3.5 w-3.5" />
+                                <span className="text-xs font-bold uppercase tracking-widest">Blueprint</span>
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="dashboard" 
+                                className="rounded-full data-[state=active]:bg-white data-[state=active]:text-black transition-all gap-2 px-4 py-1.5"
+                            >
+                                <LayoutDashboard className="h-3.5 w-3.5" />
+                                <span className="text-xs font-bold uppercase tracking-widest">Dashboard</span>
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                </div>
             </div>
 
-            {/* Project Notes Editor */}
-            <div className="prose dark:prose-invert max-w-none">
-                <h3>Project Notes</h3>
-                <NodeContentEditor
-                    nodeId={node.id}
-                    initialContent={node.content || ''}
-                    placeholder="Add project notes, goals, and details here..."
-                />
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                {activeTab === "blueprint" ? (
+                    <BlueprintEditor nodeId={fullNode.id} parentNode={fullNode} />
+                ) : (
+                    <ProjectDashboardView node={fullNode} />
+                )}
             </div>
         </div>
     );

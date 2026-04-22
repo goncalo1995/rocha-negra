@@ -19,4 +19,20 @@ api.interceptors.request.use(async (config) => {
     return Promise.reject(error);
 });
 
+// Interceptor to handle responses and offline states
+api.interceptors.response.use(
+    (response) => {
+        // If a request succeeds, we know the backend is online
+        window.dispatchEvent(new CustomEvent('backend-online'));
+        return response;
+    },
+    (error) => {
+        // If there's no response from server (Network Error, Timeout, Connection Refused)
+        if (!error.response) {
+            window.dispatchEvent(new CustomEvent('backend-offline'));
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;

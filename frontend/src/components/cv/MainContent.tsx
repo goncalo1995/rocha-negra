@@ -272,11 +272,6 @@ export function MainContent({ name, role, profile, experience, achievements }) {
                 </ul>
             </Section>
 
-            {/* <ProjectDetailsModal
-                project={selectedProject}
-                isOpen={isModalOpen}
-                onOpenChange={setIsModalOpen}
-            /> */}
         </div>
     );
 }

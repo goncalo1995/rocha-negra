@@ -4,5 +4,7 @@ public enum NodeType {
     PROJECT,
     AREA,
     RESOURCE,
-    GOAL
+    GOAL,
+    VERSION,
+    CHECKPOINT
 }

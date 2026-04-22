@@ -36,7 +36,9 @@ const ParaDashboard = lazy(() => import("./pages/ParaDashboard"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const TransactionDetail = lazy(() => import("./pages/finance/TransactionDetail"));
-
+const AgentsHub = lazy(() => import("./pages/AgentsHub"));
+const PersonaDashboard = lazy(() => import("./pages/PersonaDashboard"));
+const AgentStudio = lazy(() => import("./pages/AgentStudio"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -223,6 +225,11 @@ const App = () => {
 
                     <Route path="/gtd" element={<Navigate to="/gtd/inbox" replace />} />
                     <Route path="/gtd/:tab" element={<GTD />} />
+                    
+                    {/* Workforce Routing */}
+                    <Route path="/agents" element={<AgentsHub />} />
+                    <Route path="/agents/:personaId" element={<PersonaDashboard />} />
+                    <Route path="/agents/:personaId/worker/:workerId" element={<AgentStudio />} />
                   </Route>
 
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
