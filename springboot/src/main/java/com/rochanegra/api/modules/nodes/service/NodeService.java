@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.rochanegra.api.common.exception.ForbiddenException;
 import com.rochanegra.api.common.exception.ResourceNotFoundException;
+import com.rochanegra.api.modules.blueprint.dto.BlueprintStepDto;
+import com.rochanegra.api.modules.blueprint.service.BlueprintService;
 import com.rochanegra.api.modules.dashboard.dtos.ProjectsWidgetDto;
 import com.rochanegra.api.modules.nodes.domain.Node;
 import com.rochanegra.api.modules.nodes.domain.NodeLink;
@@ -30,9 +32,6 @@ import com.rochanegra.api.modules.nodes.types.NodeLinkType;
 import com.rochanegra.api.modules.nodes.types.NodeRole;
 import com.rochanegra.api.modules.nodes.types.NodeStatus;
 import com.rochanegra.api.modules.nodes.types.NodeType;
-import com.rochanegra.api.modules.roadmap.domain.ProjectDetails;
-import com.rochanegra.api.modules.roadmap.dto.ProjectDetailsDto;
-import com.rochanegra.api.modules.roadmap.repository.ProjectDetailsRepository;
 import com.rochanegra.api.modules.tasks.dtos.TaskSummaryDto;
 
 import java.util.ArrayList;
@@ -50,7 +49,7 @@ public class NodeService {
     private final NodeRepository nodeRepository;
     private final NodeMemberRepository memberRepository;
     private final NodeLinkRepository linkRepository;
-    private final ProjectDetailsRepository projectDetailsRepository;
+    private final BlueprintService blueprintService;
     private final JdbcTemplate jdbcTemplate;
 
     public ProjectsWidgetDto getNodesWidget(UUID userId) {
@@ -75,13 +74,7 @@ public class NodeService {
         Node node = nodeRepository.findById(newNodeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Node not found after creation"));
 
-        // Explicitly manage ProjectDetails (No JPA Cascade for safety in V1)
-        if (createDto.type() == NodeType.PROJECT) {
-            ProjectDetails details = new ProjectDetails(node);
-            details.setDesiredOutcome(createDto.desiredOutcome());
-            details.setMainRisk(createDto.mainRisk());
-            projectDetailsRepository.save(details);
-        }
+        // Roadmap details logic removed in favor of Blueprint Studio
 
         return toDetailDto(node);
     }
@@ -165,14 +158,7 @@ public class NodeService {
             node.setParent(parent);
         }
 
-        // Project details update logic
-        if (node.getType() == NodeType.PROJECT && node.getProjectDetails() != null) {
-            ProjectDetails details = node.getProjectDetails();
-            if (updateDto.desiredOutcome() != null) details.setDesiredOutcome(updateDto.desiredOutcome());
-            if (updateDto.mainRisk() != null) details.setMainRisk(updateDto.mainRisk());
-            if (updateDto.isAiEnabled() != null) details.setIsAiEnabled(updateDto.isAiEnabled());
-            projectDetailsRepository.save(details);
-        }
+        // Project details update logic removed in favor of Blueprint Studio
 
         node = nodeRepository.save(node);
         return toDetailDto(node); // Return the full, updated object
@@ -445,16 +431,6 @@ public class NodeService {
                 .map(this::toSummaryDto)
                 .collect(Collectors.toList());
 
-        ProjectDetailsDto projectDetails = null;
-        if (node.getProjectDetails() != null) {
-            projectDetails = new ProjectDetailsDto(
-                    node.getProjectDetails().getNodeId(),
-                    node.getProjectDetails().getDesiredOutcome(),
-                    node.getProjectDetails().getMainRisk(),
-                    node.getProjectDetails().getProgress(),
-                    node.getProjectDetails().getIsAiEnabled());
-        }
-
         return new NodeDetailDto(
                 node.getId(),
                 node.getParent() != null ? node.getParent().getId() : null,
@@ -477,7 +453,6 @@ public class NodeService {
                 children,
                 referencedBy,
                 references,
-                ancestors,
-                projectDetails);
+                ancestors);
     }
 }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -8,23 +8,38 @@ import {
   Clock, 
   AlertCircle,
   TrendingUp,
-  FileText
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useRoadmap } from "@/hooks/useRoadmap";
 import { Button } from "@/components/ui/button";
 import { FullNode } from "@/types/nodes";
-
+import { BlueprintStep } from "@/types/blueprint";
+import { useBlueprint } from "@/hooks/useBlueprint";
 interface ProjectDashboardViewProps {
   node: FullNode;
 }
 
+// We need a way to get all steps from the blueprint tree as a flat list.
+// This recursive function will traverse the tree and collect all steps.
+const flattenBlueprint = (steps: BlueprintStep[]): BlueprintStep[] => {
+  let allSteps: BlueprintStep[] = [];
+  for (const step of steps) {
+    allSteps.push(step);
+    if (step.children && step.children.length > 0) {
+      allSteps = [...allSteps, ...flattenBlueprint(step.children)];
+    }
+  }
+  return allSteps;
+};
+
 export function ProjectDashboardView({ node }: ProjectDashboardViewProps) {
-  const { data: steps = [] } = useRoadmap(node.id);
-  
-  const completedSteps = steps.filter(s => s.status === 'completed');
-  const todoSteps = steps.filter(s => s.status === 'todo');
-  const progress = steps.length > 0 ? (completedSteps.length / steps.length) * 100 : 0;
+  const { blueprint = [], isLoading } = useBlueprint(node.id);
+
+  const allSteps = useMemo(() => {
+    return blueprint ? flattenBlueprint(blueprint) : [];
+  }, [blueprint]);
+
+  const completedSteps = allSteps.filter(s => s.status === 'DONE');
+  const todoSteps = allSteps.filter(s => s.status === 'TODO');
+  const progress = allSteps.length > 0 ? (completedSteps.length / allSteps.length) * 100 : 0;
 
   // Needs review = completed but maybe "prompt" or "DOD" needs checking (mock logic)
   const needsReview = completedSteps.slice(0, 2); 
@@ -42,7 +57,7 @@ export function ProjectDashboardView({ node }: ProjectDashboardViewProps) {
             <div className="text-3xl font-bold tracking-tight">{Math.round(progress)}%</div>
             <Progress value={progress} className="h-1 bg-white/10" />
             <p className="text-[10px] text-white/40 font-medium">
-              {completedSteps.length} of {steps.length} steps completed
+              {completedSteps.length} of {allSteps.length} steps completed
             </p>
           </CardContent>
         </Card>
@@ -61,6 +76,8 @@ export function ProjectDashboardView({ node }: ProjectDashboardViewProps) {
           </CardContent>
         </Card>
 
+        {/* The project_details table was removed. We can get this info from the node itself if needed,
+            or just use placeholder logic for now. We'll use the node's description. */}
         <Card className="bg-[#0D0D0D] border-white/10 shadow-2xl">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Risks & Blockers</CardTitle>
@@ -68,10 +85,11 @@ export function ProjectDashboardView({ node }: ProjectDashboardViewProps) {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold tracking-tight">
-              {node.projectDetails?.mainRisk ? "Evaluating" : "Low"}
+              {/* Mock logic for now. Could be driven by a custom field on the node later. */}
+              Low
             </div>
             <p className="text-[10px] text-white/40 font-medium mt-3 leading-relaxed">
-              {node.projectDetails?.mainRisk || "No major blockers identified."}
+              No major blockers identified in the project plan.
             </p>
           </CardContent>
         </Card>
@@ -87,7 +105,8 @@ export function ProjectDashboardView({ node }: ProjectDashboardViewProps) {
             </div>
           </div>
           <div className="space-y-3">
-            {todoSteps.map((step) => (
+            {/* Display only the first 3-4 upcoming steps to keep the dashboard clean */}
+            {todoSteps.slice(0, 4).map((step) => (
               <div 
                 key={step.id} 
                 className="group p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all cursor-pointer"
@@ -95,7 +114,8 @@ export function ProjectDashboardView({ node }: ProjectDashboardViewProps) {
                 <div className="flex items-start justify-between">
                   <div>
                     <h4 className="text-md font-semibold mb-1 group-hover:text-white transition-colors">{step.title}</h4>
-                    <p className="text-xs text-white/40 line-clamp-1">{step.definitionOfDone}</p>
+                    {/* Use the new 'description' field for the step */}
+                    <p className="text-xs text-white/40 line-clamp-1">{step.description}</p>
                   </div>
                   <Button variant="ghost" size="sm" className="h-8 rounded-full border border-white/10 hover:bg-white text-[10px] font-bold hover:text-black transition-all">
                     Start Step
@@ -103,6 +123,9 @@ export function ProjectDashboardView({ node }: ProjectDashboardViewProps) {
                 </div>
               </div>
             ))}
+             {todoSteps.length === 0 && (
+                <div className="text-center py-8 text-sm text-white/40">No upcoming steps. Well done!</div>
+            )}
           </div>
         </section>
 
@@ -134,6 +157,9 @@ export function ProjectDashboardView({ node }: ProjectDashboardViewProps) {
                 </div>
               </div>
             ))}
+            {needsReview.length === 0 && (
+                <div className="text-center py-8 text-sm text-white/40">Nothing pending review right now.</div>
+            )}
           </div>
         </section>
       </div>

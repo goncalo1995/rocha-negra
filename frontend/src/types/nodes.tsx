@@ -1,3 +1,4 @@
+import { BlueprintStep } from "./blueprint";
 import { Database } from "./database.types";
 import { Task } from "./tasks";
 import { FromDb } from "./utils";
@@ -22,14 +23,6 @@ export interface NodeSummary {
     updatedAt: string;
     memberCount: number;
     taskCount: number;
-}
-
-export interface ProjectDetails {
-    nodeId: string;
-    desiredOutcome?: string | null;
-    mainRisk?: string | null;
-    progress?: number | null;
-    isAiEnabled?: boolean | null;
 }
 
 // --- API CONTRACT (DTOs) ---
@@ -72,5 +65,4 @@ export type FullNode = Node & {
     referencedBy: NodeLinkDto[];
     references: NodeLinkDto[];
     ancestors: NodeSummary[];
-    projectDetails?: ProjectDetails | null;
 };

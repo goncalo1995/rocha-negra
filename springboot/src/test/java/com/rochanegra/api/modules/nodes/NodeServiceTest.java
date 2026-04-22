@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.rochanegra.api.common.exception.ResourceNotFoundException;
+import com.rochanegra.api.modules.blueprint.service.BlueprintService;
 import com.rochanegra.api.modules.nodes.domain.Node;
 import com.rochanegra.api.modules.nodes.domain.NodeMember;
 import com.rochanegra.api.modules.nodes.dto.NodeCreateDto;
@@ -22,7 +23,6 @@ import com.rochanegra.api.modules.nodes.service.NodeService;
 import com.rochanegra.api.modules.nodes.types.NodeRole;
 import com.rochanegra.api.modules.nodes.types.NodeStatus;
 import com.rochanegra.api.modules.nodes.types.NodeType;
-import com.rochanegra.api.modules.roadmap.repository.ProjectDetailsRepository;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -49,7 +49,7 @@ class NodeServiceTest {
     @Mock
     private JdbcTemplate jdbcTemplate;
     @Mock
-    private ProjectDetailsRepository projectDetailsRepository;
+    private BlueprintService blueprintService;
 
     // --- CLASS UNDER TEST ---
     // This creates an instance of NodeService and automatically injects the
@@ -109,7 +109,6 @@ class NodeServiceTest {
         when(nodeRepository.findById(newNodeId)).thenReturn(Optional.of(mockNode));
 
         // Act
-        when(projectDetailsRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         NodeDetailDto resultDto = nodeService.createNode(createDto, userId);
 
         // Assert
@@ -215,7 +214,6 @@ class NodeServiceTest {
         when(nodeRepository.findById(newProjectId)).thenReturn(Optional.of(mockProject));
 
         // --- ACT ---
-        when(projectDetailsRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         NodeDetailDto resultDto = nodeService.createNode(createDto, userId);
 
         // --- ASSERT ---

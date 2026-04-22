@@ -1,12 +1,9 @@
-import { Node as AppNode, FullNode } from "@/types/nodes";
+import { Node as AppNode } from "@/types/nodes";
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Plus, LayoutDashboard, Map as RoadmapIcon, Sparkles, Loader2 } from "lucide-react";
-import { RoadmapEditor } from "@/components/projects/RoadmapEditor";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LayoutDashboard, Layers, Loader2 } from "lucide-react";
+import { BlueprintEditor } from "@/components/blueprint/BlueprintEditor";
 import { ProjectDashboardView } from "@/components/projects/ProjectDashboardView";
-import { ProjectIntakeModal, ProjectIntakeData } from "@/components/projects/ProjectIntakeModal";
-import { toast } from "sonner";
 import { useNode } from "@/hooks/useNodes";
 
 interface ProjectDetailViewProps {
@@ -15,14 +12,7 @@ interface ProjectDetailViewProps {
 
 export function ProjectDetailView({ node: initialNode }: ProjectDetailViewProps) {
     const { data: fullNode, isLoading } = useNode(initialNode.id);
-    const [isIntakeOpen, setIsIntakeOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState("roadmap");
-
-    const handleIntakeComplete = (data: ProjectIntakeData) => {
-        setIsIntakeOpen(false);
-        // useNode will be invalidated by the mutation in the modal
-        toast.success("Project updated!");
-    };
+    const [activeTab, setActiveTab] = useState("blueprint");
 
     if (isLoading || !fullNode) {
         return (
@@ -32,8 +22,6 @@ export function ProjectDetailView({ node: initialNode }: ProjectDetailViewProps)
         );
     }
 
-    const isAiEnabled = fullNode.projectDetails?.isAiEnabled ?? true;
-
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-white/5">
@@ -41,11 +29,11 @@ export function ProjectDetailView({ node: initialNode }: ProjectDetailViewProps)
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="bg-white/5 p-1 rounded-full border border-white/10">
                         <TabsList className="bg-transparent border-none">
                             <TabsTrigger 
-                                value="roadmap" 
+                                value="blueprint" 
                                 className="rounded-full data-[state=active]:bg-white data-[state=active]:text-black transition-all gap-2 px-4 py-1.5"
                             >
-                                <RoadmapIcon className="h-3.5 w-3.5" />
-                                <span className="text-xs font-bold uppercase tracking-widest">Roadmap</span>
+                                <Layers className="h-3.5 w-3.5" />
+                                <span className="text-xs font-bold uppercase tracking-widest">Blueprint</span>
                             </TabsTrigger>
                             <TabsTrigger 
                                 value="dashboard" 
@@ -57,40 +45,15 @@ export function ProjectDetailView({ node: initialNode }: ProjectDetailViewProps)
                         </TabsList>
                     </Tabs>
                 </div>
-
-                <div className="flex items-center gap-3">
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setIsIntakeOpen(true)}
-                        className="rounded-full border border-white/10 hover:bg-white/5 text-[10px] font-bold uppercase tracking-widest gap-2"
-                    >
-                        <Plus className="h-3 w-3" />
-                        Re-run Intake
-                    </Button>
-                    {isAiEnabled && (
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
-                            <Sparkles className="h-3 w-3" />
-                            AI Opt-in
-                        </div>
-                    )}
-                </div>
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                {activeTab === "roadmap" ? (
-                    <RoadmapEditor nodeId={fullNode.id} isAiEnabled={isAiEnabled} />
+                {activeTab === "blueprint" ? (
+                    <BlueprintEditor nodeId={fullNode.id} parentNode={fullNode} />
                 ) : (
                     <ProjectDashboardView node={fullNode} />
                 )}
             </div>
-
-            <ProjectIntakeModal 
-                isOpen={isIntakeOpen} 
-                onClose={() => setIsIntakeOpen(false)} 
-                onComplete={handleIntakeComplete} 
-                nodeId={fullNode.id}
-            />
         </div>
     );
 }
