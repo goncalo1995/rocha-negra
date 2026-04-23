@@ -43,6 +43,7 @@ public class SecurityConfig {
                         "/error", // Spring's default error page
                         "/favicon.ico", // Spring's default favicon
                         "/actuator/**", // Actuator endpoints
+                        "/api/v1/nodes/share/**", // Public node sharing
                         // --- SWAGGER UI ---
                         "/swagger-ui.html",
                         "/swagger-ui/**",

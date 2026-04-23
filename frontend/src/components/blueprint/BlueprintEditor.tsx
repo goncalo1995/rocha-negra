@@ -131,7 +131,7 @@ export const BlueprintEditor: React.FC<BlueprintEditorProps> = ({ nodeId, parent
     }
 
     return (
-        <div className="h-[calc(100vh-200px)] border border-white/10 rounded-2xl overflow-hidden bg-[#0D0D0D] flex flex-col">
+        <div className="h-[calc(100vh-50px)] sm:h-[calc(100vh-200px)] border border-white/10 rounded-2xl overflow-hidden bg-[#0D0D0D] flex flex-col">
             <ResizablePanelGroup direction="horizontal" className="flex-1">
                 <ResizablePanel defaultSize={60} minSize={40}>
                     <div className="h-full flex flex-col border-r border-white/10">

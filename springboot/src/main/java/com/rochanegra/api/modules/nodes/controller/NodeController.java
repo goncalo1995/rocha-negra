@@ -122,4 +122,41 @@ public class NodeController {
         UUID userId = UUID.fromString(auth.getName());
         return ResponseEntity.ok(nodeService.getGraph(nodeId, userId));
     }
+
+    // --- Share Endpoints ---
+    @PostMapping("/{nodeId}/share")
+    public ResponseEntity<NodeShareDto> enableShare(@PathVariable UUID nodeId, Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.ok(nodeService.enableShare(nodeId, userId));
+    }
+
+    @PostMapping("/{nodeId}/share/disable")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void disableShare(@PathVariable UUID nodeId, Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        nodeService.disableShare(nodeId, userId);
+    }
+
+    @PostMapping("/{nodeId}/share/regenerate")
+    public ResponseEntity<NodeShareDto> regenerateShareToken(@PathVariable UUID nodeId, Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.ok(nodeService.regenerateShareToken(nodeId, userId));
+    }
+
+    @GetMapping("/{nodeId}/share/stats")
+    public ResponseEntity<NodeShareStatsDto> getShareStats(@PathVariable UUID nodeId) {
+        return ResponseEntity.ok(nodeService.getShareStats(nodeId));
+    }
+
+    // Public endpoint - no auth required
+    @GetMapping("/share/{token}")
+    public ResponseEntity<PublicNodeDto> getPublicNodeByToken(@PathVariable UUID token,
+            jakarta.servlet.http.HttpServletRequest request) {
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        String userAgent = request.getHeader("User-Agent");
+        if (ipAddress == null || ipAddress.isEmpty()) {
+            ipAddress = request.getRemoteAddr();
+        }
+        return ResponseEntity.ok(nodeService.getPublicNodeByToken(token, ipAddress, userAgent));
+    }
 }

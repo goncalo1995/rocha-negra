@@ -98,4 +98,10 @@ public class Node {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+    @Column(name = "share_token")
+    private UUID shareToken;
+
+    @Column(name = "share_enabled")
+    private Boolean shareEnabled = false;
 }

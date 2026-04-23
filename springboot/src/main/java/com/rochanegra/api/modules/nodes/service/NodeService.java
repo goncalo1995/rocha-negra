@@ -5,15 +5,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.transaction.annotation.Propagation;
 
 import com.rochanegra.api.common.exception.ForbiddenException;
 import com.rochanegra.api.common.exception.ResourceNotFoundException;
+import com.rochanegra.api.modules.blueprint.domain.BlueprintStep;
 import com.rochanegra.api.modules.blueprint.dto.BlueprintStepDto;
+import com.rochanegra.api.modules.blueprint.repository.BlueprintStepRepository;
 import com.rochanegra.api.modules.blueprint.service.BlueprintService;
 import com.rochanegra.api.modules.dashboard.dtos.ProjectsWidgetDto;
 import com.rochanegra.api.modules.nodes.domain.Node;
 import com.rochanegra.api.modules.nodes.domain.NodeLink;
 import com.rochanegra.api.modules.nodes.domain.NodeMember;
+import com.rochanegra.api.modules.nodes.domain.NodeShareAnalytics;
 import com.rochanegra.api.modules.nodes.dto.GraphDto;
 import com.rochanegra.api.modules.nodes.dto.GraphEdgeDto;
 import com.rochanegra.api.modules.nodes.dto.GraphNodeDto;
@@ -22,34 +27,53 @@ import com.rochanegra.api.modules.nodes.dto.NodeCreateDto;
 import com.rochanegra.api.modules.nodes.dto.NodeDetailDto;
 import com.rochanegra.api.modules.nodes.dto.NodeLinkDto;
 import com.rochanegra.api.modules.nodes.dto.NodeMemberDto;
+import com.rochanegra.api.modules.nodes.dto.NodeShareDto;
+import com.rochanegra.api.modules.nodes.dto.NodeShareStatsDto;
 import com.rochanegra.api.modules.nodes.dto.NodeSummaryDto;
 import com.rochanegra.api.modules.nodes.dto.NodeTreeDto;
 import com.rochanegra.api.modules.nodes.dto.NodeUpdateDto;
+import com.rochanegra.api.modules.nodes.dto.PublicBlueprintStepDto;
+import com.rochanegra.api.modules.nodes.dto.PublicNodeDto;
+import com.rochanegra.api.modules.nodes.dto.PublicTaskDto;
 import com.rochanegra.api.modules.nodes.repository.NodeLinkRepository;
 import com.rochanegra.api.modules.nodes.repository.NodeMemberRepository;
 import com.rochanegra.api.modules.nodes.repository.NodeRepository;
+import com.rochanegra.api.modules.nodes.repository.NodeShareAnalyticsRepository;
 import com.rochanegra.api.modules.nodes.types.NodeLinkType;
 import com.rochanegra.api.modules.nodes.types.NodeRole;
 import com.rochanegra.api.modules.nodes.types.NodeStatus;
 import com.rochanegra.api.modules.nodes.types.NodeType;
 import com.rochanegra.api.modules.tasks.dtos.TaskSummaryDto;
+import com.rochanegra.api.modules.tasks.Task;
+import com.rochanegra.api.modules.tasks.TaskRepository;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class NodeService {
 
     private final NodeRepository nodeRepository;
     private final NodeMemberRepository memberRepository;
     private final NodeLinkRepository linkRepository;
-    private final BlueprintService blueprintService;
+    private final BlueprintStepRepository blueprintStepRepository;
+    private final NodeShareAnalyticsRepository nodeShareAnalyticsRepository;
+    private final TaskRepository taskRepository;
     private final JdbcTemplate jdbcTemplate;
 
     public ProjectsWidgetDto getNodesWidget(UUID userId) {
@@ -162,6 +186,143 @@ public class NodeService {
 
         node = nodeRepository.save(node);
         return toDetailDto(node); // Return the full, updated object
+    }
+
+    @Transactional
+    public NodeShareDto enableShare(UUID nodeId, UUID userId) {
+        Node node = validateIsOwner(nodeId, userId);
+        node.setShareToken(java.util.UUID.randomUUID());
+        node.setShareEnabled(true);
+        nodeRepository.save(node);
+        return toShareDto(node);
+    }
+
+    @Transactional
+    public NodeShareDto disableShare(UUID nodeId, UUID userId) {
+        Node node = validateIsOwner(nodeId, userId);
+        node.setShareEnabled(false);
+        nodeRepository.save(node);
+        return toShareDto(node);
+    }
+
+    @Transactional
+    public NodeShareDto regenerateShareToken(UUID nodeId, UUID userId) {
+        Node node = validateIsOwner(nodeId, userId);
+        node.setShareToken(java.util.UUID.randomUUID());
+        node.setShareEnabled(true);
+        nodeRepository.save(node);
+        return toShareDto(node);
+    }
+
+    @Transactional
+    public PublicNodeDto getPublicNodeByToken(UUID token, String ipAddress, String userAgent) {
+        // Rate limiting check
+        checkShareRateLimit(token, ipAddress);
+
+        Node node = nodeRepository.findByShareTokenAndShareEnabledTrue(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Share link not found or expired"));
+
+        // Record visit asynchronously (fire and forget)
+        recordShareVisitAsync(node.getId(), token, ipAddress, userAgent);
+
+        // Fetch tasks directly - these are public for shared nodes
+        List<Task> tasks = taskRepository.findByNodeIdOrderByPositionAsc(node.getId());
+        List<PublicTaskDto> publicTasks = tasks.stream()
+                .filter(t -> t.getParent() == null) // Only root-level tasks
+                .map(t -> new PublicTaskDto(
+                        t.getId(),
+                        t.getTitle(),
+                        t.getDescription(),
+                        t.getStatus().name(),
+                        t.getPriority(),
+                        t.getDueDate()))
+                .toList();
+
+        // Fetch blueprint steps for PROJECT nodes
+        List<PublicBlueprintStepDto> blueprintSteps = List.of();
+        if (node.getType() == NodeType.PROJECT) {
+            List<BlueprintStep> steps = blueprintStepRepository.findByNodeIdOrderByPositionAsc(node.getId());
+            blueprintSteps = steps.stream()
+                    .map(s -> new PublicBlueprintStepDto(
+                            s.getId(),
+                            s.getParent() != null ? s.getParent().getId() : null,
+                            s.getTitle(),
+                            s.getDescription(),
+                            s.getStatus().name(),
+                            s.getPosition()))
+                    .toList();
+        }
+
+        return new PublicNodeDto(
+                node.getId(),
+                node.getName(),
+                node.getDescription(),
+                node.getContent(),
+                node.getIcon(),
+                node.getType(),
+                publicTasks,
+                blueprintSteps,
+                node.getUpdatedAt());
+    }
+
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public CompletableFuture<Void> recordShareVisitAsync(UUID nodeId, UUID shareToken, String ipAddress,
+            String userAgent) {
+        try {
+            NodeShareAnalytics analytics = new NodeShareAnalytics();
+            analytics.setNodeId(nodeId);
+            analytics.setShareToken(shareToken);
+            analytics.setVisitorIp(ipAddress);
+            analytics.setVisitorUserAgent(userAgent);
+            analytics.setVisitedAt(Instant.now());
+            nodeShareAnalyticsRepository.save(analytics);
+        } catch (Exception e) {
+            log.error("Failed to record share visit for node {}: {}", nodeId, e.getMessage());
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Transactional(readOnly = true)
+    public NodeShareStatsDto getShareStats(UUID nodeId) {
+        int viewCount = nodeShareAnalyticsRepository.countByNodeId(nodeId);
+        Optional<Instant> lastViewedAt = nodeShareAnalyticsRepository.findLastViewedAtByNodeId(nodeId);
+
+        return new NodeShareStatsDto(viewCount, lastViewedAt.orElse(null));
+    }
+
+    // Rate limiting: max 10 views per token+IP per hour
+    private final Map<String, RateLimitEntry> shareViewRateLimit = new ConcurrentHashMap<>();
+
+    private record RateLimitEntry(AtomicInteger count, Instant windowStart) {
+    }
+
+    private void checkShareRateLimit(UUID token, String ipAddress) {
+        String key = token.toString() + ":" + (ipAddress != null ? ipAddress : "unknown");
+        Instant now = Instant.now();
+
+        RateLimitEntry entry = shareViewRateLimit.compute(key, (k, v) -> {
+            if (v == null || Duration.between(v.windowStart(), now).toHours() >= 1) {
+                return new RateLimitEntry(new AtomicInteger(1), now);
+            }
+            return v;
+        });
+
+        int count = entry.count().incrementAndGet();
+        if (count > 20) {
+            throw new ForbiddenException("Rate limit exceeded. Please try again later.");
+        }
+    }
+
+    private Node validateIsOwner(UUID nodeId, UUID userId) {
+        Node node = nodeRepository.findById(nodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Node not found"));
+        NodeMember member = memberRepository.findByNodeIdAndUserId(nodeId, userId)
+                .orElseThrow(() -> new ForbiddenException("You do not have access to this node."));
+        if (member.getRole() != NodeRole.OWNER) {
+            throw new ForbiddenException("Only owners can manage sharing.");
+        }
+        return node;
     }
 
     @Transactional
@@ -453,6 +614,23 @@ public class NodeService {
                 children,
                 referencedBy,
                 references,
-                ancestors);
+                ancestors,
+                node.getShareToken(),
+                node.getShareEnabled());
+    }
+
+    private NodeShareDto toShareDto(Node node) {
+        String baseUrl = System.getenv("APP_BASE_URL");
+        if (baseUrl == null || baseUrl.isBlank()) {
+            baseUrl = "http://localhost:3000";
+        }
+        String url = node.getShareToken() != null
+                ? baseUrl + "/share/" + node.getShareToken()
+                : null;
+
+        return new NodeShareDto(
+                node.getShareToken(),
+                node.getShareEnabled(),
+                url);
     }
 }

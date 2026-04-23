@@ -39,6 +39,7 @@ const TransactionDetail = lazy(() => import("./pages/finance/TransactionDetail")
 const AgentsHub = lazy(() => import("./pages/AgentsHub"));
 const PersonaDashboard = lazy(() => import("./pages/PersonaDashboard"));
 const AgentStudio = lazy(() => import("./pages/AgentStudio"));
+const SharedNode = lazy(() => import("./pages/SharedNode"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -233,6 +234,7 @@ const App = () => {
                   </Route>
 
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="/share/:token" element={<SharedNode />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

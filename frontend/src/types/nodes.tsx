@@ -65,4 +65,6 @@ export type FullNode = Node & {
     referencedBy: NodeLinkDto[];
     references: NodeLinkDto[];
     ancestors: NodeSummary[];
+    shareToken?: string | null;
+    shareEnabled?: boolean;
 };

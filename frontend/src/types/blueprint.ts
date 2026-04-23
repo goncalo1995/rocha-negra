@@ -37,3 +37,34 @@ export interface AiPlanGenerateRequest {
     goal: string;
     contextNodeIds: string[];
 }
+
+export interface PublicBlueprintStep {
+    id: string;
+    parentId: string | null;
+    title: string;
+    description: string | null;
+    status: TaskStatus;
+    position: number;
+    children: PublicBlueprintStep[];
+}
+
+export interface PublicTask {
+    id: string;
+    title: string;
+    description: string | null;
+    status: TaskStatus;
+    priority: number;
+    dueDate: string | null;
+}
+
+export interface PublicNode {
+    id: string;
+    name: string;
+    description: string | null;
+    content: string | null;
+    icon: string | null;
+    type: string;
+    tasks: PublicTask[];
+    blueprint: PublicBlueprintStep[];
+    lastUpdated: string;
+}
