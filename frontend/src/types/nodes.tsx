@@ -1,6 +1,6 @@
-import { BlueprintStep } from "./blueprint";
+import { BlueprintStep, PublicBlueprintStep } from "./blueprint";
 import { Database } from "./database.types";
-import { Task } from "./tasks";
+import { PublicTask, Task } from "./tasks";
 import { FromDb } from "./utils";
 
 // Enums
@@ -68,3 +68,15 @@ export type FullNode = Node & {
     shareToken?: string | null;
     shareEnabled?: boolean;
 };
+
+export interface PublicNode {
+    id: string;
+    name: string;
+    description: string | null;
+    content: string | null;
+    icon: string | null;
+    type: string;
+    tasks: PublicTask[];
+    blueprint: PublicBlueprintStep[];
+    updatedAt: string;
+}

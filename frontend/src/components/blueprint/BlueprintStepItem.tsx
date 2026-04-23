@@ -108,7 +108,7 @@ export const BlueprintStepItem: React.FC<BlueprintStepItemProps> = ({
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="opacity-0 group-hover/row:opacity-100 h-6 w-6 rounded-full hover:bg-white/10 transition-all"
+                    className="opacity-100 sm:opacity-0 group-hover/row:opacity-100 h-6 w-6 rounded-full hover:bg-white/10 transition-all"
                     onClick={(e) => {
                         e.stopPropagation();
                         onAddChild(step.id);

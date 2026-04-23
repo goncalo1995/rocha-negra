@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import { PublicNode } from "@/types/blueprint";
+import { PublicNode } from "@/types/nodes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 

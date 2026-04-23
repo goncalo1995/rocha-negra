@@ -57,9 +57,9 @@ export default function SharedNode() {
                     <div className="flex items-center gap-2 text-xs font-medium text-amber-800 dark:text-amber-200">
                         <Eye className="h-3.5 w-3.5" />
                         <span>
-                            You're viewing a shared snapshot. Last updated{" "}
-                            {node.lastUpdated
-                                ? formatDistanceToNow(new Date(node.lastUpdated), { addSuffix: true })
+                            You're viewing a shared {node.type.toLowerCase()}. Last updated{" "}
+                            {node.updatedAt
+                                ? formatDistanceToNow(new Date(node.updatedAt), { addSuffix: true })
                                 : "N/A"}
                         </span>
                     </div>
@@ -90,7 +90,7 @@ export default function SharedNode() {
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-3.5 w-3.5" />
                                     <span className="text-xs font-semibold">
-                                        {node.lastUpdated ? format(new Date(node.lastUpdated), 'MMM d, yyyy') : 'N/A'}
+                                        {node.updatedAt ? format(new Date(node.updatedAt), 'MMM d, yyyy HH:mm') : 'N/A'}
                                     </span>
                                 </div>
                             </div>

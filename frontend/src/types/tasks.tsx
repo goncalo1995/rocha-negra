@@ -31,3 +31,12 @@ export type TaskUpdate = {
     nodeId?: string | null;
     parentId?: string | null;
 };
+
+export interface PublicTask {
+    id: string;
+    title: string;
+    description: string | null;
+    status: TaskStatus;
+    priority: number;
+    dueDate: string | null;
+}

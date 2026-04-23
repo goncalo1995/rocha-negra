@@ -85,8 +85,7 @@ export const StepInspectorPanel: React.FC<StepInspectorPanelProps> = ({
             {/* Header with Save Button */}
             <div className="p-6 border-b border-white/10 flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-bold text-white tracking-tight">Step Settings</h3>
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">Inspection Mode</p>
+                    <h3 className="text-lg font-bold text-white tracking-tight">{step.title}</h3>
                 </div>
                 <div className="flex items-center gap-2">
                     {hasChanges && (
@@ -148,6 +147,24 @@ export const StepInspectorPanel: React.FC<StepInspectorPanelProps> = ({
                         </div>
                     </div>
 
+                    {/* Description / Definition of Done */}
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-white/40">
+                            <Info className="h-3.5 w-3.5" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Definition of Done</span>
+                        </div>
+                        <div className={cn(
+                            "min-h-[200px] rounded-xl border overflow-hidden",
+                            hasChanges && localDescription !== (step.description || "") && "border-yellow-500/50",
+                            "border-white/10 bg-white/[0.02]"
+                        )}>
+                            <MarkdownEditor 
+                                value={localDescription}
+                                onChange={setLocalDescription}
+                            />
+                        </div>
+                    </div>
+
                     {/* AI Analysis Section - No changes needed */}
                     <div className="p-4 rounded-2xl bg-purple-500/5 border border-purple-500/10 space-y-4">
                         <div className="flex items-center justify-between">
@@ -175,24 +192,6 @@ export const StepInspectorPanel: React.FC<StepInspectorPanelProps> = ({
                                 Use AI to check this step for clarity, potential risks, and missing requirements.
                             </p>
                         )}
-                    </div>
-
-                    {/* Description / Definition of Done */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-white/40">
-                            <Info className="h-3.5 w-3.5" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Definition of Done</span>
-                        </div>
-                        <div className={cn(
-                            "min-h-[200px] rounded-xl border overflow-hidden",
-                            hasChanges && localDescription !== (step.description || "") && "border-yellow-500/50",
-                            "border-white/10 bg-white/[0.02]"
-                        )}>
-                            <MarkdownEditor 
-                                value={localDescription}
-                                onChange={setLocalDescription}
-                            />
-                        </div>
                     </div>
 
                     {/* Context Management - Use local state */}

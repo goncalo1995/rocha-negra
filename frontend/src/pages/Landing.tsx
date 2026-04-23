@@ -16,6 +16,7 @@ import {
     Cpu,
     Network
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Landing() {
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -40,9 +41,9 @@ export default function Landing() {
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                            <span className="text-background font-bold text-xl">O</span>
+                            <span className="text-background font-bold text-xl">RN</span>
                         </div>
-                        <span className="font-semibold text-xl tracking-tight">Orchestrate</span>
+                        <span className="font-semibold text-xl tracking-tight">Rocha Negra</span>
                     </div>
                     <div className="flex items-center gap-4 text-sm font-medium">
                         <Button className="bg-white text-background hover:bg-white/90" onClick={scrollToBeta}>
@@ -65,7 +66,7 @@ export default function Landing() {
                             <span className="text-white">Now with a Workforce.</span>
                         </h1>
                         <p className="text-xl md:text-2xl text-muted-foreground mb-10 leading-relaxed max-w-xl">
-                            Move beyond passive note-taking. Orchestrate connects your projects, notes, and tasks to custom AI Agents that execute work based on your deep context.
+                            Move beyond passive note-taking. Rocha Negra connects your projects, notes, and tasks to custom AI Agents that execute work based on your deep context.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4">
                             <Button size="lg" className="h-14 px-8 text-lg bg-white text-background hover:bg-white/90 shadow-[0_0_40px_rgba(255,255,255,0.3)]" onClick={scrollToBeta}>
@@ -170,7 +171,7 @@ export default function Landing() {
                     <div className="text-center mb-20">
                         <h2 className="text-5xl md:text-6xl font-bold tracking-tight mb-6">Give your AI a brain. <span className="text-gradient">Yours.</span></h2>
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Stop repeating yourself. Orchestrate ingests your world and runs agents natively where your context lives.
+                            Stop repeating yourself. Rocha Negra ingests your world and runs agents natively where your context lives.
                         </p>
                     </div>
 
@@ -190,16 +191,16 @@ export default function Landing() {
                         </div>
 
                         {/* Feature 2 */}
-                        <div className="relative p-8 rounded-3xl bg-white border border-white hover:scale-[1.02] transition-transform shadow-[0_0_40px_rgba(255,255,255,0.1)] group">
+                        <div className="relative p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] transition-colors group">
                             <div className="absolute inset-0 bg-primary/5 vault-shimmer rounded-3xl" />
-                            <div className="absolute top-0 right-0 p-6 opacity-5">
-                                <Workflow className="w-24 h-24 text-background" />
+                            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Workflow className="w-24 h-24" />
                             </div>
-                            <div className="w-12 h-12 rounded-xl bg-background flex items-center justify-center mb-6 relative z-10 shadow-lg">
+                            <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-6 relative z-10 border border-white/5">
                                 <BrainCircuit className="w-6 h-6 text-white" />
                             </div>
-                            <h3 className="text-2xl font-bold mb-4 text-background relative z-10">Reusable Agents</h3>
-                            <p className="text-background/70 leading-relaxed font-medium relative z-10">
+                            <h3 className="text-2xl font-bold mb-4">Reusable Agents</h3>
+                            <p className="text-muted-foreground leading-relaxed font-medium">
                                 Build an "SEO Copywriter" agent once. Give it your brand guidelines. Run it forever on new product launches with one click.
                             </p>
                         </div>
@@ -220,6 +221,55 @@ export default function Landing() {
                     </div>
                 </div>
             </section>
+
+            <section className="py-32 bg-[#0a0a0a] border-y border-white/[0.05]">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
+                            <Bot className="w-4 h-4" />
+                            <span>Coming in Phase Two</span>
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                            Agents That <span className="text-gradient">Build Your Blueprint</span>
+                        </h2>
+                        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                            Stop manually breaking down projects. Your agents will analyze goals, split steps into substeps, and verify completion—automatically.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                        <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center">
+                            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                                <BrainCircuit className="w-6 h-6 text-primary" />
+                            </div>
+                            <h3 className="font-bold mb-2">1. Set a Goal</h3>
+                            <p className="text-sm text-muted-foreground">"Launch my SaaS landing page"</p>
+                        </div>
+                        <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center">
+                            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                                <Workflow className="w-6 h-6 text-primary" />
+                            </div>
+                            <h3 className="font-bold mb-2">2. AI Generates Blueprint</h3>
+                            <p className="text-sm text-muted-foreground">With dependencies, estimates, and context links</p>
+                        </div>
+                        <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center">
+                            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                                <CheckCircle2 className="w-6 h-6 text-primary" />
+                            </div>
+                            <h3 className="font-bold mb-2">3. Verify & Execute</h3>
+                            <p className="text-sm text-muted-foreground">Manual or automated verification before proceeding</p>
+                        </div>
+                    </div>
+                    
+                    {/* <div className="text-center mt-12">
+                        <Button variant="outline" className="border-white/20 bg-white/5" onClick={scrollToBeta}>
+                            Get early access to agent features
+                            <ArrowRight className="ml-2 w-4 h-4" />
+                        </Button>
+                    </div> */}
+                </div>
+            </section>
+
 
             {/* Future-Proof Teaser */}
             <section className="py-24 bg-gradient-to-b from-background to-white/[0.02] border-t border-white/[0.05]">
@@ -259,7 +309,7 @@ export default function Landing() {
                             </div>
                         ) : (
                             <form onSubmit={handleBetaSubmit} className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-white/80">Name</label>
                                         <Input required placeholder="Jane Doe" className="bg-black/50 border-white/10 h-12" />
@@ -267,6 +317,22 @@ export default function Landing() {
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-white/80">Work Email</label>
                                         <Input required type="email" placeholder="jane@company.com" className="bg-black/50 border-white/10 h-12" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-white/80">What's your role?</label>
+                                        <Select>
+                                            <SelectTrigger className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/10 text-white">
+                                                <SelectValue placeholder="Select your role" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="founder">Founder / Solo Creator</SelectItem>
+                                                <SelectItem value="product">Product Manager</SelectItem>
+                                                <SelectItem value="marketing">Marketing Lead</SelectItem>
+                                                <SelectItem value="freelancer">Freelancer / Agency Owner</SelectItem>
+                                                <SelectItem value="other">Other</SelectItem>
+                                            </SelectContent>
+                                            
+                                        </Select>
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -293,11 +359,11 @@ export default function Landing() {
                 <div className="max-w-7xl mx-auto px-6 flex flex-col items-center justify-center gap-4">
                     <div className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
                         <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center">
-                            <span className="text-background font-bold text-xs">O</span>
+                            <span className="text-background font-bold text-xs">RN</span>
                         </div>
-                        <span className="font-semibold tracking-tight">Orchestrate</span>
+                        <span className="font-semibold tracking-tight">Rocha Negra</span>
                     </div>
-                    <p className="text-sm text-muted-foreground text-center">© {new Date().getFullYear()} Orchestrate. Built to give you your time back.</p>
+                    <p className="text-sm text-muted-foreground text-center">© {new Date().getFullYear()} Rocha Negra. Built to give you your time back.</p>
                 </div>
             </footer>
         </div>

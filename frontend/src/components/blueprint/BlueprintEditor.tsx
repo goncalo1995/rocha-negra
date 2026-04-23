@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { DragDropProvider } from '@dnd-kit/react';
 
 import { useBlueprint, useBlueprintMutations } from '@/hooks/useBlueprint';
@@ -19,10 +19,14 @@ import {
     Plus, 
     Sparkles, 
     Search,
-    Loader2
+    Loader2,
+    ChevronLeft,
+    X
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FullNode } from '@/types/nodes';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface BlueprintEditorProps {
     nodeId: string;
@@ -46,9 +50,20 @@ export const BlueprintEditor: React.FC<BlueprintEditorProps> = ({ nodeId, parent
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
     const [analysisResults, setAnalysisResults] = useState<Record<string, string>>({});
     const [isAnalyzing, setIsAnalyzing] = useState<Record<string, boolean>>({});
+    
+    // Mobile detection
+    const isMobile = useIsMobile();
+    const [inspectorOpen, setInspectorOpen] = useState(false);
+    
+    // Close inspector on mobile when step changes
+    useEffect(() => {
+        if (isMobile && selectedStepId) {
+            setInspectorOpen(true);
+        }
+    }, [selectedStepId, isMobile]);
 
     const selectedStep = useMemo(() => {
-        // Now blueprint is already a tree, but we need to search recursively
+        // We need to search recursively in the blueprint array for the selected step
         const findStep = (steps: BlueprintStep[]): BlueprintStep | undefined => {
             for (const s of steps) {
                 if (s.id === selectedStepId) return s;
@@ -117,10 +132,24 @@ export const BlueprintEditor: React.FC<BlueprintEditorProps> = ({ nodeId, parent
         }
     };
 
+    const handleStepSelect = (step: BlueprintStep) => {
+        setSelectedStepId(step.id);
+        if (isMobile) {
+            setInspectorOpen(true);
+        }
+    };
+
+    const handleCloseInspector = () => {
+        setInspectorOpen(false);
+        if (isMobile) {
+            setSelectedStepId(null);
+        }
+    };
+
     if (isLoading) {
         return (
-            <div className="h-full flex flex-col p-8 space-y-4">
-                <Skeleton className="h-8 w-1/4 bg-white/5" />
+            <div className="h-full flex flex-col p-4 sm:p-8 space-y-4">
+                <Skeleton className="h-8 w-1/3 sm:w-1/4 bg-white/5" />
                 <div className="space-y-2">
                     <Skeleton className="h-12 w-full bg-white/5" />
                     <Skeleton className="h-12 w-full bg-white/5" />
@@ -130,6 +159,143 @@ export const BlueprintEditor: React.FC<BlueprintEditorProps> = ({ nodeId, parent
         );
     }
 
+    // Mobile layout (no resizable panels, use sheet for inspector)
+    if (isMobile) {
+        return (
+            <>
+                <div className="h-full flex flex-col bg-[#0D0D0D]">
+                    {/* Toolbar - Compact for mobile */}
+                    <div className="sticky top-0 z-10 p-3 border-b border-white/10 bg-[#0D0D0D] flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-white/40">
+                            <Layers className="h-4 w-4" />
+                            <span className="text-xs font-bold uppercase tracking-widest hidden xs:inline">
+                                Blueprint
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setIsAiModalOpen(true)}
+                                className="h-8 rounded-full border-purple-500/30 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20 gap-1 px-3"
+                            >
+                                <Sparkles className="h-3.5 w-3.5" />
+                                <span className="text-[10px] font-bold hidden sm:inline">Generate</span>
+                            </Button>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 rounded-full hover:bg-white/10"
+                                onClick={() => createStep.mutate({ title: "New Phase", status: 'TODO' })}
+                            >
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <ScrollArea className="flex-1">
+                        {generatePlan.isPending ? (
+                            <div className="p-6 space-y-4">
+                                <div className="flex items-center gap-3 animate-pulse">
+                                    <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
+                                    <span className="text-xs text-white/40 font-bold uppercase tracking-widest">
+                                        AI is architecting...
+                                    </span>
+                                </div>
+                                {[1,2,3].map(i => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <Skeleton className="h-8 w-8 rounded-full bg-white/5" />
+                                        <Skeleton className="h-8 flex-1 bg-white/5 rounded-lg" />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : blueprint.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-4">
+                                <div className="h-16 w-16 rounded-3xl bg-white/[0.02] border border-white/5 flex items-center justify-center text-white/10">
+                                    <Layers className="h-8 w-8" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-white/60">No Plan Yet</h4>
+                                    <p className="text-xs text-white/20 mt-1 max-w-[200px]">
+                                        Start building your project blueprint
+                                    </p>
+                                </div>
+                                <Button 
+                                    variant="outline" 
+                                    onClick={() => createStep.mutate({ title: "Phase 1", status: 'TODO' })}
+                                    className="border-white/10 bg-white/5 hover:bg-white/10"
+                                >
+                                    Add First Step
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="p-3">
+                                <DragDropProvider onDragEnd={handleDragEnd}>
+                                    {blueprint.map((step, index) => (
+                                        <BlueprintStepItem 
+                                            key={step.id} 
+                                            step={step} 
+                                            depth={0}
+                                            index={index}
+                                            group="root"
+                                            isSelected={selectedStepId === step.id}
+                                            onSelect={handleStepSelect}
+                                            onToggleExpand={toggleExpand}
+                                            isExpanded={expandedIds.has(step.id)}
+                                            expandedIds={expandedIds}
+                                            selectedStepId={selectedStepId}
+                                            onAddChild={(parentId) => createStep.mutate({ title: "New Sub-step", parentId })}
+                                        />
+                                    ))}
+                                </DragDropProvider>
+                            </div>
+                        )}
+                    </ScrollArea>
+                </div>
+
+                {/* Mobile Inspector Sheet */}
+                <Sheet open={inspectorOpen} onOpenChange={setInspectorOpen}>
+                    <SheetContent side="bottom" className="h-[85vh] bg-[#0D0D0D] border-t border-white/10 rounded-t-2xl p-0">
+                        <SheetHeader className="p-4 border-b border-white/10 flex flex-row items-center justify-between">
+                            <SheetTitle className="text-sm font-bold text-white/80">
+                                Step Details
+                            </SheetTitle>
+                        </SheetHeader>
+                        <ScrollArea className="h-[calc(85vh-60px)]">
+                            {selectedStep && (
+                                <StepInspectorPanel 
+                                    step={selectedStep}
+                                    onUpdate={(id, updates) => updateStep.mutate({ stepId: id, updates })}
+                                    onDelete={(id) => {
+                                        deleteStep.mutate(id);
+                                        handleCloseInspector();
+                                    }}
+                                    onAnalyze={handleAnalyze}
+                                    allNodes={allNodes}
+                                    analysisResult={analysisResults[selectedStep.id]}
+                                    isAnalyzing={isAnalyzing[selectedStep.id]}
+                                />
+                            )}
+                        </ScrollArea>
+                    </SheetContent>
+                </Sheet>
+
+                {/* AI Generator Modal */}
+                <AiPlanGenerateModal 
+                    isOpen={isAiModalOpen}
+                    onClose={() => setIsAiModalOpen(false)}
+                    onSubmit={(goal, contextNodeIds) => {
+                        generatePlan.mutate({ goal, contextNodeIds });
+                        setIsAiModalOpen(false);
+                    }}
+                    isLoading={generatePlan.isPending}
+                    parentNode={parentNode}
+                />
+            </>
+        );
+    }
+
+    // Desktop layout (with resizable panels)
     return (
         <div className="h-[calc(100vh-50px)] sm:h-[calc(100vh-200px)] border border-white/10 rounded-2xl overflow-hidden bg-[#0D0D0D] flex flex-col">
             <ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -205,7 +371,7 @@ export const BlueprintEditor: React.FC<BlueprintEditorProps> = ({ nodeId, parent
                                                 index={index}
                                                 group="root"
                                                 isSelected={selectedStepId === step.id}
-                                                onSelect={(s) => setSelectedStepId(s.id)}
+                                                onSelect={handleStepSelect}
                                                 onToggleExpand={toggleExpand}
                                                 isExpanded={expandedIds.has(step.id)}
                                                 expandedIds={expandedIds}
